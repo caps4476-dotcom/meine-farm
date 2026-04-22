@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Meine Farm - Deluxe Edition</title>
+    <title>Meine Farm Deluxe - Cloud Speicher</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
@@ -436,7 +436,7 @@
             box-shadow: 0 2px 0 #1e3a1a;
         }
         
-        .farm-grid, .barn-grid, .craft-grid, .research-grid, .licenses-grid, .multiplayer-grid, .account-grid, .quests-grid {
+        .farm-grid, .barn-grid, .craft-grid, .research-grid, .licenses-grid, .multiplayer-grid, .account-grid, .quests-grid, .handbook-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 16px;
@@ -447,6 +447,7 @@
             box-shadow: inset 0 0 0 3px #f7efcf, inset 0 0 0 8px #b58b5a;
         }
         .quests-grid { background: #c4b68a; grid-template-columns: 1fr; }
+        .handbook-grid { background: #c4b68a; grid-template-columns: 1fr; max-height: 70vh; overflow-y: auto; }
         .barn-grid { background: #c4a67a; }
         .craft-grid { background: #b8a88a; }
         .research-grid { background: #a89a7a; }
@@ -457,7 +458,7 @@
             .farm-grid, .barn-grid, .craft-grid, .research-grid, .licenses-grid, .multiplayer-grid, .account-grid { grid-template-columns: repeat(2, 1fr); }
         }
         
-        .field, .animal-slot, .craft-slot, .research-slot, .license-slot, .multiplayer-slot, .account-slot {
+        .field, .animal-slot, .craft-slot, .research-slot, .license-slot, .multiplayer-slot, .account-slot, .handbook-slot {
             background: #6b4226;
             border-radius: 28px;
             padding: 12px 6px;
@@ -466,6 +467,56 @@
             position: relative;
             overflow: hidden;
             color: white;
+        }
+        
+        .handbook-slot {
+            text-align: left;
+            padding: 20px;
+        }
+        
+        .handbook-section {
+            background: #4a3a2a;
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .handbook-section h3 {
+            color: #f5a623;
+            margin-top: 0;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #f5a623;
+            display: inline-block;
+        }
+        .handbook-section table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+        .handbook-section th, .handbook-section td {
+            border: 1px solid #8a7a5a;
+            padding: 8px;
+            text-align: left;
+        }
+        .handbook-section th {
+            background: #3a2a1a;
+            color: #f5a623;
+        }
+        .handbook-section tr:nth-child(even) {
+            background: #3a3022;
+        }
+        .handbook-tip {
+            background: #2a4a2a;
+            border-left: 4px solid #6f9e3f;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+        }
+        .handbook-warning {
+            background: #4a2a2a;
+            border-left: 4px solid #c44;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 10px;
         }
         
         .field .crop-name, .animal-slot .animal-name, .craft-slot .crop-name,
@@ -936,7 +987,7 @@
         <div id="loginErrorMsg" class="login-error"></div>
         <div class="login-switch">
             💾 Dein Spielstand wird automatisch in der Cloud gespeichert!<br>
-            🎮 Neue Features: NPC-Besucher, globaler Chat, dynamische Preise!
+            🎮 Spiele auf PC, Tablet und Smartphone - immer synchron!
         </div>
     </div>
 </div>
@@ -976,6 +1027,7 @@
         <button id="viewQuestsBtn" class="view-btn">📋 Quests</button>
         <button id="viewAccountBtn" class="view-btn">👤 Account</button>
         <button id="viewAchievementsBtn" class="view-btn">🏆 Erfolge</button>
+        <button id="viewHandbookBtn" class="view-btn">📖 Handbuch</button>
     </div>
 
     <div class="mass-plant-row" id="massPlantRow"></div>
@@ -1018,6 +1070,15 @@
             <div style="margin-top: 10px;">
                 <button id="createTradeOfferBtn" class="mass-btn" style="background:#8b5a8b;">📦 Angebot erstellen</button>
             </div>
+        </div>
+        <div id="chatContainer" class="multiplayer-slot" style="grid-column:1/-1; background:#2a2a2a;">
+            <div class="status" style="background:#3a5a3a;">💬 GLOBALER CHAT</div>
+            <div id="chatMessages" style="height: 200px; overflow-y: auto; background: #1a1a1a; border-radius: 20px; padding: 10px; margin: 10px 0; font-size: 0.8rem;"></div>
+            <div style="display: flex; gap: 5px;">
+                <input type="text" id="chatInput" placeholder="Nachricht an alle..." style="flex: 1; background: #3a3022; border: none; border-radius: 30px; padding: 8px 15px; color: #ffefcf;">
+                <button id="chatSendBtn" class="mass-btn" style="background:#4a6e8b;">📤 Senden</button>
+            </div>
+            <div style="font-size: 0.6rem; margin-top: 5px; color: #aaa;">💡 Sei respektvoll! Admin kann Nachrichten löschen.</div>
         </div>
         <div id="adminSection" class="admin-section hidden" style="grid-column:1/-1;">
             <div class="admin-title">🛡️ ADMIN-BEREICH</div>
@@ -1086,6 +1147,12 @@
         <div style="font-size:1.3rem; text-align:center; margin-bottom:15px;">🏆 Erfolge</div>
         <div id="achievementsList" class="achievement-list"></div>
     </div>
+    <div id="handbookView" class="handbook-grid hidden">
+        <div class="handbook-slot" style="grid-column:1/-1;">
+            <div class="status" style="background:#3a5a3a; font-size:1.2rem;">📖 OFFIZIELLES FARM-HANDBUCH</div>
+            <div id="handbookContent" style="max-height: 600px; overflow-y: auto; padding: 15px;"></div>
+        </div>
+    </div>
 
     <div class="orders-section" id="ordersContainer">
         <div style="text-align:center; font-weight:bold;">📋 MARKTAUFTRÄGE</div>
@@ -1104,7 +1171,8 @@
             📋 Quests: Tägliche und wöchentliche Aufgaben für extra Belohnungen!<br>
             🎁 Login-Bonus: Täglich einloggen und Gold kassieren!<br>
             🔬 Forschung: Investiere Gold und Ressourcen für permanente Boni!<br>
-            💾 Auto-Save: Dein Spielstand wird alle 5 Minuten automatisch gespeichert!
+            💾 Auto-Save: Dein Spielstand wird alle 5 Minuten automatisch gespeichert!<br>
+            📖 Handbuch: Alle Infos zu Pflanzen, Tieren, Crafting, XP und mehr!
         </div>
     </div>
     <footer>✨ Account-System: Mit E-Mail/Passwort auf mehreren Geräten spielen! | Version 3.0</footer>
@@ -1138,77 +1206,6 @@
     let auth = null;
     let currentUser = null;
     let playerName = localStorage.getItem("farmPlayerName") || "";
-    
-    // ==================== VERBESSERTER VERSIONS-CHECK ====================
-    async function checkAndResetOldSavegames() {
-        const localVersion = localStorage.getItem("gameVersion");
-        const needsLocalReset = localVersion !== CURRENT_GAME_VERSION;
-        
-        let needsCloudReset = false;
-        let cloudVersion = null;
-        
-        if (currentUser && firebaseInitialized && database) {
-            try {
-                const versionSnapshot = await database.ref(`users/${currentUser.uid}/gameVersion`).once('value');
-                cloudVersion = versionSnapshot.val();
-                needsCloudReset = cloudVersion !== CURRENT_GAME_VERSION;
-            } catch(e) {
-                console.warn("Cloud-Version check fehlgeschlagen:", e);
-            }
-        }
-        
-        if (needsLocalReset || needsCloudReset) {
-            const confirmReset = confirm(
-                `⚠️ SPIELSTAND-VERALTET!\n\n` +
-                `Neue Version: ${CURRENT_GAME_VERSION}\n` +
-                `Deine Version: ${localVersion || "keine"} (lokal) / ${cloudVersion || "keine"} (Cloud)\n\n` +
-                `Ein Update erfordert einen kompletten Neustart des Spiels.\n` +
-                `Möchtest du von vorne beginnen?\n\n` +
-                `(Ja = Neustart / Nein = Spiel wird nicht geladen)`
-            );
-            
-            if (confirmReset) {
-                localStorage.removeItem("farmPremium");
-                localStorage.removeItem("gameVersion");
-                if (currentUser) {
-                    localStorage.removeItem(`lastLocalSave_${currentUser.uid}`);
-                    localStorage.removeItem(`realPlayDays_${currentUser.uid}`);
-                    localStorage.removeItem(`firstLogin_${currentUser.uid}`);
-                    localStorage.removeItem(`lastDayCheck_${currentUser.uid}`);
-                    localStorage.removeItem(`loginBonus_${currentUser.uid}`);
-                    localStorage.removeItem(`quests_${currentUser.uid}`);
-                    localStorage.removeItem(`research_${currentUser.uid}`);
-                }
-                
-                if (currentUser && firebaseInitialized && database) {
-                    try {
-                        await database.ref(`users/${currentUser.uid}/savegame`).remove();
-                        await database.ref(`users/${currentUser.uid}/gameVersion`).set(CURRENT_GAME_VERSION);
-                        showToast("✅ Cloud-Spielstand wurde zurückgesetzt!", false);
-                    } catch(e) {
-                        console.warn("Cloud-Reset fehlgeschlagen:", e);
-                    }
-                }
-                
-                localStorage.setItem("gameVersion", CURRENT_GAME_VERSION);
-                showToast("🔄 Spiel wurde zurückgesetzt! Starte neu.", false);
-                return true;
-            } else {
-                showToast("❌ Bitte Seite neu laden und Reset bestätigen!", true);
-                return false;
-            }
-        }
-        return false;
-    }
-    
-    async function performStartupCheck() {
-        const needsReset = await checkAndResetOldSavegames();
-        if (needsReset) {
-            setTimeout(() => location.reload(), 2000);
-            return false;
-        }
-        return true;
-    }
     
     // ==================== ADMIN/MODERATOR SYSTEM ====================
     const ADMIN_EMAILS = ["caps4476@web.de"];
@@ -1669,27 +1666,6 @@
     
     async function initChat() {
         if (!firebaseInitialized || !database) return;
-        const multiplayerView = document.getElementById("multiplayerView");
-        if (!multiplayerView) return;
-        const existingChat = document.getElementById("chatContainer");
-        if (existingChat) return;
-        
-        const chatContainer = document.createElement("div");
-        chatContainer.id = "chatContainer";
-        chatContainer.className = "multiplayer-slot";
-        chatContainer.style.gridColumn = "1/-1";
-        chatContainer.style.background = "#2a2a2a";
-        chatContainer.innerHTML = `
-            <div class="status" style="background:#3a5a3a;">💬 GLOBALER CHAT</div>
-            <div id="chatMessages" style="height: 200px; overflow-y: auto; background: #1a1a1a; border-radius: 20px; padding: 10px; margin: 10px 0; font-size: 0.8rem;"></div>
-            <div style="display: flex; gap: 5px;">
-                <input type="text" id="chatInput" placeholder="Nachricht an alle..." style="flex: 1; background: #3a3022; border: none; border-radius: 30px; padding: 8px 15px; color: #ffefcf;">
-                <button id="chatSendBtn" class="mass-btn" style="background:#4a6e8b;">📤 Senden</button>
-            </div>
-            <div style="font-size: 0.6rem; margin-top: 5px; color: #aaa;">💡 Sei respektvoll! Admin kann Nachrichten löschen.</div>
-        `;
-        multiplayerView.appendChild(chatContainer);
-        
         await loadChatMessages();
         database.ref('chat').limitToLast(50).on('child_added', (snapshot) => {
             const msg = snapshot.val();
@@ -2256,7 +2232,7 @@
     function renderLicenses() { const container = document.getElementById("licensesView"); if (!container) return; container.innerHTML = ""; if (!isLicensesUnlocked(playerLevel)) { container.innerHTML = `<div class="license-slot" style="grid-column:1/-1; background:#4a3a2a;"><div class="license-icon">🔒</div><div class="license-name">Noch nicht freigeschaltet</div><div class="status">Erreiche Level 10, um Lizenzen freizuschalten!</div></div>`; return; } for (let [id, license] of Object.entries(LICENSES)) { const isOwned = ownedLicenses.includes(id); const canBuy = !isOwned && playerGold >= license.cost && playerLevel >= license.levelRequired; const div = document.createElement("div"); div.className = "license-slot" + (isOwned ? " owned" : ""); div.innerHTML = `<div class="license-icon">${license.emoji}</div><div class="license-name">${license.name}</div><div class="status" style="font-size:0.65rem;">${license.description}</div><div class="status" style="background:#3a5a3a;">⭐ Level ${license.levelRequired}</div><div class="license-cost">💰 ${license.cost} Gold</div>${!isOwned ? `<button class="buy-license-btn" data-license="${id}" ${!canBuy ? 'disabled style="opacity:0.5;"' : ''}>📜 Lizenz kaufen</button>` : `<div class="status" style="background:#2a6a2a;">✅ Besitzt du</div>`}`; container.appendChild(div); } document.querySelectorAll(".buy-license-btn").forEach(btn => btn.addEventListener("click", () => buyLicense(btn.dataset.license))); }
     
     // ==================== WETTER ====================
-    function changeWeather() { if (isPaused) return; const weathers = ["sunny", "rainy", "stormy", "thunder"]; const newWeather = weathers[Math.floor(Math.random() * weathers.length)]; currentWeather = newWeather; const weather = WEATHER_TYPES[currentWeather]; const weatherEl = document.getElementById("weatherInfo"); weatherEl.innerHTML = weather.emoji + " " + weather.name; weatherEl.className = "weather-info " + weather.color; showToast(`🌤️ Wetter ändert sich: ${weather.name}`, false); for (let i = 0; i < fields.length; i++) { const f = fields[i]; if (f.owned && f.cropId && !f.isReady && f.plantedAt) { const crop = CROPS[f.cropId]; const elapsed = Date.now() - f.plantedAt; const oldTotalTime = crop.growTime * getGrowthModifierForWeather(currentWeather === newWeather ? oldWeather : currentWeather); const newTotalTime = crop.growTime * getGrowthModifierForWeather(newWeather); if (f.timerId) clearTimeout(f.timerId); const progressPercent = Math.min(0.99, elapsed / oldTotalTime); const newElapsed = progressPercent * newTotalTime; const remaining = Math.max(0, newTotalTime - newElapsed); f.plantedAt = Date.now() - newElapsed; f.timerId = setTimeout(() => { if (fields[i] && fields[i].cropId === f.cropId) { fields[i].isReady = true; renderFields(); saveGameToLocal(); showToast(`🌱 ${crop.name} auf Feld ${i+1} ist bereit!`); } }, remaining); } } saveGameToLocal(); const nextChange = 120000 + Math.random() * 180000; if (weatherTimer) clearTimeout(weatherTimer); weatherTimer = setTimeout(changeWeather, nextChange); }
+    function changeWeather() { if (isPaused) return; const weathers = ["sunny", "rainy", "stormy", "thunder"]; const newWeather = weathers[Math.floor(Math.random() * weathers.length)]; const oldWeather = currentWeather; currentWeather = newWeather; const weather = WEATHER_TYPES[currentWeather]; const weatherEl = document.getElementById("weatherInfo"); weatherEl.innerHTML = weather.emoji + " " + weather.name; weatherEl.className = "weather-info " + weather.color; showToast(`🌤️ Wetter ändert sich: ${weather.name}`, false); for (let i = 0; i < fields.length; i++) { const f = fields[i]; if (f.owned && f.cropId && !f.isReady && f.plantedAt) { const crop = CROPS[f.cropId]; const elapsed = Date.now() - f.plantedAt; const oldTotalTime = crop.growTime * getGrowthModifierForWeather(oldWeather); const newTotalTime = crop.growTime * getGrowthModifierForWeather(newWeather); if (f.timerId) clearTimeout(f.timerId); const progressPercent = Math.min(0.99, elapsed / oldTotalTime); const newElapsed = progressPercent * newTotalTime; const remaining = Math.max(0, newTotalTime - newElapsed); f.plantedAt = Date.now() - newElapsed; f.timerId = setTimeout(() => { if (fields[i] && fields[i].cropId === f.cropId) { fields[i].isReady = true; renderFields(); saveGameToLocal(); showToast(`🌱 ${crop.name} auf Feld ${i+1} ist bereit!`); } }, remaining); } } saveGameToLocal(); const nextChange = 120000 + Math.random() * 180000; if (weatherTimer) clearTimeout(weatherTimer); weatherTimer = setTimeout(changeWeather, nextChange); }
     function getGrowthModifierForWeather(weatherType) { return WEATHER_TYPES[weatherType].growthModifier; }
     function getWeatherGrowthModifier() { return WEATHER_TYPES[currentWeather].growthModifier; }
     function getWeatherHarvestRisk() { if (currentWeather === "thunder") return Math.random() < 0.2; return false; }
@@ -2274,18 +2250,161 @@
     async function dailyPriceFluctuation() { for (let key in globalMarketPrices) { let factor = 0.7 + Math.random() * 0.6; let newPrice = Math.floor(basePrices[key] * factor); newPrice = Math.max(basePrices[key] * 0.5, Math.min(basePrices[key] * 1.5, newPrice)); globalMarketPrices[key] = newPrice; } if (firebaseInitialized && database) await database.ref('globalPrices').set(globalMarketPrices); showToast(`📈 Tägliche Preisanpassung!`, false); }
     
     // ==================== VIEWS ====================
-    function setView(view) { currentView = view; document.getElementById("farmView").classList.toggle("hidden", view !== "farm"); document.getElementById("barnView").classList.toggle("hidden", view !== "barn"); document.getElementById("craftView").classList.toggle("hidden", view !== "craft"); document.getElementById("researchView").classList.toggle("hidden", view !== "research"); document.getElementById("licensesView").classList.toggle("hidden", view !== "licenses"); document.getElementById("multiplayerView").classList.toggle("hidden", view !== "multiplayer"); document.getElementById("questsView").classList.toggle("hidden", view !== "quests"); document.getElementById("accountView").classList.toggle("hidden", view !== "account"); document.getElementById("achievementsView").classList.toggle("hidden", view !== "achievements"); document.getElementById("viewFarmBtn").classList.toggle("active", view === "farm"); document.getElementById("viewBarnBtn").classList.toggle("active", view === "barn"); document.getElementById("viewCraftBtn").classList.toggle("active", view === "craft"); document.getElementById("viewResearchBtn").classList.toggle("active", view === "research"); document.getElementById("viewLicensesBtn").classList.toggle("active", view === "licenses"); document.getElementById("viewMultiplayerBtn").classList.toggle("active", view === "multiplayer"); document.getElementById("viewQuestsBtn").classList.toggle("active", view === "quests"); document.getElementById("viewAccountBtn").classList.toggle("active", view === "account"); document.getElementById("viewAchievementsBtn").classList.toggle("active", view === "achievements"); if (view === "barn") renderBarn(); if (view === "craft") renderCraft(); if (view === "research") renderResearch(); if (view === "licenses") renderLicenses(); if (view === "achievements") renderAchievements(); if (view === "quests") { renderLoginBonus(); renderQuests(); } if (view === "multiplayer" && isMultiplayerUnlocked(playerLevel)) { if (firebaseInitialized) { updateLeaderboard(); loadGlobalPrices(); loadTradeOffers(); renderAdvancedPricePanel(); } else document.getElementById("multiplayerView").innerHTML = `<div class="multiplayer-slot" style="grid-column:1/-1;"><div class="status">⚠️ Firebase nicht konfiguriert!</div></div>`; } }
+    function setView(view) {
+        currentView = view;
+        document.getElementById("farmView").classList.toggle("hidden", view !== "farm");
+        document.getElementById("barnView").classList.toggle("hidden", view !== "barn");
+        document.getElementById("craftView").classList.toggle("hidden", view !== "craft");
+        document.getElementById("researchView").classList.toggle("hidden", view !== "research");
+        document.getElementById("licensesView").classList.toggle("hidden", view !== "licenses");
+        document.getElementById("multiplayerView").classList.toggle("hidden", view !== "multiplayer");
+        document.getElementById("questsView").classList.toggle("hidden", view !== "quests");
+        document.getElementById("accountView").classList.toggle("hidden", view !== "account");
+        document.getElementById("achievementsView").classList.toggle("hidden", view !== "achievements");
+        document.getElementById("handbookView").classList.toggle("hidden", view !== "handbook");
+        
+        document.getElementById("viewFarmBtn").classList.toggle("active", view === "farm");
+        document.getElementById("viewBarnBtn").classList.toggle("active", view === "barn");
+        document.getElementById("viewCraftBtn").classList.toggle("active", view === "craft");
+        document.getElementById("viewResearchBtn").classList.toggle("active", view === "research");
+        document.getElementById("viewLicensesBtn").classList.toggle("active", view === "licenses");
+        document.getElementById("viewMultiplayerBtn").classList.toggle("active", view === "multiplayer");
+        document.getElementById("viewQuestsBtn").classList.toggle("active", view === "quests");
+        document.getElementById("viewAccountBtn").classList.toggle("active", view === "account");
+        document.getElementById("viewAchievementsBtn").classList.toggle("active", view === "achievements");
+        document.getElementById("viewHandbookBtn").classList.toggle("active", view === "handbook");
+        
+        if (view === "barn") renderBarn();
+        if (view === "craft") renderCraft();
+        if (view === "research") renderResearch();
+        if (view === "licenses") renderLicenses();
+        if (view === "achievements") renderAchievements();
+        if (view === "handbook") renderHandbook();
+        if (view === "quests") { renderLoginBonus(); renderQuests(); }
+        if (view === "multiplayer" && isMultiplayerUnlocked(playerLevel)) {
+            if (firebaseInitialized) {
+                updateLeaderboard();
+                loadGlobalPrices();
+                loadTradeOffers();
+                renderAdvancedPricePanel();
+                initChat();
+            } else document.getElementById("multiplayerView").innerHTML = `<div class="multiplayer-slot" style="grid-column:1/-1;"><div class="status">⚠️ Firebase nicht konfiguriert!</div></div>`;
+        }
+    }
     
     // ==================== EXPORT/IMPORT ====================
     function exportGame() { const saveData = { gold: playerGold, inventory, day: currentDay, currentPrices: globalMarketPrices, maxStorage, fields: fields.map(f => ({ owned: f.owned, cropId: f.cropId, plantedAt: f.plantedAt, isReady: f.isReady })), barnOwned, barnUpgrades, animals: animals.map(a => ({ type: a.type, name: a.name, isReady: a.isReady, productionStartTime: a.productionStartTime })), achievements, stats, playerLevel, playerXP, completedResearch, researchProgress, ownedLicenses, currentWeather, timestamp: Date.now(), version: CURRENT_GAME_VERSION }; const dataStr = JSON.stringify(saveData); const blob = new Blob([dataStr], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `farm_save_v${CURRENT_GAME_VERSION}_${new Date().toISOString().slice(0,19)}.json`; a.click(); URL.revokeObjectURL(url); showToast("💾 Spielstand exportiert!"); }
     
     function importGame(file) { const reader = new FileReader(); reader.onload = (e) => { try { const data = JSON.parse(e.target.result); playerGold = data.gold; inventory = data.inventory; currentDay = data.day; maxStorage = data.maxStorage; playerLevel = data.playerLevel || 1; playerXP = data.playerXP || 0; completedResearch = data.completedResearch || []; ownedLicenses = data.ownedLicenses || []; if (data.researchProgress) researchProgress = data.researchProgress; else initResearchProgress(); if (data.currentWeather) currentWeather = data.currentWeather; applyResearchBonuses(); for (let i = 0; i < fields.length && i < data.fields.length; i++) { fields[i].owned = data.fields[i].owned; fields[i].cropId = data.fields[i].cropId; fields[i].plantedAt = data.fields[i].plantedAt; fields[i].isReady = data.fields[i].isReady; } barnOwned = data.barnOwned; barnUpgrades = data.barnUpgrades || { autoCollector: false, speedBoost: false }; animals = data.animals || []; for (let a of animals) { if (!a.isReady && a.productionStartTime) startAnimalProduction(a, animals.indexOf(a)); } achievements = data.achievements || achievements; stats = data.stats || stats; updateMoneyUI(); updateLevelUI(); updateStorageUI(); renderFields(); renderPricePanel(); renderMarket(); if (isBarnUnlocked(playerLevel) && barnOwned) renderBarn(); updateViewButtons(); updateMassPlantButtons(); const weather = WEATHER_TYPES[currentWeather] || WEATHER_TYPES.sunny; const weatherEl = document.getElementById("weatherInfo"); weatherEl.innerHTML = weather.emoji + " " + weather.name; weatherEl.className = "weather-info " + weather.color; showToast("📂 Spielstand importiert!"); saveGameToLocal(); updateLeaderboard(); } catch(err) { showToast("Fehler beim Import!", true); } }; reader.readAsText(file); }
     
-    // ==================== CLOUD-SPEICHER ====================
+    // ==================== CLOUD-SPEICHER (GERÄTEÜBERGREIFEND) ====================
     function startAutoSave() { if (autoSaveInterval) clearInterval(autoSaveInterval); autoSaveInterval = setInterval(async () => { if (currentUser && !isPaused) await autoSaveToCloud(); }, 5 * 60 * 1000); }
-    async function autoSaveToCloud() { if (!currentUser) return; if (Date.now() - lastCloudLoad < 10000) return; try { const snapshot = await database.ref('users/' + currentUser.uid + '/savegame').once('value'); const cloudData = snapshot.val(); if (cloudData && cloudData.timestamp && cloudData.timestamp > lastCloudSave) return; const saveData = { gold: playerGold, inventory, day: currentDay, playerLevel, playerXP, maxStorage, fields: fields.map(f => ({ owned: f.owned, cropId: f.cropId, plantedAt: f.plantedAt, isReady: f.isReady })), barnOwned, barnUpgrades, animals: animals.map(a => ({ type: a.type, name: a.name, isReady: a.isReady, productionStartTime: a.productionStartTime })), achievements, stats, completedResearch, researchProgress, ownedLicenses, timestamp: Date.now() }; await database.ref('users/' + currentUser.uid + '/savegame').set(saveData); await database.ref('users/' + currentUser.uid + '/gameVersion').set(CURRENT_GAME_VERSION); lastCloudSave = Date.now(); } catch(err) { console.warn("Auto-Save fehlgeschlagen:", err); } }
-    async function smartLoadFromCloud() { if (!currentUser) { showToast("❌ Bitte zuerst einloggen!", true); return; } try { const snapshot = await database.ref('users/' + currentUser.uid + '/savegame').once('value'); const cloudData = snapshot.val(); if (cloudData) { const localSaveTime = localStorage.getItem(`lastLocalSave_${currentUser.uid}`) || 0; const cloudTime = cloudData.timestamp || 0; if (cloudTime > localSaveTime) { await applyCloudData(cloudData); showToast("📥 Neuerer Cloud-Spielstand wurde geladen!", false); } else if (localSaveTime > cloudTime) { if (confirm("Dein lokaler Spielstand ist neuer. Hochladen?")) { await autoSaveToCloud(); showToast("💾 Lokaler Spielstand in Cloud gespeichert!", false); } } else { await applyCloudData(cloudData); showToast("📥 Spielstand aus der Cloud geladen!", false); } lastCloudLoad = Date.now(); } else { await autoSaveToCloud(); showToast("💾 Lokaler Spielstand wurde in die Cloud gespeichert!", false); } } catch(err) { showToast("❌ Fehler beim Laden: " + err.message, true); } }
-    async function applyCloudData(data) { playerGold = data.gold; inventory = data.inventory; currentDay = data.day; playerLevel = data.playerLevel; playerXP = data.playerXP; maxStorage = data.maxStorage; barnOwned = data.barnOwned; barnUpgrades = data.barnUpgrades || { autoCollector: false, speedBoost: false }; animals = data.animals || []; achievements = data.achievements || achievements; stats = data.stats || stats; completedResearch = data.completedResearch || []; researchProgress = data.researchProgress || {}; ownedLicenses = data.ownedLicenses || []; for (let i = 0; i < fields.length && i < data.fields.length; i++) { fields[i].owned = data.fields[i].owned; fields[i].cropId = data.fields[i].cropId; fields[i].plantedAt = data.fields[i].plantedAt; fields[i].isReady = data.fields[i].isReady; if (fields[i].cropId && !fields[i].isReady && fields[i].plantedAt) { if (fields[i].timerId) clearTimeout(fields[i].timerId); startFieldTimer(i, fields[i].cropId); } } for (let a of animals) { if (!a.isReady && a.productionStartTime) { if (a.timerId) clearTimeout(a.timerId); startAnimalProduction(a, animals.indexOf(a)); } } updateMoneyUI(); updateLevelUI(); updateStorageUI(); renderFields(); renderPricePanel(); renderMarket(); if (isBarnUnlocked(playerLevel)) renderBarn(); updateViewButtons(); updateMassPlantButtons(); if (currentUser) localStorage.setItem(`lastLocalSave_${currentUser.uid}`, data.timestamp || Date.now()); saveGameToLocal(); }
+    
+    async function autoSaveToCloud() {
+        if (!currentUser) return;
+        try {
+            const saveData = {
+                gold: playerGold,
+                inventory: inventory,
+                day: currentDay,
+                playerLevel: playerLevel,
+                playerXP: playerXP,
+                maxStorage: maxStorage,
+                fields: fields.map(f => ({ owned: f.owned, cropId: f.cropId, plantedAt: f.plantedAt, isReady: f.isReady })),
+                barnOwned: barnOwned,
+                barnUpgrades: barnUpgrades,
+                animals: animals.map(a => ({ type: a.type, name: a.name, isReady: a.isReady, productionStartTime: a.productionStartTime })),
+                achievements: achievements,
+                stats: stats,
+                completedResearch: completedResearch,
+                researchProgress: researchProgress,
+                ownedLicenses: ownedLicenses,
+                currentWeather: currentWeather,
+                timestamp: Date.now(),
+                version: CURRENT_GAME_VERSION
+            };
+            await database.ref('users/' + currentUser.uid + '/savegame').set(saveData);
+            await database.ref('users/' + currentUser.uid + '/gameVersion').set(CURRENT_GAME_VERSION);
+            lastCloudSave = Date.now();
+            console.log("Cloud-Save durchgeführt");
+        } catch(err) { console.warn("Auto-Save fehlgeschlagen:", err); }
+    }
+    
+    async function loadGameFromCloud() {
+        if (!currentUser) { showToast("❌ Bitte zuerst einloggen!", true); return; }
+        try {
+            const snapshot = await database.ref('users/' + currentUser.uid + '/savegame').once('value');
+            const cloudData = snapshot.val();
+            if (cloudData) {
+                await applyCloudData(cloudData);
+                showToast("📥 Spielstand aus der Cloud geladen!", false);
+                lastCloudLoad = Date.now();
+            } else {
+                await autoSaveToCloud();
+                showToast("💾 Lokaler Spielstand wurde in die Cloud gespeichert!", false);
+            }
+        } catch(err) { showToast("❌ Fehler beim Laden: " + err.message, true); }
+    }
+    
+    async function saveGameToCloud() {
+        if (!currentUser) { showToast("❌ Bitte zuerst einloggen!", true); return; }
+        await autoSaveToCloud();
+        showToast("💾 Spielstand in der Cloud gespeichert! Du kannst jetzt auf jedem Gerät weiterspielen!", false);
+    }
+    
+    async function applyCloudData(data) {
+        playerGold = data.gold;
+        inventory = data.inventory;
+        currentDay = data.day;
+        playerLevel = data.playerLevel;
+        playerXP = data.playerXP;
+        maxStorage = data.maxStorage;
+        barnOwned = data.barnOwned;
+        barnUpgrades = data.barnUpgrades || { autoCollector: false, speedBoost: false };
+        animals = data.animals || [];
+        achievements = data.achievements || achievements;
+        stats = data.stats || stats;
+        completedResearch = data.completedResearch || [];
+        researchProgress = data.researchProgress || {};
+        ownedLicenses = data.ownedLicenses || [];
+        if (data.currentWeather) currentWeather = data.currentWeather;
+        
+        for (let i = 0; i < fields.length && i < data.fields.length; i++) {
+            fields[i].owned = data.fields[i].owned;
+            fields[i].cropId = data.fields[i].cropId;
+            fields[i].plantedAt = data.fields[i].plantedAt;
+            fields[i].isReady = data.fields[i].isReady;
+            if (fields[i].cropId && !fields[i].isReady && fields[i].plantedAt) {
+                if (fields[i].timerId) clearTimeout(fields[i].timerId);
+                startFieldTimer(i, fields[i].cropId);
+            }
+        }
+        
+        for (let a of animals) {
+            if (!a.isReady && a.productionStartTime) {
+                if (a.timerId) clearTimeout(a.timerId);
+                startAnimalProduction(a, animals.indexOf(a));
+            }
+        }
+        
+        updateMoneyUI();
+        updateLevelUI();
+        updateStorageUI();
+        renderFields();
+        renderPricePanel();
+        renderMarket();
+        if (isBarnUnlocked(playerLevel)) renderBarn();
+        updateViewButtons();
+        updateMassPlantButtons();
+        
+        const weather = WEATHER_TYPES[currentWeather] || WEATHER_TYPES.sunny;
+        const weatherEl = document.getElementById("weatherInfo");
+        weatherEl.innerHTML = weather.emoji + " " + weather.name;
+        weatherEl.className = "weather-info " + weather.color;
+        
+        saveGameToLocal();
+    }
+    
     function saveGameToLocalWithTimestamp() { const saveData = { gold: playerGold, inventory, day: currentDay, maxStorage, fields: fields.map(f => ({ owned: f.owned, cropId: f.cropId, plantedAt: f.plantedAt, isReady: f.isReady })), barnOwned, barnUpgrades, animals: animals.map(a => ({ type: a.type, name: a.name, isReady: a.isReady, productionStartTime: a.productionStartTime })), achievements, stats, playerLevel, playerXP, completedResearch, researchProgress, ownedLicenses, currentWeather, timestamp: Date.now() }; localStorage.setItem("farmPremium", JSON.stringify(saveData)); if (currentUser) localStorage.setItem(`lastLocalSave_${currentUser.uid}`, Date.now().toString()); }
     function saveGameToLocal() { saveGameToLocalWithTimestamp(); }
     
@@ -2366,10 +2485,123 @@
     function updateRealDayDisplay() { const daySpanEl = document.getElementById("dayCount"); if (daySpanEl && currentUser) { daySpanEl.innerHTML = realPlayDays; daySpanEl.title = `🎉 Du spielst seit ${realPlayDays} Tagen!`; } }
     function startRealDayCheck() { if (realDayCheckInterval) clearInterval(realDayCheckInterval); realDayCheckInterval = setInterval(() => { if (currentUser && !isPaused) checkAndUpdateRealDay(); }, 5 * 60 * 1000); }
     
+    // ==================== HANDBUCH ====================
+    function renderHandbook() {
+        const container = document.getElementById("handbookContent");
+        if (!container) return;
+        
+        let xpTableHtml = "";
+        let cumulativeXP = 0;
+        for (let lvl = 1; lvl <= 30; lvl++) {
+            let xpNeeded = 0;
+            if (lvl <= 10) xpNeeded = 200 + (lvl - 1) * 50;
+            else if (lvl <= 20) xpNeeded = 650 + (lvl - 10) * 80;
+            else if (lvl <= 30) xpNeeded = 1450 + (lvl - 20) * 120;
+            else xpNeeded = 2650 + (lvl - 30) * 200;
+            cumulativeXP += xpNeeded;
+            let unlock = "";
+            if (lvl === 5) unlock = "🔓 Multiplayer";
+            else if (lvl === 6) unlock = "🔓 Stall & Tiere";
+            else if (lvl === 8) unlock = "🔓 Verarbeitung";
+            else if (lvl === 9) unlock = "🔓 Forschung";
+            else if (lvl === 10) unlock = "🔓 Lizenzen";
+            else if (lvl === 15) unlock = "🔓 Premium-Lizenz";
+            xpTableHtml += `<tr><td>${lvl}</td><td>${xpNeeded}</td><td>${cumulativeXP}</td><td>${unlock || "-"}</td></tr>`;
+        }
+        
+        let cropsHtml = "";
+        const cropOrder = ["carrot","wheat","tomato","strawberry","pumpkin","pineapple","coffee","blueberry","raspberry","grape","peach","lemon","apple","banana","mango","cherry","pear","pomegranate","kiwi","dragonfruit","starfruit","saffron","vanilla"];
+        for (let cropId of cropOrder) {
+            const crop = CROPS[cropId];
+            if (crop) cropsHtml += `<tr><td>${crop.emoji}</td><td>${crop.name}</td><td>${crop.levelRequired}</td><td>${crop.seedCost}💰</td><td>${Math.round(crop.growTime/1000)}s</td><td>${crop.basePrice}💰</td><td>5 XP</td></tr>`;
+        }
+        
+        let animalsHtml = "";
+        for (let [id, animal] of Object.entries(ANIMALS)) {
+            animalsHtml += `<tr><td>${animal.emoji}</td><td>${animal.name}</td><td>${animal.levelRequired}</td><td>${animal.buyCost}💰</td><td>${animal.feedCost}💰</td><td>${animal.product} (${animal.productEmoji})</td><td>${animal.basePrice}💰</td><td>${Math.round(animal.productionTime/1000)}s</td><td>4 XP</td></tr>`;
+        }
+        
+        let craftsHtml = "";
+        for (let [id, recipe] of Object.entries(RECIPES)) {
+            let inputs = "";
+            for (let [res, qty] of Object.entries(recipe.input)) {
+                inputs += `${qty}x ${recipe.inputNames[res]} `;
+            }
+            craftsHtml += `<tr><td>${recipe.emoji}</td><td>${recipe.name}</td><td>8</td><td>${inputs}</td><td>${recipe.outputName} (${recipe.outputEmoji})</td><td>${recipe.basePrice}💰</td><td>${Math.round(recipe.craftTime/1000)}s</td><td>10 XP</td></tr>`;
+        }
+        
+        let loginBonusHtml = "";
+        for (let bonus of LOGIN_BONUSES) {
+            loginBonusHtml += `<tr><td>Tag ${bonus.day}</td><td>${bonus.gold}💰</td><td>${bonus.xp} XP</td></tr>`;
+        }
+        
+        container.innerHTML = `
+            <div class="handbook-section">
+                <h3>📊 WILLKOMMEN IM FARM-HANDBUCH</h3>
+                <p>Dieses Handbuch enthält alle wichtigen Informationen über Ressourcen, Produktionen, XP und Freischaltungen.</p>
+                <div class="handbook-tip">💡 <strong>TIPP:</strong> Je höher dein Level, desto mehr Pflanzen, Tiere und Verarbeitungsmöglichkeiten werden freigeschaltet!</div>
+            </div>
+            <div class="handbook-section">
+                <h3>⭐ LEVEL-SYSTEM & XP-TABELLE (Level 1-30)</h3>
+                <table><thead><tr><th>Level</th><th>XP bis nächstem Level</th><th>Kumulierte XP</th><th>Freischaltung</th></tr></thead><tbody>${xpTableHtml}</tbody></table>
+                <div class="handbook-tip">💡 <strong>XP-QUELLEN:</strong> Pflanzen (2 XP) + Ernten (5 XP) | Tiere sammeln (4 XP) | Crafting (10 XP) | Quests (20-200 XP)</div>
+            </div>
+            <div class="handbook-section">
+                <h3>🌱 PFLANZEN (ANBAU & ERNTE)</h3>
+                <table><thead><tr><th></th><th>Name</th><th>Level</th><th>Samenkosten</th><th>Wachstum</th><th>Verkaufspreis</th><th>XP</th></tr></thead><tbody>${cropsHtml}</tbody></table>
+                <div class="handbook-tip">💡 <strong>TIPP:</strong> Lizenzen schalten neue Pflanzen frei! Besuche den Lizenzen-Tab ab Level 10.</div>
+            </div>
+            <div class="handbook-section">
+                <h3>🐄 TIERE & PRODUKTE</h3>
+                <table><thead><tr><th></th><th>Tier</th><th>Level</th><th>Kaufpreis</th><th>Futter</th><th>Produkt</th><th>Preis</th><th>Produktion</th><th>XP</th></tr></thead><tbody>${animalsHtml}</tbody></table>
+                <div class="handbook-tip">💡 <strong>TIPP:</strong> Der Stall wird ab Level 6 freigeschaltet. Kaufe Upgrades für Automatisierung!</div>
+            </div>
+            <div class="handbook-section">
+                <h3>🔨 VERARBEITUNG (CRAFTING)</h3>
+                <table><thead><tr><th></th><th>Rezept</th><th>Level</th><th>Zutaten</th><th>Produkt</th><th>Preis</th><th>Dauer</th><th>XP</th></tr></thead><tbody>${craftsHtml}</tbody></table>
+                <div class="handbook-tip">💡 <strong>TIPP:</strong> Verarbeitete Produkte verkaufen sich teurer! Ab Level 8 freigeschaltet.</div>
+            </div>
+            <div class="handbook-section">
+                <h3>🎁 TÄGLICHER LOGIN-BONUS</h3>
+                <table><thead><tr><th>Tag</th><th>Gold</th><th>XP</th></tr></thead><tbody>${loginBonusHtml}</tbody></table>
+                <div class="handbook-tip">💡 <strong>TIPP:</strong> Täglich einloggen für steigende Belohnungen! Bei 7 Tagen gibt's 2500💰 + 100 XP!</div>
+            </div>
+            <div class="handbook-section">
+                <h3>🌦️ WETTER-EFFEKTE</h3>
+                <table><thead><tr><th>Wetter</th><th>Effekt auf Wachstum</th><th>Besonderheit</th></tr></thead><tbody>
+                    <tr><td>☀️ Sonnig</td><td>Normal (1.0x)</td><td>Standard</td></tr>
+                    <tr><td>🌧️ Regen</td><td>Schneller (0.7x)</td><td>Wachstumsboost</td></tr>
+                    <tr><td>🌩️ Sturm</td><td>Langsamer (1.3x)</td><td>Wachstumsmalus</td></tr>
+                    <tr><td>⛈️ Gewitter</td><td>Langsamer (1.5x)</td><td>20% Chance Ernte zu zerstören!</td></tr>
+                </tbody></table>
+                <div class="handbook-warning">⚠️ <strong>ACHTUNG:</strong> Bei Gewitter besteht die Gefahr, dass deine Ernte zerstört wird!</div>
+            </div>
+            <div class="handbook-section">
+                <h3>💰 PREISDYNAMIK</h3>
+                <div class="handbook-tip">📈 <strong>FAKTOREN:</strong> Angebot/Nachfrage, Saison (Frühling/Sommer/Herbst/Winter), Markttrends, Volatilität, Events</div>
+                <div class="handbook-tip">🍂 <strong>SAISON-EFFEKT:</strong> Produkte sind in ihrer Saison 20% teurer, außerhalb 10% billiger</div>
+                <div class="handbook-tip">🧙 <strong>NPC-BESUCHER:</strong> Zufällige Händler mit speziellen Angeboten und Boni!</div>
+            </div>
+            <div class="handbook-section">
+                <h3>💡 ALLGEMEINE TIPPS</h3>
+                <div class="handbook-tip">🌱 Pflanze zuerst günstige Pflanzen (Karotten, Weizen) für schnelles XP</div>
+                <div class="handbook-tip">🐄 Kaufe früh Hühner - Eier sind gute passive Einnahmen</div>
+                <div class="handbook-tip">🔨 Nutze die Verarbeitung ab Level 8 für höhere Gewinnmargen</div>
+                <div class="handbook-tip">📜 Investiere in Lizenzen für wertvolle Pflanzen ab Level 10</div>
+                <div class="handbook-tip">🔬 Forsche früh für permanente Boni (besonders Schnellwachstum!)</div>
+                <div class="handbook-tip">📋 Erledige tägliche Quests für extra Gold und XP</div>
+                <div class="handbook-tip">🎁 Logge dich täglich ein für den Login-Bonus</div>
+                <div class="handbook-tip">🌍 Nutze den Multiplayer für Handel und globale Marktpreise</div>
+                <div class="handbook-tip">🧙 Achte auf NPC-Besucher - sie bieten seltene Deals!</div>
+                <div class="handbook-warning">⚠️ Bei Gewitter besteht Ernte-Risiko - ernte vorher!</div>
+            </div>
+        `;
+    }
+    
     // ==================== LOGIN & AUTH ====================
     const loginScreenElem = document.getElementById("loginScreen"), gameWrapperElem = document.getElementById("gameWrapper"), loginModeElem = document.getElementById("loginMode"), registerModeElem = document.getElementById("registerMode"), loginErrorMsgElem = document.getElementById("loginErrorMsg");
     function showLoginError(msg) { loginErrorMsgElem.innerText = msg; setTimeout(() => { loginErrorMsgElem.innerText = ""; }, 3000); }
-    function initFirebase() { try { firebase.initializeApp(firebaseConfig); database = firebase.database(); auth = firebase.auth(); firebaseInitialized = true; console.log("Firebase initialisiert!"); auth.onAuthStateChanged((user) => { currentUser = user; updateAuthUI(); updateTopLoginStatus(); checkAdminStatus(); if (user) { loginScreenElem.classList.add("hidden"); gameWrapperElem.classList.remove("hidden"); showToast(`👋 Willkommen ${user.email}!`, false); loadGameFromLocal(); smartLoadFromCloud(); updateOnlineStatus(); updateLeaderboard(); loadLoginBonusData(); loadQuests(); loadResearchProgress(); checkLoginBonus(); startAutoSave(); initRealPlayDays(); startRealDayCheck(); performStartupCheck().then(canStart => { if (!canStart) location.reload(); }); } else { loginScreenElem.classList.remove("hidden"); gameWrapperElem.classList.add("hidden"); updateTopLoginStatus(); updateLeaderboard(); if (document.getElementById("loginEmailScreen")) document.getElementById("loginEmailScreen").value = ""; if (document.getElementById("loginPasswordScreen")) document.getElementById("loginPasswordScreen").value = ""; if (document.getElementById("registerEmailScreen")) document.getElementById("registerEmailScreen").value = ""; if (document.getElementById("registerPasswordScreen")) document.getElementById("registerPasswordScreen").value = ""; loginModeElem.style.display = "block"; registerModeElem.style.display = "none"; } }); return true; } catch(e) { console.warn("Firebase Fehler:", e); return false; } }
+    function initFirebase() { try { firebase.initializeApp(firebaseConfig); database = firebase.database(); auth = firebase.auth(); firebaseInitialized = true; console.log("Firebase initialisiert!"); auth.onAuthStateChanged((user) => { currentUser = user; updateAuthUI(); updateTopLoginStatus(); checkAdminStatus(); if (user) { loginScreenElem.classList.add("hidden"); gameWrapperElem.classList.remove("hidden"); showToast(`👋 Willkommen ${user.email}!`, false); loadGameFromLocal(); loadGameFromCloud(); updateOnlineStatus(); updateLeaderboard(); loadLoginBonusData(); loadQuests(); loadResearchProgress(); checkLoginBonus(); startAutoSave(); initRealPlayDays(); startRealDayCheck(); } else { loginScreenElem.classList.remove("hidden"); gameWrapperElem.classList.add("hidden"); updateTopLoginStatus(); updateLeaderboard(); if (document.getElementById("loginEmailScreen")) document.getElementById("loginEmailScreen").value = ""; if (document.getElementById("loginPasswordScreen")) document.getElementById("loginPasswordScreen").value = ""; if (document.getElementById("registerEmailScreen")) document.getElementById("registerEmailScreen").value = ""; if (document.getElementById("registerPasswordScreen")) document.getElementById("registerPasswordScreen").value = ""; loginModeElem.style.display = "block"; registerModeElem.style.display = "none"; } }); return true; } catch(e) { console.warn("Firebase Fehler:", e); return false; } }
     document.getElementById("doLoginBtn").onclick = async () => { const email = document.getElementById("loginEmailScreen").value, password = document.getElementById("loginPasswordScreen").value; if (!email || !password) { showLoginError("❌ Bitte E-Mail und Passwort eingeben!"); return; } try { await auth.signInWithEmailAndPassword(email, password); } catch(err) { showLoginError("❌ " + err.message); } };
     document.getElementById("doRegisterBtn").onclick = async () => { const email = document.getElementById("registerEmailScreen").value, password = document.getElementById("registerPasswordScreen").value; if (!email || !password) { showLoginError("❌ Bitte E-Mail und Passwort eingeben!"); return; } if (password.length < 6) { showLoginError("❌ Passwort muss mindestens 6 Zeichen lang sein!"); return; } try { await auth.createUserWithEmailAndPassword(email, password); } catch(err) { showLoginError("❌ " + err.message); } };
     document.getElementById("showRegisterBtn").onclick = () => { loginModeElem.style.display = "none"; registerModeElem.style.display = "block"; loginErrorMsgElem.innerText = ""; };
@@ -2380,8 +2612,6 @@
     function updateAuthUI() { const logoutBtn = document.getElementById("logoutBtn"), loginEmail = document.getElementById("loginEmail"), loginPassword = document.getElementById("loginPassword"), registerBtn = document.getElementById("registerBtn"), loginBtn = document.getElementById("loginBtn"), authStatus = document.getElementById("authStatus"), userEmailDisplay = document.getElementById("userEmailDisplay"); if (currentUser) { if (authStatus) authStatus.innerHTML = "✅ Eingeloggt als: " + currentUser.email; if (userEmailDisplay) userEmailDisplay.innerHTML = `Angemeldet: ${currentUser.email}`; if (loginEmail) loginEmail.style.display = "none"; if (loginPassword) loginPassword.style.display = "none"; if (registerBtn) registerBtn.style.display = "none"; if (loginBtn) loginBtn.style.display = "none"; if (logoutBtn) logoutBtn.style.display = "inline-block"; } else { if (authStatus) authStatus.innerHTML = "❌ Nicht eingeloggt"; if (userEmailDisplay) userEmailDisplay.innerHTML = ""; if (loginEmail) loginEmail.style.display = "inline-block"; if (loginPassword) loginPassword.style.display = "inline-block"; if (registerBtn) registerBtn.style.display = "inline-block"; if (loginBtn) loginBtn.style.display = "inline-block"; if (logoutBtn) logoutBtn.style.display = "none"; } }
     function updateTopLoginStatus() { const loginStatusIcon = document.getElementById("loginStatusIcon"), loginStatusText = document.getElementById("loginStatusText"), quickLoginBtn = document.getElementById("quickLoginBtn"), notLoggedinHint = document.getElementById("notLoggedinHint"); if (currentUser) { if (loginStatusIcon) loginStatusIcon.innerHTML = "🔒"; if (loginStatusText) loginStatusText.innerHTML = currentUser.email.split('@')[0]; if (quickLoginBtn) { quickLoginBtn.innerHTML = "🚪 Logout"; quickLoginBtn.onclick = () => logout(); } if (notLoggedinHint) notLoggedinHint.classList.add("hidden"); } else { if (loginStatusIcon) loginStatusIcon.innerHTML = "🔓"; if (loginStatusText) loginStatusText.innerHTML = "Nicht eingeloggt"; if (quickLoginBtn) { quickLoginBtn.innerHTML = "🔐 Login"; quickLoginBtn.onclick = () => { setView("account"); showToast("👤 Gehe zum Account-Tab, um dich zu registrieren oder einzuloggen!", false); }; } if (notLoggedinHint) { notLoggedinHint.classList.remove("hidden"); setTimeout(() => { if (notLoggedinHint && !currentUser) notLoggedinHint.classList.add("hidden"); }, 10000); } } }
     document.getElementById("notLoggedinHint")?.addEventListener("click", () => { setView("account"); const hint = document.getElementById("notLoggedinHint"); if (hint) hint.classList.add("hidden"); });
-    async function saveGameToCloud() { if (!currentUser) { showToast("❌ Bitte zuerst einloggen!", true); return; } await autoSaveToCloud(); showToast("💾 Spielstand in der Cloud gespeichert!", false); }
-    async function loadGameFromCloud() { await smartLoadFromCloud(); }
     function startLiveUpdates() { if (isPaused) return; if (liveUpdateInterval) clearInterval(liveUpdateInterval); liveUpdateInterval = setInterval(() => { if (currentView === "farm") updateFieldProgressBars(); else if (currentView === "barn" && barnOwned && isBarnUnlocked(playerLevel)) updateAnimalProgressBars(); else if (currentView === "craft") renderCraft(); else if (currentView === "research" && isResearchUnlocked(playerLevel)) renderResearch(); else if (currentView === "licenses" && isLicensesUnlocked(playerLevel)) renderLicenses(); updateMassPlantButtonsLive(); }, 500); }
     function resetGame() { if (confirm("🔄 Möchtest du wirklich ein neues Spiel beginnen?\n\nDein aktueller Fortschritt geht dabei verloren!")) { localStorage.removeItem("farmPremium"); location.reload(); } }
     
@@ -2426,6 +2656,7 @@
         document.getElementById("viewQuestsBtn").onclick = () => setView("quests");
         document.getElementById("viewAccountBtn").onclick = () => setView("account");
         document.getElementById("viewAchievementsBtn").onclick = () => setView("achievements");
+        document.getElementById("viewHandbookBtn").onclick = () => setView("handbook");
         document.getElementById("registerBtn").onclick = () => register();
         document.getElementById("loginBtn").onclick = () => login();
         document.getElementById("logoutBtn").onclick = () => logout();
