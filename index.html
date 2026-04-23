@@ -2621,20 +2621,6 @@
     async function login() { const email = document.getElementById("loginEmail").value, password = document.getElementById("loginPassword").value; if (!email || !password) { showToast("❌ Bitte E-Mail und Passwort eingeben!", true); return; } try { await auth.signInWithEmailAndPassword(email, password); showToast("✅ Eingeloggt!", false); } catch(err) { showToast("❌ Fehler: " + err.message, true); } }
     async function logout() { try { await removeOnlineStatus(); await auth.signOut(); showToast("🔓 Ausgeloggt", false); setTimeout(() => updateLeaderboard(), 1000); } catch(err) { showToast("❌ Fehler beim Ausloggen", true); } }
     
-    const user = auth.currentUser;
-if (user) {
-  database.ref('users/' + user.uid).once('value', (s) => {
-    if (!s.exists()) {
-      database.ref('users/' + user.uid).set({
-        gold: 500,
-        xp: 0,
-        name: "Farmer"
-      });
-    }
-  });
-}
-
-    
     function updateAuthUI() {
     const user = firebase.auth().currentUser;
     const adminPanel = document.getElementById('admin-panel');
