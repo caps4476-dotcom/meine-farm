@@ -1150,11 +1150,35 @@
     let currentUser = null;
     let playerName = localStorage.getItem("farmPlayerName") || "";
     
-        async function adminGlobalReset() {
+            async function adminGlobalReset() {
         if (!isAdmin) {
             showToast("❌ Keine Admin-Rechte!", true);
             return;
         }
+        
+        if (!confirm("⚠️ Sicher? Alle Farmen werden geleert (Accounts bleiben!).")) return;
+        
+        try {
+            // 1. Zeitstempel für alle Handys setzen
+            await database.ref('globalResetTime').set(Date.now());
+            
+            // 2. Leaderboard löschen
+            await database.ref('leaderboard').remove();
+            
+            // 3. DEINEN STATUS RETTEN (Ersetze DEIN_NAME durch deinen Usernamen!)
+            await database.ref('leaderboard/DEIN_NAME').set({
+                gold: 0,
+                xp: 0,
+                isAdmin: true
+            });
+            
+            showToast("✅ Reset erfolgreich!", false);
+            setTimeout(() => location.reload(), 2000);
+        } catch(err) {
+            alert("Firebase Fehler: " + err.message);
+        }
+    }
+    
         
         const confirm1 = confirm("⚠️ ACHTUNG! Dies setzt alle Farmen in der Cloud zurück!\n\nDie Accounts (Login) bleiben bestehen.\n\nFortfahren?");
         if (!confirm1) return;
