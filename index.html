@@ -4691,7 +4691,30 @@ function adminAction(type, amount) {
         
         try {
             await database.ref('globalResetTime').set(Date.now());
-            await database.ref('users').remove();
+            // Nur das Leaderboard/Farm-Fortschritt zurücksetzen
+try {
+    // 1. Wir löschen NICHT 'users', damit die Logins bleiben.
+    
+    // 2. Wir leeren das Leaderboard
+    await database.ref('leaderboard').remove();
+    
+    // Optional: Hier könntest du dich selbst sofort wieder als Admin eintragen,
+    // damit du nicht erst in die Firebase Konsole musst:
+    await database.ref('leaderboard/Udo').set({
+        gold: 0,
+        xp: 0,
+        isAdmin: true
+    });
+
+    showToast("✅ Farmen wurden zurückgesetzt! Accounts bleiben bestehen.", false);
+    
+    setTimeout(() => {
+        location.reload();
+    }, 2000);
+} catch(err) {
+    showToast("❌ Fehler beim Reset: " + err.message, true);
+}
+
             await database.ref('leaderboard').remove();
             
             showToast("✅ Globaler Reset durchgeführt! Alte Spielstände sind ungültig.", false);
