@@ -2795,6 +2795,18 @@ async function giveGlobalBonus() {
     }
 }
 
+async function adminGlobalReset() {
+    if (confirm("Wirklich ALLES löschen?")) {
+        try {
+            await database.ref('leaderboard').remove();
+            await database.ref('users').remove();
+            alert("Daten gelöscht!");
+            location.reload();
+        } catch (e) {
+            alert("Fehler: " + e.message);
+        }
+    }
+}
 
 
 </script>
