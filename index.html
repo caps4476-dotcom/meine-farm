@@ -1051,6 +1051,13 @@
         </div>
     </div>
     <div id="accountView" class="account-grid hidden">
+    <div class="account-slot" style="grid-column: 1 / -1; background: #4a3c28; border: 2px dashed #ffd700;">
+    <h3>💾 Datensicherung</h3>
+    <p style="font-size: 0.8em;">Sichere deinen Spielstand als Datei auf deinem Gerät.</p>
+    <button class="mass-btn" onclick="exportSaveGame()" style="background: #27ae60; margin-bottom: 5px;">📥 Backup erstellen</button>
+    <button class="mass-btn" onclick="document.getElementById('importFile').click()" style="background: #2980b9;">📤 Backup laden</button>
+    <input type="file" id="importFile" style="display:none" accept=".json" onchange="importSaveGame(event)">
+</div>
         <div class="account-slot" style="grid-column:1/-1;">
             <div class="status" style="background:#3a5a3a;">🔐 ACCOUNT</div>
             <div id="authStatus">Nicht eingeloggt</div>
@@ -4883,6 +4890,49 @@
         }, 500);
     }
     
+    // --- BACKUP FUNKTIONEN ---
+function exportSaveGame() {
+    const saveData = {
+        gold: playerGold,
+        level: playerLevel,
+        xp: playerXP,
+        inventory: inventory,
+        animals: animals,
+        timestamp: new Date().toLocaleString()
+    };
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(saveData));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", "meine_farm_backup.json");
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    showToast("✅ Backup-Datei wurde gespeichert!");
+}
+
+function importSaveGame(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            // Hier werden die Werte geladen
+            playerGold = data.gold || 0;
+            playerLevel = data.level || 1;
+            playerXP = data.xp || 0;
+            inventory = data.inventory || {};
+            animals = data.animals || [];
+            saveGameToLocal(); // Speichert es dauerhaft
+            showToast("♻️ Spielstand erfolgreich geladen!");
+            setTimeout(() => location.reload(), 1000); // Startet das Spiel neu
+        } catch (err) {
+            showToast("❌ Fehler beim Lesen der Datei!", true);
+        }
+    };
+    reader.readAsText(file);
+}
+
     function init() {
         for (let i = 0; i < MAX_FIELDS; i++) fields.push({ owned: i < 4, cropId: null, plantedAt: null, isReady: false, timerId: null });
         initResearchProgress();
