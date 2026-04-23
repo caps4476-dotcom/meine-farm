@@ -2727,38 +2727,61 @@ async function adminGlobalReset() {
 
 // --- ADMIN BONUS SYSTEM FÜR UDO ---
 async function giveGlobalBonus() {
+    // 1. Sicherheits-Check
     if (typeof isAdmin === 'undefined' || !isAdmin) {
-        alert("❌ Nur Udo darf Geschenke verteilen!");
+        alert("❌ Zugriff verweigert!");
         return;
     }
 
+    // 2. Abfrage der Werte
     const goldBonus = parseInt(prompt("Wieviel GOLD soll JEDER Spieler erhalten?", "1000"));
     const xpBonus = parseInt(prompt("Wieviel XP soll JEDER Spieler erhalten?", "500"));
 
     if (isNaN(goldBonus) || isNaN(xpBonus)) {
-        alert("❌ Bitte gültige Zahlen eingeben!");
+        alert("Abgebrochen: Ungültige Zahl.");
         return;
     }
 
     try {
+        // 3. Alle aktuellen Leaderboard-Daten holen
         const snapshot = await database.ref('leaderboard').once('value');
         const allPlayers = snapshot.val();
 
         if (!allPlayers) {
-            alert("Es sind noch keine Spieler im Leaderboard.");
+            alert("Keine Spieler im Leaderboard gefunden.");
             return;
         }
 
         const updates = {};
+        
+        // 4. Durch alle Spieler im Leaderboard gehen
         for (let playerName in allPlayers) {
-            updates[`leaderboard/${playerName}/gold`] = (allPlayers[playerName].gold || 0) + goldBonus;
-            updates[`leaderboard/${playerName}/xp`] = (allPlayers[playerName].xp || 0) + xpBonus;
+            const currentGold = allPlayers[playerName].gold || 0;
+            const currentXP = allPlayers[playerName].xp || 0;
+            
+            const newGold = currentGold + goldBonus;
+            const newXP = currentXP + xpBonus;
+
+            // Update im Leaderboard-Zweig
+            updates[`leaderboard/${playerName}/gold`] = newGold;
+            updates[`leaderboard/${playerName}/xp`] = newXP;
+            
+            // Update im Users-Zweig (damit es im Spiel live angezeigt wird)
+            // Wichtig: Das setzt voraus, dass deine User-IDs in Firebase 
+            // den gleichen Namen haben wie im Leaderboard
+            updates[`users/${playerName}/gold`] = newGold;
+            updates[`users/${playerName}/xp`] = newXP;
         }
 
+        // 5. Alles mit einem Befehl in die Cloud schicken
         await database.ref().update(updates);
-        alert(`✅ Erfolg! Jedem Spieler wurden ${goldBonus} Gold und ${xpBonus} XP gutgeschrieben.`);
+        
+        alert(`✅ Erfolg! ${goldBonus} Gold & ${xpBonus} XP an alle verteilt.`);
+        location.reload(); // Seite neu laden, um die Werte lokal zu übernehmen
+        
     } catch (err) {
-        alert("Fehler beim Bonus: " + err.message);
+        alert("Fehler: " + err.message);
+        console.error(err);
     }
 }
 
