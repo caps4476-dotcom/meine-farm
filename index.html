@@ -3314,6 +3314,80 @@
         }
     }
     
+    // --- NEU: BACKUP & ADMIN FUNKTIONEN ---
+function exportSaveGame() {
+    // Wir nutzen genau die Datenstruktur, die du mir oben gezeigt hast
+    const saveData = { 
+        gold: playerGold, 
+        inventory, 
+        day: currentDay, 
+        maxStorage, 
+        fields: fields.map(f => ({ owned: f.owned, cropId: f.cropId, plantedAt: f.plantedAt, isReady: f.isReady })), 
+        barnOwned, 
+        barnUpgrades, 
+        animals: animals.map(a => ({ type: a.type, name: a.name, isReady: a.isReady, productionStartTime: a.productionStartTime })), 
+        achievements, 
+        stats, 
+        playerLevel, 
+        playerXP, 
+        completedResearch, 
+        researchProgress, 
+        ownedLicenses, 
+        currentWeather,
+        timestamp: Date.now()
+    };
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(saveData));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", "farm_backup.json");
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    showToast("✅ Backup erstellt!");
+}
+
+function importSaveGame(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            // Hier überschreiben wir die aktuellen Werte mit den Backup-Werten
+            playerGold = data.gold;
+            playerLevel = data.playerLevel;
+            playerXP = data.playerXP;
+            // ... (und so weiter)
+            saveGameToLocalWithTimestamp(); // Speichert es sofort richtig ab
+            showToast("♻️ Spielstand geladen! Seite lädt neu...");
+            setTimeout(() => location.reload(), 1500);
+        } catch (err) {
+            showToast("❌ Datei fehlerhaft!", true);
+        }
+    };
+    reader.readAsText(file);
+}
+
+function adminAction(type, amount) {
+    const target = document.getElementById('adminTargetName').value;
+    if (!target) {
+        showToast("❌ Namen eingeben!", true);
+        return;
+    }
+    const ref = firebase.database().ref('leaderboard/' + target);
+    ref.once('value').then((snapshot) => {
+        if (snapshot.exists()) {
+            let currentVal = (snapshot.val()[type] || 0);
+            let updateData = {};
+            updateData[type] = currentVal + amount;
+            ref.update(updateData);
+            showToast(`🎁 ${amount} ${type} an ${target} gesendet!`);
+        } else {
+            showToast("❓ Spieler nicht gefunden!", true);
+        }
+    });
+}
+
     function saveGameToLocal() {
         saveGameToLocalWithTimestamp();
     }
@@ -4962,6 +5036,11 @@ function adminAction(type, amount) {
 }
 
     function init() {
+    if (typeof isAdmin !== 'undefined' && isAdmin) {
+    const panel = document.getElementById('adminPanel');
+    if(panel) panel.style.display = 'block';
+}
+
     if (isAdmin) document.getElementById('adminPanel').style.display = 'block';
     
         for (let i = 0; i < MAX_FIELDS; i++) fields.push({ owned: i < 4, cropId: null, plantedAt: null, isReady: false, timerId: null });
