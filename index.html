@@ -2682,6 +2682,38 @@
     }
     
     init();
+    // --- ADMIN RESET SYSTEM FÜR UDO ---
+async function adminGlobalReset() {
+    // Prüft ob du als Udo eingeloggt bist und Admin-Status hast
+    if (typeof isAdmin === 'undefined' || !isAdmin) {
+        alert("❌ Zugriff verweigert: Nur Admin Udo darf das!");
+        return;
+    }
+    
+    const bestätigung = confirm("Hallo Udo! Möchtest du wirklich alle Farmen (Gold/XP) zurücksetzen?\n\nDie Accounts bleiben erhalten, aber das Leaderboard wird geleert.");
+    if (!bestätigung) return;
+    
+    try {
+        // 1. Globalen Reset-Zeitstempel für alle Clients setzen
+        await database.ref('globalResetTime').set(Date.now());
+        
+        // 2. Das komplette Leaderboard leeren
+        await database.ref('leaderboard').remove();
+        
+        // 3. Deinen Admin-Status (Udo) sofort wieder in die DB schreiben
+        await database.ref('leaderboard/Udo').set({
+            gold: 0,
+            xp: 0,
+            isAdmin: true
+        });
+        
+        alert("✅ Reset erfolgreich! Die Seite wird nun neu geladen.");
+        location.reload();
+    } catch(err) {
+        alert("Fehler beim Reset: " + err.message);
+    }
+}
+
 </script>
 </body>
 </html>
