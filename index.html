@@ -2714,28 +2714,11 @@
     init();
     // --- ADMIN RESET SYSTEM FÜR UDO ---
 async function adminGlobalReset() {
-    // Doppelte Sicherheitsabfrage, damit man nicht aus Versehen alles löscht
-    const confirm1 = confirm("⚠️ ACHTUNG: Willst du wirklich ALLE Spielstände löschen?");
-    if (!confirm1) return;
-    
-    const confirm2 = confirm("Bist du GANZ sicher? Auch alle Gold-Bestände und XP in den User-Profilen werden gelöscht!");
-    if (!confirm2) return;
-
-    try {
-        // 1. Das Leaderboard (Rangliste) löschen
-        await database.ref('leaderboard').remove();
-        
-        // 2. Die eigentlichen Spieldaten (Gold, XP unter der UID) löschen
-        await database.ref('users').remove();
-        
-        alert("✅ SERVER-RESET ERFOLGREICH: Alle Daten wurden gelöscht.");
-        location.reload(); // Seite neu laden
-    } catch (err) {
-        alert("Fehler beim Reset: " + err.message);
-        console.error(err);
+    // Prüft ob du als Udo eingeloggt bist und Admin-Status hast
+    if (typeof isAdmin === 'undefined' || !isAdmin) {
+        alert("❌ Zugriff verweigert: Nur Admin Udo darf das!");
+        return;
     }
-}
-
     
     const bestätigung = confirm("Hallo Udo! Möchtest du wirklich alle Farmen (Gold/XP) zurücksetzen?\n\nDie Accounts bleiben erhalten, aber das Leaderboard wird geleert.");
     if (!bestätigung) return;
