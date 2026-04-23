@@ -964,6 +964,17 @@
 </head>
 <body>
 
+<div id="admin-panel" style="background: #222; color: white; padding: 15px; text-align: center; border-bottom: 3px solid #ff9800; width: 100%; z-index: 9999; position: relative;">
+    <h3 style="margin: 0 0 10px 0;">🛠 Admin-Zentrale: Udo</h3>
+    <button onclick="adminGlobalReset()" style="background: #9c27b0; color: white; border: none; padding: 10px 20px; border-radius: 5px; margin: 5px; font-weight: bold; cursor: pointer;">
+        ⚠️ Reset
+    </button>
+    <button onclick="giveGlobalBonus()" style="background: #ff9800; color: white; border: none; padding: 10px 20px; border-radius: 5px; margin: 5px; font-weight: bold; cursor: pointer;">
+        🎁 Bonus
+    </button>
+</div>
+
+
 <div id="loginScreen" class="login-screen">
     <div class="login-card">
         <div class="farm-emoji">🌾🚜</div>
@@ -2713,6 +2724,44 @@ async function adminGlobalReset() {
         alert("Fehler beim Reset: " + err.message);
     }
 }
+
+// --- ADMIN BONUS SYSTEM FÜR UDO ---
+async function giveGlobalBonus() {
+    if (typeof isAdmin === 'undefined' || !isAdmin) {
+        alert("❌ Nur Udo darf Geschenke verteilen!");
+        return;
+    }
+
+    const goldBonus = parseInt(prompt("Wieviel GOLD soll JEDER Spieler erhalten?", "1000"));
+    const xpBonus = parseInt(prompt("Wieviel XP soll JEDER Spieler erhalten?", "500"));
+
+    if (isNaN(goldBonus) || isNaN(xpBonus)) {
+        alert("❌ Bitte gültige Zahlen eingeben!");
+        return;
+    }
+
+    try {
+        const snapshot = await database.ref('leaderboard').once('value');
+        const allPlayers = snapshot.val();
+
+        if (!allPlayers) {
+            alert("Es sind noch keine Spieler im Leaderboard.");
+            return;
+        }
+
+        const updates = {};
+        for (let playerName in allPlayers) {
+            updates[`leaderboard/${playerName}/gold`] = (allPlayers[playerName].gold || 0) + goldBonus;
+            updates[`leaderboard/${playerName}/xp`] = (allPlayers[playerName].xp || 0) + xpBonus;
+        }
+
+        await database.ref().update(updates);
+        alert(`✅ Erfolg! Jedem Spieler wurden ${goldBonus} Gold und ${xpBonus} XP gutgeschrieben.`);
+    } catch (err) {
+        alert("Fehler beim Bonus: " + err.message);
+    }
+}
+
 
 </script>
 </body>
