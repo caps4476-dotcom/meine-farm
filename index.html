@@ -5047,20 +5047,49 @@ function importSaveGame(event) {
 function adminAction(type, amount) {
     const target = document.getElementById('adminTargetName').value;
     if (!target) {
-        showToast("❌ Bitte einen Namen eingeben!", true);
+        showToast("❌ Namen eingeben!", true);
         return;
     }
+    
     const ref = firebase.database().ref('leaderboard/' + target);
     ref.once('value').then((snapshot) => {
         if (snapshot.exists()) {
-            let currentVal = snapshot.val()[type] || 0;
-            ref.update({ [type]: currentVal + amount });
-            showToast(`🎁 ${amount} ${type} an ${target} gesendet!`);
+            let currentData = snapshot.val();
+            let currentVal = (currentData[type] || 0);
+            let newVal = currentVal + amount;
+            
+            // Wir erstellen ein Update-Objekt
+            let updates = {};
+            updates[type] = newVal;
+            
+            // WICHTIG: Wir setzen den Zeitstempel in der Cloud auf "JETZT" 
+            // oder sogar etwas in die Zukunft, damit die Cloud "neuer" ist.
+            updates['timestamp'] = Date.now() + 5000; 
+
+            ref.update(updates).then(() => {
+                showToast(`🎁 ${amount} ${type} an ${target} gesendet!`);
+                
+                if (target === playerName) {
+                    // Werte im Spiel sofort anpassen
+                    if (type === 'gold') playerGold = newVal;
+                    if (type === 'xp') playerXP = newVal;
+                    
+                    // UI aktualisieren
+                    if (typeof updateUI === 'function') updateUI();
+                    
+                    // Lokalen Speicher mit dem NEUEN Zeitstempel gleichziehen
+                    // Damit das Handy nicht denkt, es sei noch neuer als die Cloud
+                    if (typeof saveGameToLocalWithTimestamp === 'function') {
+                        saveGameToLocalWithTimestamp();
+                    }
+                }
+            });
         } else {
             showToast("❓ Spieler nicht gefunden!", true);
         }
     });
 }
+
 
     function init() {
     if (typeof isAdmin !== 'undefined' && isAdmin) {
