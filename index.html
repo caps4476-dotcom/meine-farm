@@ -964,15 +964,15 @@
 </head>
 <body>
 
-<div id="admin-panel" style="background: #222; color: white; padding: 15px; text-align: center; border-bottom: 3px solid #ff9800; width: 100%; z-index: 9999; position: relative;">
-    <h3 style="margin: 0 0 10px 0;">🛠 Admin-Zentrale: Udo</h3>
-    <button onclick="adminGlobalReset()" style="background: #9c27b0; color: white; border: none; padding: 10px 20px; border-radius: 5px; margin: 5px; font-weight: bold; cursor: pointer;">
-        ⚠️ Reset
-    </button>
-    <button onclick="giveGlobalBonus()" style="background: #ff9800; color: white; border: none; padding: 10px 20px; border-radius: 5px; margin: 5px; font-weight: bold; cursor: pointer;">
-        🎁 Bonus
-    </button>
+<div id="admin-panel" style="position: fixed; top: 0; left: 0; width: 100%; background: rgba(0, 0, 0, 0.9); color: white; padding: 8px; text-align: center; z-index: 10000; border-bottom: 2px solid #ff9800; display: flex; justify-content: center; align-items: center; gap: 10px; font-family: sans-serif;">
+    <span style="font-size: 14px; font-weight: bold; color: #ff9800;">🛠 ADMIN</span>
+    <button onclick="adminGlobalReset()" style="background: #9c27b0; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Reset</button>
+    <button onclick="giveGlobalBonus()" style="background: #e67e22; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">🎁 Bonus</button>
+    <button onclick="this.parentElement.style.display='none'" style="background: #444; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">X</button>
 </div>
+
+<div style="height: 50px;"></div>
+
 
 
 <div id="loginScreen" class="login-screen">
@@ -2727,63 +2727,55 @@ async function adminGlobalReset() {
 
 // --- ADMIN BONUS SYSTEM FÜR UDO ---
 async function giveGlobalBonus() {
-    // 1. Sicherheits-Check
     if (typeof isAdmin === 'undefined' || !isAdmin) {
         alert("❌ Zugriff verweigert!");
         return;
     }
 
-    // 2. Abfrage der Werte
     const goldBonus = parseInt(prompt("Wieviel GOLD soll JEDER Spieler erhalten?", "1000"));
     const xpBonus = parseInt(prompt("Wieviel XP soll JEDER Spieler erhalten?", "500"));
 
-    if (isNaN(goldBonus) || isNaN(xpBonus)) {
-        alert("Abgebrochen: Ungültige Zahl.");
-        return;
-    }
+    if (isNaN(goldBonus) || isNaN(xpBonus)) return;
 
     try {
-        // 3. Alle aktuellen Leaderboard-Daten holen
+        // 1. Leaderboard aktualisieren (für die Rangliste)
         const snapshot = await database.ref('leaderboard').once('value');
         const allPlayers = snapshot.val();
 
-        if (!allPlayers) {
-            alert("Keine Spieler im Leaderboard gefunden.");
-            return;
+        if (allPlayers) {
+            const updates = {};
+            for (let playerName in allPlayers) {
+                updates[`leaderboard/${playerName}/gold`] = (allPlayers[playerName].gold || 0) + goldBonus;
+                updates[`leaderboard/${playerName}/xp`] = (allPlayers[playerName].xp || 0) + xpBonus;
+            }
+            await database.ref().update(updates);
         }
 
-        const updates = {};
-        
-        // 4. Durch alle Spieler im Leaderboard gehen
-        for (let playerName in allPlayers) {
-            const currentGold = allPlayers[playerName].gold || 0;
-            const currentXP = allPlayers[playerName].xp || 0;
-            
-            const newGold = currentGold + goldBonus;
-            const newXP = currentXP + xpBonus;
+        // 2. DAS WICHTIGSTE: Dein eigenes Gold im Spiel direkt erhöhen
+        // Wir nutzen die Variablen, die dein Spiel sowieso schon verwendet
+        if (typeof userGold !== 'undefined') {
+            userGold += goldBonus;
+            if (typeof userXP !== 'undefined') userXP += xpBonus;
 
-            // Update im Leaderboard-Zweig
-            updates[`leaderboard/${playerName}/gold`] = newGold;
-            updates[`leaderboard/${playerName}/xp`] = newXP;
+            // Speichert es direkt in DEINEM User-Ordner (unter der kryptischen ID)
+            // auth.currentUser.uid ist genau diese Buchstaben-Zahlen-Folge
+            const myUid = firebase.auth().currentUser.uid;
+            await database.ref('users/' + myUid).update({
+                gold: userGold,
+                xp: userXP
+            });
             
-            // Update im Users-Zweig (damit es im Spiel live angezeigt wird)
-            // Wichtig: Das setzt voraus, dass deine User-IDs in Firebase 
-            // den gleichen Namen haben wie im Leaderboard
-            updates[`users/${playerName}/gold`] = newGold;
-            updates[`users/${playerName}/xp`] = newXP;
+            // Anzeige im Spiel aktualisieren
+            if (typeof updateUI === 'function') updateUI(); 
         }
 
-        // 5. Alles mit einem Befehl in die Cloud schicken
-        await database.ref().update(updates);
-        
-        alert(`✅ Erfolg! ${goldBonus} Gold & ${xpBonus} XP an alle verteilt.`);
-        location.reload(); // Seite neu laden, um die Werte lokal zu übernehmen
+        alert(`✅ Bonus verteilt! Dein Gold-Stand wurde direkt im Spiel aktualisiert.`);
         
     } catch (err) {
         alert("Fehler: " + err.message);
-        console.error(err);
     }
 }
+
 
 
 </script>
