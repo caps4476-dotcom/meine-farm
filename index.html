@@ -1058,6 +1058,15 @@
     <button class="mass-btn" onclick="document.getElementById('importFile').click()" style="background: #2980b9;">📤 Backup laden</button>
     <input type="file" id="importFile" style="display:none" accept=".json" onchange="importSaveGame(event)">
 </div>
+<div id="adminPanel" class="account-slot" style="display:none; background: #8e44ad; border: 2px solid #fff;">
+    <h3 style="color: #fff;">🛠️ Admin-Konsole</h3>
+    <input type="text" id="adminTargetName" placeholder="Spieler Name" style="width: 90%; padding: 5px; margin-bottom: 10px;">
+    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+        <button onclick="adminAction('gold', 1000)" style="background: #f1c40f; color: black; border: none; padding: 5px;">+1000 Gold</button>
+        <button onclick="adminAction('xp', 500)" style="background: #3498db; color: white; border: none; padding: 5px;">+500 XP</button>
+    </div>
+</div>
+
         <div class="account-slot" style="grid-column:1/-1;">
             <div class="status" style="background:#3a5a3a;">🔐 ACCOUNT</div>
             <div id="authStatus">Nicht eingeloggt</div>
@@ -4933,7 +4942,28 @@ function importSaveGame(event) {
     reader.readAsText(file);
 }
 
+// --- ADMIN FUNKTIONEN ---
+function adminAction(type, amount) {
+    const target = document.getElementById('adminTargetName').value;
+    if (!target) {
+        showToast("❌ Bitte einen Namen eingeben!", true);
+        return;
+    }
+    const ref = firebase.database().ref('leaderboard/' + target);
+    ref.once('value').then((snapshot) => {
+        if (snapshot.exists()) {
+            let currentVal = snapshot.val()[type] || 0;
+            ref.update({ [type]: currentVal + amount });
+            showToast(`🎁 ${amount} ${type} an ${target} gesendet!`);
+        } else {
+            showToast("❓ Spieler nicht gefunden!", true);
+        }
+    });
+}
+
     function init() {
+    if (isAdmin) document.getElementById('adminPanel').style.display = 'block';
+    
         for (let i = 0; i < MAX_FIELDS; i++) fields.push({ owned: i < 4, cropId: null, plantedAt: null, isReady: false, timerId: null });
         initResearchProgress();
         
