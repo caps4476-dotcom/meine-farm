@@ -3374,19 +3374,46 @@ function adminAction(type, amount) {
         showToast("❌ Namen eingeben!", true);
         return;
     }
+    
     const ref = firebase.database().ref('leaderboard/' + target);
     ref.once('value').then((snapshot) => {
         if (snapshot.exists()) {
             let currentVal = (snapshot.val()[type] || 0);
-            let updateData = {};
-            updateData[type] = currentVal + amount;
-            ref.update(updateData);
-            showToast(`🎁 ${amount} ${type} an ${target} gesendet!`);
+            let newVal = currentVal + amount;
+            
+            // 1. In Firebase speichern
+            ref.update({ [type]: newVal }).then(() => {
+                showToast(`🎁 ${amount} ${type} an ${target} gesendet!`);
+                
+                // 2. WICHTIG: Wenn du es selbst bist, aktualisiere die Spiel-Variablen
+                if (target === playerName) {
+                    if (type === 'gold') playerGold = newVal;
+                    if (type === 'xp') {
+                        playerXP = newVal;
+                        // Falls dein Spiel Level-Up Logik hat:
+                        if (typeof checkLevelUp === 'function') checkLevelUp();
+                    }
+                    
+                    // 3. UI aktualisieren (Anzeige oben rechts)
+                    if (typeof updateUI === 'function') {
+                        updateUI();
+                    } else if (typeof displayStats === 'function') {
+                        displayStats();
+                    }
+                    
+                    // 4. Den lokalen Speicher sofort überschreiben
+                    // Damit beim Neuladen kein Konflikt entsteht!
+                    if (typeof saveGameToLocalWithTimestamp === 'function') {
+                        saveGameToLocalWithTimestamp();
+                    }
+                }
+            });
         } else {
             showToast("❓ Spieler nicht gefunden!", true);
         }
     });
 }
+
 
     function saveGameToLocal() {
         saveGameToLocalWithTimestamp();
