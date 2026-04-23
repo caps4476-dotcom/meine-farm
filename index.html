@@ -1058,7 +1058,7 @@
     <button class="mass-btn" onclick="document.getElementById('importFile').click()" style="background: #2980b9;">📤 Backup laden</button>
     <input type="file" id="importFile" style="display:none" accept=".json" onchange="importSaveGame(event)">
 </div>
-<div id="adminPanel" class="account-slot" style="display:block; background: #8e44ad; border: 2px solid #fff;">
+<div id="adminPanel" class="account-slot" style="display:none; background: #8e44ad; border: 2px solid #fff;">
     <h3 style="color: #fff;">🛠️ Admin-Konsole</h3>
     <input type="text" id="adminTargetName" placeholder="Spieler Name" style="width: 90%; padding: 5px; margin-bottom: 10px;">
     <div style="display: flex; gap: 5px; flex-wrap: wrap;">
@@ -5195,6 +5195,17 @@ function adminAction(type, amount) {
     }
     
     init();
+    // Dieser Teil schaltet das lila Panel nur für dich frei
+setInterval(() => {
+    if (typeof isAdmin !== 'undefined' && isAdmin === true) {
+        const panel = document.getElementById('adminPanel');
+        if (panel && panel.style.display === 'none') {
+            panel.style.display = 'block';
+            console.log("Admin-Modus aktiv!");
+        }
+    }
+}, 2000);
+
 </script>
 </body>
 </html>
