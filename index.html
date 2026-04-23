@@ -3644,6 +3644,61 @@ function adminAction(type, amount) {
         return deletedCount;
     }
     
+        // ==================== RESET-FUNKTIONEN ====================
+    function checkGameVersion() {
+        const localVersion = localStorage.getItem("gameVersion");
+        if (localVersion !== CURRENT_GAME_VERSION) {
+            localStorage.removeItem("farmPremium");
+            localStorage.removeItem(`lastLocalSave_${currentUser?.uid || "guest"}`);
+            localStorage.setItem("gameVersion", CURRENT_GAME_VERSION);
+            showToast("🔄 Spiel wurde zurückgesetzt!", false);
+            return true;
+        }
+        return false;
+    }
+    
+    async function checkGlobalReset() {
+        if (!firebaseInitialized || !database) return false;
+        try {
+            const resetTimeSnapshot = await database.ref('globalResetTime').once('value');
+            const globalResetTime = resetTimeSnapshot.val() || 0;
+            const lastSaveTime = parseInt(localStorage.getItem("lastSaveTime") || "0");
+            if (globalResetTime > lastSaveTime) {
+                localStorage.removeItem("farmPremium");
+                localStorage.removeItem(`lastLocalSave_${currentUser?.uid || "guest"}`);
+                localStorage.setItem("lastSaveTime", Date.now().toString());
+                showToast("🔄 Globaler Reset durchgeführt!", false);
+                return true;
+            }
+        } catch(e) { console.warn("Reset-Check fehlgeschlagen:", e); }
+        return false;
+    }
+    
+    async function adminGlobalReset() {
+        if (!isAdmin) {
+            showToast("❌ Keine Admin-Rechte!", true);
+            return;
+        }
+        if (!confirm("⚠️ Sicher? Alle Farmen werden geleert.")) return;
+        try {
+            await database.ref('globalResetTime').set(Date.now());
+            await database.ref('leaderboard').remove();
+            
+            // WICHTIG: Setze hier deinen Namen ein
+            await database.ref('leaderboard/DEIN_NAME').set({ 
+                gold: 0, 
+                xp: 0, 
+                isAdmin: true 
+            });
+            
+            showToast("✅ Reset erfolgreich!", false);
+            setTimeout(() => location.reload(), 2000);
+        } catch(err) { alert("Fehler: " + err.message); }
+    }
+
+    // ==================== AB HIER GEHT DEIN ALTER CODE WEITER ====================
+
+    
     async function updateLeaderboardWithBans() {
         if (!firebaseInitialized || !database) return;
         
