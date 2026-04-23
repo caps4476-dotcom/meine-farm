@@ -2620,25 +2620,27 @@
     async function register() { const email = document.getElementById("loginEmail").value, password = document.getElementById("loginPassword").value; if (!email || !password) { showToast("❌ Bitte E-Mail und Passwort eingeben!", true); return; } if (password.length < 6) { showToast("❌ Passwort muss mindestens 6 Zeichen lang sein!", true); return; } try { await auth.createUserWithEmailAndPassword(email, password); showToast("✅ Account erstellt! Du bist jetzt eingeloggt.", false); } catch(err) { showToast("❌ Fehler: " + err.message, true); } }
     async function login() { const email = document.getElementById("loginEmail").value, password = document.getElementById("loginPassword").value; if (!email || !password) { showToast("❌ Bitte E-Mail und Passwort eingeben!", true); return; } try { await auth.signInWithEmailAndPassword(email, password); showToast("✅ Eingeloggt!", false); } catch(err) { showToast("❌ Fehler: " + err.message, true); } }
     async function logout() { try { await removeOnlineStatus(); await auth.signOut(); showToast("🔓 Ausgeloggt", false); setTimeout(() => updateLeaderboard(), 1000); } catch(err) { showToast("❌ Fehler beim Ausloggen", true); } }
+    
     function updateAuthUI() {
     const user = firebase.auth().currentUser;
-    const logoutBtn = document.getElementById("logoutBtn");
     const adminPanel = document.getElementById('admin-panel');
 
     if (user) {
-        if (logoutBtn) logoutBtn.style.display = "block";
-        
-        // Admin-Check für Udo
+        // Zwingt den Browser, lokale alte Daten zu vergessen
+        localStorage.clear(); 
+        console.log("Lokaler Speicher wurde bereinigt.");
+
+        // Dein Admin-Check
         database.ref('leaderboard/Udo/isAdmin').once('value', (snapshot) => {
             if (snapshot.val() === true && adminPanel) {
-                adminPanel.style.display = 'flex'; // Balken zeigen
+                adminPanel.style.display = 'flex';
             }
         });
     } else {
-        if (logoutBtn) logoutBtn.style.display = "none";
-        if (adminPanel) adminPanel.style.display = 'none'; // Balken verstecken
+        if (adminPanel) adminPanel.style.display = 'none';
     }
 }
+
 
     function updateTopLoginStatus() { const loginStatusIcon = document.getElementById("loginStatusIcon"), loginStatusText = document.getElementById("loginStatusText"), quickLoginBtn = document.getElementById("quickLoginBtn"), notLoggedinHint = document.getElementById("notLoggedinHint"); if (currentUser) { if (loginStatusIcon) loginStatusIcon.innerHTML = "🔒"; if (loginStatusText) loginStatusText.innerHTML = currentUser.email.split('@')[0]; if (quickLoginBtn) { quickLoginBtn.innerHTML = "🚪 Logout"; quickLoginBtn.onclick = () => logout(); } if (notLoggedinHint) notLoggedinHint.classList.add("hidden"); } else { if (loginStatusIcon) loginStatusIcon.innerHTML = "🔓"; if (loginStatusText) loginStatusText.innerHTML = "Nicht eingeloggt"; if (quickLoginBtn) { quickLoginBtn.innerHTML = "🔐 Login"; quickLoginBtn.onclick = () => { setView("account"); showToast("👤 Gehe zum Account-Tab, um dich zu registrieren oder einzuloggen!", false); }; } if (notLoggedinHint) { notLoggedinHint.classList.remove("hidden"); setTimeout(() => { if (notLoggedinHint && !currentUser) notLoggedinHint.classList.add("hidden"); }, 10000); } } }
     document.getElementById("notLoggedinHint")?.addEventListener("click", () => { setView("account"); const hint = document.getElementById("notLoggedinHint"); if (hint) hint.classList.add("hidden"); });
