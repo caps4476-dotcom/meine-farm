@@ -2810,6 +2810,29 @@ async function adminGlobalReset() {
     }
 }
 
+// --- AUTO-CHECK-IN (SICHERHEITS-VERSION) ---
+firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+        // Wir greifen direkt über firebase.database() zu, 
+        // falls die Variable 'database' mal nicht geladen ist.
+        const userRef = firebase.database().ref('users/' + user.uid);
+        
+        userRef.once('value').then((snapshot) => {
+            if (!snapshot.exists()) {
+                console.log("Neuer User erkannt, erstelle Eintrag...");
+                userRef.set({
+                    name: user.displayName || "Farmer",
+                    gold: 500,
+                    xp: 0,
+                    level: 1,
+                    firstLogin: new Date().toISOString()
+                }).catch(e => console.error("Fehler beim Erstellen:", e));
+            }
+        });
+    }
+});
+// --- ENDE AUTO-CHECK-IN ---
+
 
 </script>
 </body>
