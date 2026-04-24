@@ -2810,37 +2810,34 @@ async function adminGlobalReset() {
     }
 }
 
-// --- AUTOMATISCHER HINTERGRUND-SYNC ---
+// --- AKTIVE GOLD-SICHERUNG ---
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
         const userRef = firebase.database().ref('users/' + user.uid);
-        userRef.once('value').then((snapshot) => {
+        
+        // .on statt .once sorgt dafür, dass jede Änderung (auch vom Admin) sofort erscheint
+        userRef.on('value', (snapshot) => {
             const data = snapshot.val();
             if (data && data.gold !== undefined) {
                 const g = data.gold;
 
-                // Variablen im Speicher aktualisieren
+                // Absolute Zuweisung an alle Variablen
                 if (typeof gold !== 'undefined') gold = g;
                 if (typeof money !== 'undefined') money = g;
-                if (typeof score !== 'undefined') score = g;
                 if (typeof playerGold !== 'undefined') playerGold = g;
-                if (typeof gameState !== 'undefined') gameState.gold = g;
                 if (typeof player !== 'undefined') player.gold = g;
 
-                // Anzeige auf dem Bildschirm aktualisieren
+                // Sofortige Anzeige-Aktualisierung
                 document.querySelectorAll('*[id*="gold"], *[id*="Gold"]').forEach(el => {
                     if (el.tagName !== 'SCRIPT') el.innerText = g;
                 });
-
-                // UI-Funktionen aufrufen, falls vorhanden
-                if (typeof updateUI === 'function') updateUI();
-                if (typeof render === 'function') render();
                 
-                console.log("Hintergrund-Sync: Gold erfolgreich geladen.");
+                console.log("Sicherung: Gold auf " + g + " fixiert.");
             }
         });
     }
 });
+
 
 
 </script>
