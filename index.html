@@ -2354,20 +2354,35 @@
     }
     
     async function loadGameFromCloud() {
-        if (!currentUser) { showToast("❌ Bitte zuerst einloggen!", true); return; }
-        try {
-            const snapshot = await database.ref('users/' + currentUser.uid + '/savegame').once('value');
-            const cloudData = snapshot.val();
-            if (cloudData) {
-                await applyCloudData(cloudData);
-                showToast("📥 Spielstand aus der Cloud geladen!", false);
-                lastCloudLoad = Date.now();
-            } else {
-                await autoSaveToCloud();
-                showToast("💾 Lokaler Spielstand wurde in die Cloud gespeichert!", false);
-            }
-        } catch(err) { showToast("❌ Fehler beim Laden: " + err.message, true); }
+    if (!currentUser) return;
+    try {
+        const snapshot = await database.ref("users/" + currentUser.uid + "/savegame").once("value");
+        const data = snapshot.val();
+
+        if (data) {
+            // Daten vorhanden -> Laden
+            gold = data.gold !== undefined ? data.gold : 500;
+            xp = data.xp !== undefined ? data.xp : 0;
+            level = data.level !== undefined ? data.level : 1;
+            // Falls du noch mehr Werte hast (z.B. ClickPower), hier ergänzen
+            console.log("✅ Cloud-Daten geladen");
+        } else {
+            // KEINE Daten vorhanden (nach Reset) -> Startwerte setzen
+            console.log("ℹ️ Neuer Spielstand wird initialisiert...");
+            gold = 500;
+            xp = 0;
+            level = 1;
+            // Sofort einmal speichern, damit die Cloud nicht mehr leer ist
+            await saveGameToCloud();
+        }
+        updateUI(); 
+    } catch (error) {
+        console.error("Fehler beim Laden:", error);
+        // Hier kommt die rote Meldung her, die du gesehen hast
+        showToast("Fehler beim Laden der Cloud-Daten", true);
     }
+}
+
     
     async function saveGameToCloud() {
         if (!currentUser) { showToast("❌ Bitte zuerst einloggen!", true); return; }
