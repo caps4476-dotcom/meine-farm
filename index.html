@@ -2810,29 +2810,46 @@ async function adminGlobalReset() {
     }
 }
 
-// --- AKTIVE GOLD-SICHERUNG ---
+// --- ULTIMATIVE FIREBASE-DOMINANZ ---
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
         const userRef = firebase.database().ref('users/' + user.uid);
         
-        // .on statt .once sorgt dafür, dass jede Änderung (auch vom Admin) sofort erscheint
         userRef.on('value', (snapshot) => {
             const data = snapshot.val();
             if (data && data.gold !== undefined) {
                 const g = data.gold;
+                const l = data.level || 1; // Falls Level auch in DB
 
-                // Absolute Zuweisung an alle Variablen
+                // 1. Lokale Variablen im Code überschreiben
                 if (typeof gold !== 'undefined') gold = g;
-                if (typeof money !== 'undefined') money = g;
                 if (typeof playerGold !== 'undefined') playerGold = g;
-                if (typeof player !== 'undefined') player.gold = g;
+                if (typeof playerLevel !== 'undefined') playerLevel = l;
 
-                // Sofortige Anzeige-Aktualisierung
+                // 2. Den "farmPremium" Speicher im Browser flicken
+                try {
+                    let localData = localStorage.getItem("farmPremium");
+                    let saveData = localData ? JSON.parse(localData) : {};
+                    
+                    // Wir erzwingen die Firebase-Werte in das Speicher-Objekt
+                    saveData.gold = g;
+                    saveData.playerGold = g;
+                    saveData.level = l;
+                    
+                    localStorage.setItem("farmPremium", JSON.stringify(saveData));
+                } catch(e) {
+                    console.log("Fehler beim LocalStorage Update", e);
+                }
+
+                // 3. Leaderboard-Eintrag lokal "faken" (damit es dort auch sofort stimmt)
+                localStorage.setItem("lastLocalSave_" + user.uid, Date.now().toString());
+
+                // 4. Anzeige auf dem Bildschirm aktualisieren
                 document.querySelectorAll('*[id*="gold"], *[id*="Gold"]').forEach(el => {
                     if (el.tagName !== 'SCRIPT') el.innerText = g;
                 });
                 
-                console.log("Sicherung: Gold auf " + g + " fixiert.");
+                console.log("🔥 Firebase hat farmPremium-Speicher synchronisiert: " + g + " Gold.");
             }
         });
     }
