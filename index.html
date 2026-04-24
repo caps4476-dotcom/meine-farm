@@ -2810,54 +2810,29 @@ async function adminGlobalReset() {
     }
 }
 
-// 1. Die Speicher-Funktion "stumm" schalten, damit sie keine 0 speichert
-window.saveGameToLocal = function() {
-    console.log("Speichern unterdrückt, bis Firebase bereit ist...");
-};
-
+// --- SCHONENDER CLOUD-SYNC ---
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
+        console.log("Admin eingeloggt, warte auf Cloud-Daten...");
         const userRef = firebase.database().ref('users/' + user.uid);
-        userRef.on('value', (snapshot) => {
+        
+        userRef.once('value').then((snapshot) => {
             const data = snapshot.val();
             if (data && data.gold !== undefined) {
-                const g = data.gold;
-
-                // 2. Jetzt die echte Speicher-Funktion wieder erlauben/erstellen
-                window.saveGameToLocal = function() {
-                    const saveData = {
-                        gold: g,
-                        playerGold: g,
-                        level: data.level || 1,
-                        lastSave: Date.now()
-                    };
-                    localStorage.setItem("farmPremium", JSON.stringify(saveData));
-                    console.log("Sicher gespeichert: " + g);
-                };
-
-                // 3. Den Wert sofort überall reindrücken
-                const force = () => {
-                    window.playerGold = g;
-                    window.gold = g;
-                    if(window.player) window.player.gold = g;
-                    
-                    // Anzeige aktualisieren
-                    document.querySelectorAll('*[id*="gold"], *[id*="Gold"]').forEach(el => {
-                        el.innerText = g;
-                    });
-                };
-
-                // Sofort und danach regelmäßig fixieren
-                force();
-                setInterval(force, 1000); 
+                // Wir setzen NUR die Variablen, die absolut nötig sind
+                // und lassen den Timer/Rest des Spiels in Ruhe
+                window.playerGold = data.gold;
+                if (window.player) window.player.gold = data.gold;
                 
-                // Einmalig speichern, um die 20.000 im Browser zu zementieren
-                window.saveGameToLocal();
+                // Wir triggern die spielinterne Anzeige-Aktualisierung
+                if (typeof updateUI === 'function') updateUI();
+                if (typeof updateMoneyUI === 'function') updateMoneyUI();
+                
+                console.log("Admin-Gold synchronisiert: " + data.gold);
             }
         });
     }
 });
-
 
 
 </script>
