@@ -1092,6 +1092,18 @@
             <div style="font-size: 0.6rem; margin-top: 5px; color: #aaa;">💡 Sei respektvoll! Admin kann Nachrichten löschen.</div>
         </div>
         <div id="adminSection" class="admin-section hidden" style="grid-column:1/-1;">
+        <div id="adminSection" class="admin-section hidden" style="grid-column:1/-1;">
+    <div style="background: #4a1a1a; padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 2px solid red;">
+        <h3 style="color: #ff6666; margin-top: 0;">☢️ KRITISCHE ADMIN-ZENTRALE</h3>
+        <p style="font-size: 0.8em; color: #ccc;">Hiermit löschst du die gesamte Datenbank für den Live-Gang.</p>
+        <button onclick="adminGlobalReset()" class="admin-btn" style="background: #cc0000; font-weight: bold;">
+            🔥 KOMPLETTES SPIEL RESETTEN (WIPE)
+        </button>
+    </div>
+
+    </div>
+
+
             <div class="admin-title">🛡️ ADMIN-BEREICH</div>
             <div>
                 <button id="adminCleanupBtn" class="admin-btn danger">🧹 Alle alten Einträge löschen (7+ Tage)</button>
@@ -2478,14 +2490,73 @@
     function renderOrders() { if (!ordersContainer) return; if (!activeOrder) { const pauseRemaining = Math.max(0, Math.ceil((orderPauseUntil - Date.now()) / 1000)); if (pauseRemaining > 0) ordersContainer.innerHTML = `<div style="text-align:center; padding:15px;">⏳ Neuer Händler in ${Math.floor(pauseRemaining / 60)}:${(pauseRemaining % 60).toString().padStart(2, '0')} Minuten...</div>`; else ordersContainer.innerHTML = `<div style="text-align:center; padding:15px;">📭 Keine aktiven Aufträge. Händler kommt bald...</div>`; return; } const status = activeOrder.accepted ? "🏃‍♂️ ANGENOMMEN - Lieferzeit" : "🆕 NEU - Entscheidungszeit"; const timeDisplay = activeOrder.accepted ? `${Math.floor(activeOrder.deliveryTimeLeft / 60)}:${(activeOrder.deliveryTimeLeft % 60).toString().padStart(2, '0')} h` : `${activeOrder.timeLeft}s`; ordersContainer.innerHTML = `<div class="order-card"><div>📦 ${status}</div><div style="font-size:1.3rem;">${activeOrder.emoji} ${activeOrder.amount}x ${activeOrder.displayName}</div><div>💰 Basis: ${globalMarketPrices[activeOrder.productId] * activeOrder.amount} | 🎁 Bonus: +${activeOrder.rewardBonus}</div><div>💎 Gesamt: <strong style="color:#b44;">${activeOrder.totalReward} Gold</strong></div><div class="order-timer">⏱️ ${timeDisplay}</div>${!activeOrder.accepted ? `<button class="accept-order-btn" id="acceptOrderBtn">👍 Annehmen</button>` : `<div><button class="accept-order-btn" id="completeOrderBtn" style="background:#3a8c3a;">📦 Liefern</button><button class="cancel-order-btn" id="cancelOrderBtn">❌ Abbrechen</button></div>`}</div>`; document.getElementById("acceptOrderBtn")?.addEventListener("click", acceptOrder); document.getElementById("completeOrderBtn")?.addEventListener("click", completeOrder); document.getElementById("cancelOrderBtn")?.addEventListener("click", cancelOrder); }
     
     // ==================== ADMIN-FUNKTIONEN ====================
-    function checkAdminStatus() { if (currentUser && ADMIN_EMAILS.includes(currentUser.email)) { isAdmin = true; document.getElementById("adminSection")?.classList.remove("hidden"); loadBannedPlayers(); adminLoadAllPlayers(); } else { isAdmin = false; document.getElementById("adminSection")?.classList.add("hidden"); } }
+    function checkAdminStatus() {
+    // Wir prüfen beides: Deine ID ODER ob deine Email in der Liste steht
+    const isExplicitAdmin = (currentUser && currentUser.uid === 'Hb9Btkhn3UOBJLjapmwXfsDi05z2');
+    const isEmailAdmin = (currentUser && typeof ADMIN_EMAILS !== 'undefined' && ADMIN_EMAILS.includes(currentUser.email));
+
+    if (isExplicitAdmin || isEmailAdmin) {
+        isAdmin = true;
+        // Dein HTML-Bereich heißt laut dem Fund "adminSection"
+        const section = document.getElementById("adminSection");
+        if (section) section.classList.remove("hidden");
+        
+        console.log("👑 Admin-Status verifiziert!");
+
+        // Diese Funktionen laden zusätzliche Admin-Daten (Bestenliste/Spielerliste)
+        if (typeof loadBannedPlayers === 'function') loadBannedPlayers();
+        if (typeof adminLoadAllPlayers === 'function') adminLoadAllPlayers();
+    } else {
+        isAdmin = false;
+        const section = document.getElementById("adminSection");
+        if (section) section.classList.add("hidden");
+    }
+}
+
     async function loadBannedPlayers() { if (!firebaseInitialized || !database) return; const snapshot = await database.ref('bannedPlayers').once('value'); const data = snapshot.val(); bannedPlayers = []; if (data) for (let id in data) bannedPlayers.push({ name: id, ...data[id] }); updateBannedListDisplay(); }
     async function banPlayer(playerName) { if (!isAdmin) { showToast("❌ Keine Admin-Rechte!", true); return; } if (!playerName) { showToast("❌ Bitte Spielername eingeben!", true); return; } try { await database.ref('bannedPlayers/' + playerName).set({ bannedAt: Date.now(), bannedBy: currentUser.email }); showToast(`🚫 Spieler "${playerName}" wurde gebannt!`, false); await loadBannedPlayers(); await updateLeaderboard(); } catch(err) { showToast("❌ Fehler beim Bannen: " + err.message, true); } }
     async function unbanPlayer(playerName) { if (!isAdmin) { showToast("❌ Keine Admin-Rechte!", true); return; } if (!playerName) { showToast("❌ Bitte Spielername eingeben!", true); return; } try { await database.ref('bannedPlayers/' + playerName).remove(); showToast(`✅ Bann für "${playerName}" aufgehoben!`, false); await loadBannedPlayers(); await updateLeaderboard(); } catch(err) { showToast("❌ Fehler: " + err.message, true); } }
     async function removePlayerFromLeaderboard(playerName) { if (!isAdmin) { showToast("❌ Keine Admin-Rechte!", true); return; } if (!playerName) { showToast("❌ Bitte Spielername eingeben!", true); return; } try { await database.ref('leaderboard/' + playerName).remove(); showToast(`🗑️ Spieler "${playerName}" aus Bestenliste entfernt!`, false); await updateLeaderboard(); } catch(err) { showToast("❌ Fehler: " + err.message, true); } }
     async function clearAllLeaderboard() { if (!isAdmin) { showToast("❌ Keine Admin-Rechte!", true); return; } if (confirm("⚠️ ACHTUNG! Das löscht ALLE Einträge aus der Bestenliste!")) { try { await database.ref('leaderboard').remove(); showToast("🗑️ Bestenliste komplett geleert!", false); await updateLeaderboard(); } catch(err) { showToast("❌ Fehler: " + err.message, true); } } }
     async function adminCleanupOldEntries() { if (!isAdmin) { showToast("❌ Keine Admin-Rechte!", true); return; } const oneWeekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000); const allEntries = await database.ref('leaderboard').once('value'); const updates = {}; let deletedCount = 0; allEntries.forEach(child => { const entry = child.val(); if (entry.timestamp && entry.timestamp < oneWeekAgo) { updates[child.key] = null; deletedCount++; } }); if (deletedCount > 0) { await database.ref('leaderboard').update(updates); showToast(`🧹 ${deletedCount} alte Einträge gelöscht!`, false); } else showToast("Keine alten Einträge gefunden.", false); await updateLeaderboard(); }
-    async function adminGlobalReset() { if (!isAdmin) { showToast("❌ Keine Admin-Rechte!", true); return; } if (!confirm("⚠️ ACHTUNG! Dies löscht ALLE Spielstände aus der Cloud! Fortfahren?")) return; if (!confirm("⚠️ LETZTE WARNUNG! Dies kann NICHT rückgängig gemacht werden! Wirklich fortfahren?")) return; try { await database.ref('globalResetTime').set(Date.now()); await database.ref('users').remove(); await database.ref('leaderboard').remove(); showToast("✅ Globaler Reset durchgeführt!", false); setTimeout(() => location.reload(), 2000); } catch(err) { showToast("❌ Fehler beim Reset: " + err.message, true); } }
+    async function globalReset() {
+    if (confirm("⚠️ ACHTUNG: GLOBALER RESET!\n\nDies setzt ALLES zurück (Gold, XP, Level und lokale Einstellungen). Fortfahren?")) {
+        
+        const user = firebase.auth().currentUser;
+
+        // 1. Lokalen Browser-Speicher komplett leeren
+        localStorage.clear(); 
+        console.log("Lokaler Speicher (LocalStorage) wurde komplett geleert.");
+
+        if (user) {
+            try {
+                // 2. Startwerte für die Cloud definieren
+                const startData = {
+                    gold: 500,
+                    level: 1,
+                    xp: 0,
+                    lastSave: Date.now(),
+                    firstStart: true
+                };
+
+                // 3. In Firebase den savegame-Zweig überschreiben
+                // Da du Admin bist (Hb9Btkhn3UOBJLjapmwXfsDi05z2), lässt Firebase dich das tun!
+                await firebase.database().ref('users/' + user.uid + '/savegame').set(startData);
+                
+                console.log("Cloud-Daten wurden global zurückgesetzt.");
+            } catch (error) {
+                console.error("Globaler Reset Fehler:", error);
+                alert("Fehler beim Cloud-Reset: " + error.message);
+                return;
+            }
+        }
+
+        // 4. Alles neu laden
+        showToast("🚀 Globaler Reset abgeschlossen!", false);
+        setTimeout(() => { location.reload(); }, 1000);
+    }
+}
+
     function updateBannedListDisplay() { const container = document.getElementById("bannedListDisplay"); if (!container) return; if (bannedPlayers.length === 0) { container.innerHTML = "Keine gebannten Spieler."; return; } container.innerHTML = "🚫 Gebannte Spieler: " + bannedPlayers.map(p => `<span style="color:#c44; margin:0 5px;">${p.name}</span>`).join(", "); }
     function extendAdminSection() { const adminSection = document.getElementById("adminSection"); if (!adminSection || !isAdmin) return; const existingBtn = document.getElementById("adminRefreshPlayersBtn"); if (!existingBtn) { const playerListDiv = document.createElement("div"); playerListDiv.id = "adminPlayerListContainerExt"; playerListDiv.style.marginTop = "15px"; playerListDiv.innerHTML = `<div class="admin-title">👥 ALLE SPIELER (unabhängig von Level)</div><div id="adminPlayerList" style="max-height: 300px; overflow-y: auto; background: #3a3022; border-radius: 20px; padding: 10px;"></div><button id="adminRefreshPlayersBtn" class="admin-btn" style="margin-top: 10px;">🔄 Spielerliste aktualisieren</button>`; adminSection.appendChild(playerListDiv); document.getElementById("adminRefreshPlayersBtn")?.addEventListener("click", () => adminLoadAllPlayers()); } }
     function bindAdminButtons() { document.getElementById("adminCleanupBtn")?.addEventListener("click", () => adminCleanupOldEntries()); document.getElementById("adminClearAllBtn")?.addEventListener("click", () => clearAllLeaderboard()); document.getElementById("adminGlobalResetBtn")?.addEventListener("click", () => adminGlobalReset()); document.getElementById("adminClearChatBtn")?.addEventListener("click", () => adminClearChat()); document.getElementById("adminRemovePlayerBtn")?.addEventListener("click", () => { const name = document.getElementById("adminPlayerName").value; if (name) removePlayerFromLeaderboard(name); }); document.getElementById("adminBanPlayerBtn")?.addEventListener("click", () => { const name = document.getElementById("adminPlayerName").value; if (name) banPlayer(name); }); document.getElementById("adminUnbanPlayerBtn")?.addEventListener("click", () => { const name = document.getElementById("adminPlayerName").value; if (name) unbanPlayer(name); }); }
