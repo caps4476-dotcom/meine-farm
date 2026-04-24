@@ -2810,39 +2810,35 @@ async function adminGlobalReset() {
     }
 }
 
-// --- DER OFFIZIELLE CLOUD-FIX ---
-firebase.auth().onAuthStateChanged(async (user) => {
+// --- PASSIVER ADMIN-SYNC (KEIN ZWANG) ---
+firebase.auth().onAuthStateChanged((user) => {
     if (user) {
         const savegameRef = firebase.database().ref('users/' + user.uid + '/savegame');
-        
-        try {
-            // 1. Wir schauen, was aktuell in der Cloud unter 'savegame' steht
-            const snapshot = await savegameRef.once('value');
-            let cloudData = snapshot.val() || {};
 
-            // 2. Wir korrigieren NUR das Gold im Cloud-Objekt auf 20.000
-            cloudData.gold = 20000;
-            cloudData.playerGold = 20000;
-            // Falls du auch XP/Level willst, hier ergänzen:
-            // cloudData.level = 10; 
-
-            // 3. Wir schicken das reparierte Paket zurück in die Cloud
-            await savegameRef.set(cloudData);
-            console.log("Cloud-Savegame auf 20.000 korrigiert.");
-
-            // 4. Jetzt befehlen wir dem Spiel, genau diesen Stand NEU zu laden
-            if (typeof applyCloudData === 'function') {
-                await applyCloudData(cloudData);
-                if (typeof updateUI === 'function') updateUI();
-                if (typeof updateMoneyUI === 'function') updateMoneyUI();
-                console.log("Spiel-Logik erfolgreich mit 20.000 Gold gefüttert.");
+        // Wir "beobachten" das Savegame nur. Wenn sich dort etwas ändert 
+        // (z.B. durch einen Admin-Bonus), wird es ins Spiel geladen.
+        savegameRef.on('value', (snapshot) => {
+            const cloudData = snapshot.val();
+            
+            // Wir prüfen, ob Daten da sind und ob sie sich vom aktuellen Stand unterscheiden
+            if (cloudData && typeof applyCloudData === 'function') {
+                
+                // WICHTIG: Wir prüfen, ob die Cloud-Werte höher sind als unsere lokalen.
+                // So verhindern wir, dass der Admin-Bonus beim Laden ignoriert wird.
+                if (cloudData.gold !== window.playerGold) {
+                    applyCloudData(cloudData);
+                    
+                    // UI aktualisieren, damit man die Änderung sofort sieht
+                    if (typeof updateUI === 'function') updateUI();
+                    if (typeof updateMoneyUI === 'function') updateMoneyUI();
+                    
+                    console.log("Sync: Cloud-Daten (Admin-Bonus oder Save) übernommen.");
+                }
             }
-
-        } catch (err) {
-            console.error("Fehler beim Cloud-Fix:", err);
-        }
+        });
     }
 });
+
 
 
 </script>
