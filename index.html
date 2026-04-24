@@ -2810,7 +2810,7 @@ async function adminGlobalReset() {
     }
 }
 
-// --- MASTER SYNC MODUS ---
+// --- AUTOMATISCHER HINTERGRUND-SYNC ---
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
         const userRef = firebase.database().ref('users/' + user.uid);
@@ -2819,31 +2819,28 @@ firebase.auth().onAuthStateChanged((user) => {
             if (data && data.gold !== undefined) {
                 const g = data.gold;
 
-                // 1. Alle bekannten Gold-Variablen überschreiben
+                // Variablen im Speicher aktualisieren
                 if (typeof gold !== 'undefined') gold = g;
                 if (typeof money !== 'undefined') money = g;
                 if (typeof score !== 'undefined') score = g;
                 if (typeof playerGold !== 'undefined') playerGold = g;
-
-                // 2. Falls es ein zentrales Spiel-Objekt gibt
                 if (typeof gameState !== 'undefined') gameState.gold = g;
                 if (typeof player !== 'undefined') player.gold = g;
 
-                // 3. Den Text auf dem Bildschirm JEDEM Element aufzwingen, das 'gold' im Namen hat
+                // Anzeige auf dem Bildschirm aktualisieren
                 document.querySelectorAll('*[id*="gold"], *[id*="Gold"]').forEach(el => {
                     if (el.tagName !== 'SCRIPT') el.innerText = g;
                 });
 
-                // 4. Dem Spiel befehlen, die Anzeige zu erneuern (falls die Funktion existiert)
+                // UI-Funktionen aufrufen, falls vorhanden
                 if (typeof updateUI === 'function') updateUI();
                 if (typeof render === 'function') render();
                 
-                console.log("Master-Sync abgeschlossen für: " + g);
+                console.log("Hintergrund-Sync: Gold erfolgreich geladen.");
             }
         });
     }
 });
-
 
 
 </script>
