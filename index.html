@@ -2810,45 +2810,57 @@ async function adminGlobalReset() {
     }
 }
 
-// --- RESET & FORCE SYNC ---
-// Zuerst: Altes Browser-Gedächtnis sofort löschen
-localStorage.clear(); 
-console.log("Browser-Speicher geleert - Warte auf Firebase...");
+// --- DIE LETZTE INSTANZ: TOTALER SYNC ---
+
+// Wir tricksen das Spiel aus: Wir geben ihm ein "Fake-Gedächtnis", 
+// damit es nicht denkt, wir wären ein neuer Spieler.
+if(!localStorage.getItem("farmPremium")) {
+    localStorage.setItem("farmPremium", JSON.stringify({gold: 20000, firstLogin: "true"}));
+}
 
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
         const userRef = firebase.database().ref('users/' + user.uid);
+        
+        // Wir hören jetzt DAUERHAFT auf den Server
         userRef.on('value', (snapshot) => {
             const data = snapshot.val();
             if (data && data.gold !== undefined) {
                 const g = data.gold;
 
-                const applyGold = () => {
-                    // Variablen im Code setzen
-                    if (typeof gold !== 'undefined') gold = g;
-                    if (typeof playerGold !== 'undefined') playerGold = g;
-                    
-                    // Den Speicher mit dem Firebase-Wert "impfen"
-                    localStorage.setItem("farmPremium", JSON.stringify({gold: g, playerGold: g}));
-                    
-                    // Anzeige fixieren
-                    document.querySelectorAll('*[id*="gold"], *[id*="Gold"]').forEach(el => {
-                        el.innerText = g;
+                // FUNKTION: Alles im Spiel auf die Firebase-Werte festnageln
+                const lockData = () => {
+                    // 1. Interne Variablen
+                    window.gold = g;
+                    window.playerGold = g;
+                    if(window.player) window.player.gold = g;
+                    if(window.saveData) window.saveData.gold = g;
+
+                    // 2. Den Speicher füttern, den das Spiel beim Neuladen liest
+                    const currentSave = JSON.parse(localStorage.getItem("farmPremium") || "{}");
+                    currentSave.gold = g;
+                    currentSave.playerGold = g;
+                    localStorage.setItem("farmPremium", JSON.stringify(currentSave));
+
+                    // 3. Die Anzeige oben links (Gänsefüßchen-Check)
+                    const goldAnzeigen = document.querySelectorAll('*[id*="gold"], *[id*="Gold"]');
+                    goldAnzeigen.forEach(el => {
+                        if (el.tagName !== 'SCRIPT') el.innerText = g;
                     });
                 };
 
-                // 10 Sekunden lang alle 500ms sicherstellen, dass die 20.000 gewinnen
-                let count = 0;
-                const timer = setInterval(() => {
-                    applyGold();
-                    count++;
-                    if (count > 20) clearInterval(timer);
-                }, 500);
+                // Alle 100 Millisekunden (extrem schnell!) den Wert erzwingen
+                // Das machen wir für die ersten 15 Sekunden.
+                let timerCount = 0;
+                const safetyTimer = setInterval(() => {
+                    lockData();
+                    timerCount++;
+                    if (timerCount > 150) clearInterval(safetyTimer);
+                }, 100);
             }
         });
     }
 });
-
 
 
 </script>
