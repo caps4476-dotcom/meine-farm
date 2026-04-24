@@ -2810,29 +2810,6 @@ async function adminGlobalReset() {
     }
 }
 
-// --- SCHONENDER CLOUD-SYNC ---
-firebase.auth().onAuthStateChanged((user) => {
-    if (user) {
-        console.log("Admin eingeloggt, warte auf Cloud-Daten...");
-        const userRef = firebase.database().ref('users/' + user.uid);
-        
-        userRef.once('value').then((snapshot) => {
-            const data = snapshot.val();
-            if (data && data.gold !== undefined) {
-                // Wir setzen NUR die Variablen, die absolut nötig sind
-                // und lassen den Timer/Rest des Spiels in Ruhe
-                window.playerGold = data.gold;
-                if (window.player) window.player.gold = data.gold;
-                
-                // Wir triggern die spielinterne Anzeige-Aktualisierung
-                if (typeof updateUI === 'function') updateUI();
-                if (typeof updateMoneyUI === 'function') updateMoneyUI();
-                
-                console.log("Admin-Gold synchronisiert: " + data.gold);
-            }
-        });
-    }
-});
 
 
 </script>
