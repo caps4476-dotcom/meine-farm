@@ -2810,7 +2810,7 @@ async function adminGlobalReset() {
     }
 }
 
-// --- ULTIMATIVE FIREBASE-DOMINANZ ---
+// --- BRUTE-FORCE SYNC (GEGEN START-RESET) ---
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
         const userRef = firebase.database().ref('users/' + user.uid);
@@ -2819,42 +2819,37 @@ firebase.auth().onAuthStateChanged((user) => {
             const data = snapshot.val();
             if (data && data.gold !== undefined) {
                 const g = data.gold;
-                const l = data.level || 1; // Falls Level auch in DB
 
-                // 1. Lokale Variablen im Code überschreiben
-                if (typeof gold !== 'undefined') gold = g;
-                if (typeof playerGold !== 'undefined') playerGold = g;
-                if (typeof playerLevel !== 'undefined') playerLevel = l;
-
-                // 2. Den "farmPremium" Speicher im Browser flicken
-                try {
-                    let localData = localStorage.getItem("farmPremium");
-                    let saveData = localData ? JSON.parse(localData) : {};
+                // Funktion, die den Wert überall "reindrückt"
+                const forceUpdate = () => {
+                    // 1. Variablen
+                    if (typeof gold !== 'undefined') gold = g;
+                    if (typeof playerGold !== 'undefined') playerGold = g;
+                    if (typeof player !== 'undefined') player.gold = g;
                     
-                    // Wir erzwingen die Firebase-Werte in das Speicher-Objekt
-                    saveData.gold = g;
-                    saveData.playerGold = g;
-                    saveData.level = l;
-                    
-                    localStorage.setItem("farmPremium", JSON.stringify(saveData));
-                } catch(e) {
-                    console.log("Fehler beim LocalStorage Update", e);
-                }
+                    // 2. LocalStorage Gedächtnis
+                    localStorage.setItem("farmPremium", JSON.stringify({...JSON.parse(localStorage.getItem("farmPremium") || "{}"), gold: g, playerGold: g}));
 
-                // 3. Leaderboard-Eintrag lokal "faken" (damit es dort auch sofort stimmt)
-                localStorage.setItem("lastLocalSave_" + user.uid, Date.now().toString());
+                    // 3. Anzeige
+                    document.querySelectorAll('*[id*="gold"], *[id*="Gold"]').forEach(el => {
+                        if (el.tagName !== 'SCRIPT') el.innerText = g;
+                    });
+                };
 
-                // 4. Anzeige auf dem Bildschirm aktualisieren
-                document.querySelectorAll('*[id*="gold"], *[id*="Gold"]').forEach(el => {
-                    if (el.tagName !== 'SCRIPT') el.innerText = g;
-                });
-                
-                console.log("🔥 Firebase hat farmPremium-Speicher synchronisiert: " + g + " Gold.");
+                // Sofort ausführen
+                forceUpdate();
+
+                // Und für 10 Sekunden alle 500ms wiederholen, um Start-Resets abzufangen
+                let attempts = 0;
+                const interval = setInterval(() => {
+                    forceUpdate();
+                    attempts++;
+                    if (attempts > 20) clearInterval(interval); 
+                }, 500);
             }
         });
     }
 });
-
 
 
 </script>
