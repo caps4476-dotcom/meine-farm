@@ -2810,25 +2810,25 @@ async function adminGlobalReset() {
     }
 }
 
-// --- DIAGNOSE MODUS ---
+// --- DIAGNOSE MODUS V2 ---
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
-        // Diese Zeile erzeugt ein Fenster im Spiel, wenn der Code läuft!
-        alert("Code erkannt! Logged in as: " + user.uid); 
-
         const userRef = firebase.database().ref('users/' + user.uid);
-        userRef.update({
-            check: "ERFOLGREICH",
-            lastSeen: new Date().toLocaleString()
-        }).then(() => {
-            console.log("Update gesendet!");
-        }).catch((err) => {
-            alert("Fehler: " + err.message);
+        
+        userRef.once('value').then((snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                // Das hier zeigt dir beim Laden genau an, was das Spiel findet:
+                alert("SERVER-CHECK:\nID: " + user.uid + "\nGold in DB: " + data.gold + "\nName: " + data.name);
+            } else {
+                alert("KEINE DATEN GEFUNDEN unter users/" + user.uid);
+            }
         });
     } else {
-        alert("Code erkannt, aber kein User eingeloggt!");
+        alert("Kein User eingeloggt!");
     }
 });
+
 
 
 </script>
