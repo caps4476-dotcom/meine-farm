@@ -2810,25 +2810,26 @@ async function adminGlobalReset() {
     }
 }
 
-// --- DIAGNOSE MODUS V2 ---
+// --- DIAGNOSE & SYNC MODUS ---
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
         const userRef = firebase.database().ref('users/' + user.uid);
-        
         userRef.once('value').then((snapshot) => {
             const data = snapshot.val();
-            if (data) {
-                // Das hier zeigt dir beim Laden genau an, was das Spiel findet:
-                alert("SERVER-CHECK:\nID: " + user.uid + "\nGold in DB: " + data.gold + "\nName: " + data.name);
-            } else {
-                alert("KEINE DATEN GEFUNDEN unter users/" + user.uid);
+            if (data && data.gold !== undefined) {
+                // Wir versuchen die Variable im Spiel direkt zu setzen:
+                if (typeof gold !== 'undefined') gold = data.gold;
+                if (typeof playerGold !== 'undefined') playerGold = data.gold;
+                
+                // Wir versuchen die Anzeige oben links direkt zu aktualisieren:
+                const goldDisplay = document.getElementById('gold-display') || document.getElementById('goldCount');
+                if (goldDisplay) goldDisplay.innerText = data.gold;
+
+                alert("SYNC ERFOLGREICH: " + data.gold + " Gold wurden ans Spiel übertragen!");
             }
         });
-    } else {
-        alert("Kein User eingeloggt!");
     }
 });
-
 
 
 </script>
