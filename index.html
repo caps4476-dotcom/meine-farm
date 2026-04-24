@@ -2810,22 +2810,25 @@ async function adminGlobalReset() {
     }
 }
 
-// --- ADMIN-REPARATUR-MODUS ---
+// --- DIAGNOSE MODUS ---
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
+        // Diese Zeile erzeugt ein Fenster im Spiel, wenn der Code läuft!
+        alert("Code erkannt! Logged in as: " + user.uid); 
+
         const userRef = firebase.database().ref('users/' + user.uid);
-        
-        // Wir nutzen .update, um nur fehlende Infos zu ergänzen
         userRef.update({
-            name: user.displayName || "Aktiver Farmer",
-            status: "online",
-            lastCheck: new Date().toISOString()
+            check: "ERFOLGREICH",
+            lastSeen: new Date().toLocaleString()
         }).then(() => {
-            console.log("Dein Account wurde synchronisiert!");
+            console.log("Update gesendet!");
+        }).catch((err) => {
+            alert("Fehler: " + err.message);
         });
+    } else {
+        alert("Code erkannt, aber kein User eingeloggt!");
     }
 });
-
 
 
 </script>
