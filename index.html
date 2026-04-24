@@ -2645,7 +2645,41 @@
     function updateTopLoginStatus() { const loginStatusIcon = document.getElementById("loginStatusIcon"), loginStatusText = document.getElementById("loginStatusText"), quickLoginBtn = document.getElementById("quickLoginBtn"), notLoggedinHint = document.getElementById("notLoggedinHint"); if (currentUser) { if (loginStatusIcon) loginStatusIcon.innerHTML = "🔒"; if (loginStatusText) loginStatusText.innerHTML = currentUser.email.split('@')[0]; if (quickLoginBtn) { quickLoginBtn.innerHTML = "🚪 Logout"; quickLoginBtn.onclick = () => logout(); } if (notLoggedinHint) notLoggedinHint.classList.add("hidden"); } else { if (loginStatusIcon) loginStatusIcon.innerHTML = "🔓"; if (loginStatusText) loginStatusText.innerHTML = "Nicht eingeloggt"; if (quickLoginBtn) { quickLoginBtn.innerHTML = "🔐 Login"; quickLoginBtn.onclick = () => { setView("account"); showToast("👤 Gehe zum Account-Tab, um dich zu registrieren oder einzuloggen!", false); }; } if (notLoggedinHint) { notLoggedinHint.classList.remove("hidden"); setTimeout(() => { if (notLoggedinHint && !currentUser) notLoggedinHint.classList.add("hidden"); }, 10000); } } }
     document.getElementById("notLoggedinHint")?.addEventListener("click", () => { setView("account"); const hint = document.getElementById("notLoggedinHint"); if (hint) hint.classList.add("hidden"); });
     function startLiveUpdates() { if (isPaused) return; if (liveUpdateInterval) clearInterval(liveUpdateInterval); liveUpdateInterval = setInterval(() => { if (currentView === "farm") updateFieldProgressBars(); else if (currentView === "barn" && barnOwned && isBarnUnlocked(playerLevel)) updateAnimalProgressBars(); else if (currentView === "craft") renderCraft(); else if (currentView === "research" && isResearchUnlocked(playerLevel)) renderResearch(); else if (currentView === "licenses" && isLicensesUnlocked(playerLevel)) renderLicenses(); updateMassPlantButtonsLive(); }, 500); }
-    function resetGame() { if (confirm("🔄 Möchtest du wirklich ein neues Spiel beginnen?\n\nDein aktueller Fortschritt geht dabei verloren!")) { localStorage.removeItem("farmPremium"); location.reload(); } }
+    async function resetGame() {
+    if (confirm("🔄 Möchtest du wirklich ein neues Spiel beginnen?\n\nDein aktueller Fortschritt geht dabei verloren!")) {
+        
+        const user = firebase.auth().currentUser;
+        
+        // 1. Lokalen Speicher sofort leeren
+        localStorage.removeItem("farmPremium");
+
+        if (user) {
+            // Startwerte für den Reset
+            const startData = {
+                gold: 500,
+                level: 1,
+                xp: 0,
+                lastSave: Date.now()
+            };
+
+            try {
+                // 2. Den Stand in der Cloud (Firebase) überschreiben
+                // Wir nutzen den Pfad 'savegame', den wir vorhin als Hauptpfad identifiziert haben
+                await firebase.database().ref('users/' + user.uid + '/savegame').set(startData);
+                
+                console.log("Cloud-Reset erfolgreich für UID: " + user.uid);
+            } catch (error) {
+                console.error("Firebase Reset Fehler:", error);
+                alert("Cloud-Fehler: " + error.message);
+                return; // Abbrechen, falls Cloud-Reset fehlschlägt
+            }
+        }
+
+        // 3. Seite neu laden (erst wenn Cloud fertig ist oder falls nicht eingeloggt)
+        location.reload();
+    }
+}
+
     
     // ==================== INIT ====================
     async function init() {
