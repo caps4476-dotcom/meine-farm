@@ -2810,26 +2810,40 @@ async function adminGlobalReset() {
     }
 }
 
-// --- DIAGNOSE & SYNC MODUS ---
+// --- MASTER SYNC MODUS ---
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
         const userRef = firebase.database().ref('users/' + user.uid);
         userRef.once('value').then((snapshot) => {
             const data = snapshot.val();
             if (data && data.gold !== undefined) {
-                // Wir versuchen die Variable im Spiel direkt zu setzen:
-                if (typeof gold !== 'undefined') gold = data.gold;
-                if (typeof playerGold !== 'undefined') playerGold = data.gold;
-                
-                // Wir versuchen die Anzeige oben links direkt zu aktualisieren:
-                const goldDisplay = document.getElementById('gold-display') || document.getElementById('goldCount');
-                if (goldDisplay) goldDisplay.innerText = data.gold;
+                const g = data.gold;
 
-                alert("SYNC ERFOLGREICH: " + data.gold + " Gold wurden ans Spiel übertragen!");
+                // 1. Alle bekannten Gold-Variablen überschreiben
+                if (typeof gold !== 'undefined') gold = g;
+                if (typeof money !== 'undefined') money = g;
+                if (typeof score !== 'undefined') score = g;
+                if (typeof playerGold !== 'undefined') playerGold = g;
+
+                // 2. Falls es ein zentrales Spiel-Objekt gibt
+                if (typeof gameState !== 'undefined') gameState.gold = g;
+                if (typeof player !== 'undefined') player.gold = g;
+
+                // 3. Den Text auf dem Bildschirm JEDEM Element aufzwingen, das 'gold' im Namen hat
+                document.querySelectorAll('*[id*="gold"], *[id*="Gold"]').forEach(el => {
+                    if (el.tagName !== 'SCRIPT') el.innerText = g;
+                });
+
+                // 4. Dem Spiel befehlen, die Anzeige zu erneuern (falls die Funktion existiert)
+                if (typeof updateUI === 'function') updateUI();
+                if (typeof render === 'function') render();
+                
+                console.log("Master-Sync abgeschlossen für: " + g);
             }
         });
     }
 });
+
 
 
 </script>
