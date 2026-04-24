@@ -2810,46 +2810,45 @@ async function adminGlobalReset() {
     }
 }
 
-// --- BRUTE-FORCE SYNC (GEGEN START-RESET) ---
+// --- RESET & FORCE SYNC ---
+// Zuerst: Altes Browser-Gedächtnis sofort löschen
+localStorage.clear(); 
+console.log("Browser-Speicher geleert - Warte auf Firebase...");
+
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
         const userRef = firebase.database().ref('users/' + user.uid);
-        
         userRef.on('value', (snapshot) => {
             const data = snapshot.val();
             if (data && data.gold !== undefined) {
                 const g = data.gold;
 
-                // Funktion, die den Wert überall "reindrückt"
-                const forceUpdate = () => {
-                    // 1. Variablen
+                const applyGold = () => {
+                    // Variablen im Code setzen
                     if (typeof gold !== 'undefined') gold = g;
                     if (typeof playerGold !== 'undefined') playerGold = g;
-                    if (typeof player !== 'undefined') player.gold = g;
                     
-                    // 2. LocalStorage Gedächtnis
-                    localStorage.setItem("farmPremium", JSON.stringify({...JSON.parse(localStorage.getItem("farmPremium") || "{}"), gold: g, playerGold: g}));
-
-                    // 3. Anzeige
+                    // Den Speicher mit dem Firebase-Wert "impfen"
+                    localStorage.setItem("farmPremium", JSON.stringify({gold: g, playerGold: g}));
+                    
+                    // Anzeige fixieren
                     document.querySelectorAll('*[id*="gold"], *[id*="Gold"]').forEach(el => {
-                        if (el.tagName !== 'SCRIPT') el.innerText = g;
+                        el.innerText = g;
                     });
                 };
 
-                // Sofort ausführen
-                forceUpdate();
-
-                // Und für 10 Sekunden alle 500ms wiederholen, um Start-Resets abzufangen
-                let attempts = 0;
-                const interval = setInterval(() => {
-                    forceUpdate();
-                    attempts++;
-                    if (attempts > 20) clearInterval(interval); 
+                // 10 Sekunden lang alle 500ms sicherstellen, dass die 20.000 gewinnen
+                let count = 0;
+                const timer = setInterval(() => {
+                    applyGold();
+                    count++;
+                    if (count > 20) clearInterval(timer);
                 }, 500);
             }
         });
     }
 });
+
 
 
 </script>
