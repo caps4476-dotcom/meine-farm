@@ -2359,22 +2359,33 @@
         const snapshot = await database.ref("users/" + currentUser.uid + "/savegame").once("value");
         const data = snapshot.val();
 
-        if (data) {
-            // Daten vorhanden -> Laden
-            gold = data.gold !== undefined ? data.gold : 500;
-            xp = data.xp !== undefined ? data.xp : 0;
-            level = data.level !== undefined ? data.level : 1;
-            // Falls du noch mehr Werte hast (z.B. ClickPower), hier ergänzen
-            console.log("✅ Cloud-Daten geladen");
+        if (snapshot.exists() && data) {
+            // Wenn Daten in der Cloud sind, lade sie
+            gold = data.gold || 500;
+            xp = data.xp || 0;
+            level = data.level || 1;
+            clickPower = data.clickPower || 1;
+            console.log("✅ Daten geladen");
         } else {
-            // KEINE Daten vorhanden (nach Reset) -> Startwerte setzen
-            console.log("ℹ️ Neuer Spielstand wird initialisiert...");
+            // Wenn Cloud leer ist (nach deinem Reset), setze Startwerte
+            console.log("ℹ️ Cloud leer, starte neu...");
             gold = 500;
             xp = 0;
             level = 1;
-            // Sofort einmal speichern, damit die Cloud nicht mehr leer ist
+            clickPower = 1;
+            // Erstelle den Cloud-Eintrag neu
             await saveGameToCloud();
         }
+        updateUI();
+    } catch (error) {
+        console.error("Ladefehler:", error);
+        // Selbst bei Fehler: Spiel nicht abstürzen lassen!
+        gold = 500;
+        updateUI();
+    }
+}
+
+    
         updateUI(); 
     } catch (error) {
         console.error("Fehler beim Laden:", error);
