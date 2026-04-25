@@ -2465,19 +2465,75 @@
     }
     
     // Kern-Funktion: Holt Daten von Firebase
+    async function loadGameFromCloud() {
+        if (!currentUser) return;
+        try {
+            const snapshot = await database.ref("users/" + currentUser.uid + "/savegame").once("value");
+            const data = snapshot.val();
+
+            if (data) {
+                // Hier rufen wir die apply-Funktion auf, die alles verarbeitet
+                await applyCloudData(data);
+                console.log("✅ Cloud-Daten erfolgreich geladen und angewendet");
+            } else {
+                console.log("ℹ️ Kein Cloud-Spielstand gefunden. Starte neu.");
+                playerGold = 500;
+                playerXP = 0;
+                playerLevel = 1;
+                await autoSaveToCloud(); // Ersten Stand in Cloud anlegen
+            }
+        } catch (error) {
+            console.error("Fehler beim Laden:", error);
+            showToast("❌ Fehler beim Laden der Cloud-Daten", true);
+        }
+    }
+    
+    // Verarbeitet geladene Daten (Cloud ODER Lokal) und startet Timer
     async function applyCloudData(data) {
     if (!data) return;
-    window.playerGold = Number(data.gold || 0);
-    window.playerXP = Number(data.playerXP || data.xp || 0);
-    window.playerLevel = Number(data.playerLevel || data.level || 1);
+
+    // GOLD
+    playerGold = data.gold !== undefined ? data.gold : playerGold;
     
-    if (typeof updateMoneyUI === 'function') updateMoneyUI();
-    if (typeof updateLevelUI === 'function') updateLevelUI();
-    console.log("Notfall-Check: Daten geladen");
-}
+    // INVENTAR & REST
+    inventory = data.inventory || {};
+    currentDay = data.day || 1;
+    maxStorage = data.maxStorage || 50;
+    
+    // LEVEL (Sicherheits-Check für beide Namen)
+    playerLevel = data.playerLevel || data.level || 1;
+    window.playerXP = parseInt(data.playerXP || data.xp) || 0;
+    
+    // XP (Sicherheits-Check für beide Namen)
+    window.playerXP = parseInt(data.playerXP) || 0;
+window.playerLevel = parseInt(data.playerLevel || data.level) || 1;
 
 
 
+    barnOwned = data.barnOwned || false;
+    barnUpgrades = data.barnUpgrades || { autoCollector: false, speedBoost: false };
+    animals = data.animals || [];
+    achievements = data.achievements || achievements;
+    stats = data.stats || stats;
+    completedResearch = data.completedResearch || [];
+    researchProgress = data.researchProgress || {};
+    ownedLicenses = data.ownedLicenses || [];
+    
+    if (data.currentWeather) currentWeather = data.currentWeather;
+    
+    // Felder wiederherstellen
+    if (data.fields) {
+        for (let i = 0; i < fields.length && i < data.fields.length; i++) {
+            fields[i].owned = data.fields[i].owned;
+            fields[i].cropId = data.fields[i].cropId;
+            fields[i].plantedAt = data.fields[i].plantedAt;
+            fields[i].isReady = data.fields[i].isReady;
+            if (fields[i].cropId && !fields[i].isReady && fields[i].plantedAt) {
+                if (fields[i].timerId) clearTimeout(fields[i].timerId);
+                startFieldTimer(i, fields[i].cropId);
+            }
+        }
+    }
     
     // Tiere wiederherstellen
     for (let i = 0; i < animals.length; i++) {
