@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Meine Farm Deluxe - Cloud Speicher</title>
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -89,7 +88,7 @@
         .login-btn:active {
             transform: translateY(2px);
         }
-        .login-btn.secondary {
+  login-btn.secondary {
             background: #3a6e8b;
             color: white;
             margin-top: 10px;
@@ -329,6 +328,7 @@
             flex-wrap: wrap;
             gap: 10px;
         }
+        .
         .money, .storage-info, .day-info, .next-price-timer, .event-badge, .level-info, .weather-info, .npc-indicator {
             background: #4a3e2e;
             padding: 6px 18px;
@@ -963,7 +963,8 @@
     </style>
 </head>
 <body>
-
+  
+  
 <div id="admin-panel" style="position: fixed; top: 0; left: 0; width: 100%; background: rgba(0, 0, 0, 0.9); color: white; padding: 8px; text-align: center; z-index: 10000; border-bottom: 2px solid #ff9800; display: flex; justify-content: center; align-items: center; gap: 10px; font-family: sans-serif;">
     <span style="font-size: 14px; font-weight: bold; color: #ff9800;">🛠 ADMIN</span>
     <button onclick="adminGlobalReset()" style="background: #9c27b0; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Reset</button>
@@ -972,8 +973,6 @@
 </div>
 
 <div style="height: 50px;"></div>
-
-
 
 <div id="loginScreen" class="login-screen">
     <div class="login-card">
@@ -1091,19 +1090,15 @@
             </div>
             <div style="font-size: 0.6rem; margin-top: 5px; color: #aaa;">💡 Sei respektvoll! Admin kann Nachrichten löschen.</div>
         </div>
+        
         <div id="adminSection" class="admin-section hidden" style="grid-column:1/-1;">
-        <div id="adminSection" class="admin-section hidden" style="grid-column:1/-1;">
-    <div style="background: #4a1a1a; padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 2px solid red;">
-        <h3 style="color: #ff6666; margin-top: 0;">☢️ KRITISCHE ADMIN-ZENTRALE</h3>
-        <p style="font-size: 0.8em; color: #ccc;">Hiermit löschst du die gesamte Datenbank für den Live-Gang.</p>
-        <button onclick="adminGlobalReset()" class="admin-btn" style="background: #cc0000; font-weight: bold;">
-            🔥 KOMPLETTES SPIEL RESETTEN (WIPE)
-        </button>
-    </div>
-
-    </div>
-
-
+            <div style="background: #4a1a1a; padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 2px solid red;">
+                <h3 style="color: #ff6666; margin-top: 0;">☢️ KRITISCHE ADMIN-ZENTRALE</h3>
+                <p style="font-size: 0.8em; color: #ccc;">Hiermit löschst du die gesamte Datenbank für den Live-Gang.</p>
+                <button onclick="adminGlobalReset()" class="admin-btn" style="background: #cc0000; font-weight: bold;">
+                    🔥 KOMPLETTES SPIEL RESETTEN (WIPE)
+                </button>
+            </div>
             <div class="admin-title">🛡️ ADMIN-BEREICH</div>
             <div>
                 <button id="adminCleanupBtn" class="admin-btn danger">🧹 Alle alten Einträge löschen (7+ Tage)</button>
@@ -1125,9 +1120,9 @@
                 <div id="adminPlayerList" style="max-height: 300px; overflow-y: auto; background: #3a3022; border-radius: 20px; padding: 10px;"></div>
                 <button id="adminRefreshPlayersBtn" class="admin-btn" style="margin-top: 10px;">🔄 Aktualisieren</button>
             </div>
-            <div id="bannedListDisplay" style="margin-top: 10px; font-size: 0.7rem; color: #aaa;"></div>
         </div>
     </div>
+    
     <div id="questsView" class="quests-grid hidden">
         <div class="quests-slot" style="grid-column:1/-1;">
             <div class="status" style="background:#3a5a3a;">🎁 TÄGLICHER LOGIN-BONUS</div>
@@ -1142,6 +1137,7 @@
             <div id="weeklyQuestsContainer"></div>
         </div>
     </div>
+    
     <div id="accountView" class="account-grid hidden">
         <div class="account-slot" style="grid-column:1/-1;">
             <div class="status" style="background:#3a5a3a;">🔐 ACCOUNT</div>
@@ -1152,24 +1148,19 @@
             <button id="loginBtn" class="mass-btn" style="background:#4a6e8b;">🔓 Einloggen</button>
             <button id="logoutBtn" class="mass-btn" style="background:#c44; display:none;">🚪 Ausloggen</button>
             <div id="userEmailDisplay" style="margin-top: 10px;"></div>
-            <div class="info-text" style="margin-top: 10px;">
-                💾 Mit einem Account kannst du auf mehreren Geräten spielen!<br>
-                Dein Spielstand wird automatisch in der Cloud gespeichert.
-            </div>
         </div>
         <div class="account-slot" style="grid-column:1/-1;">
             <div class="status" style="background:#3a5a3a;">☁️ CLOUD-SPEICHER</div>
             <button id="saveToCloudBtn" class="mass-btn" style="background:#2c6e6e;">💾 Spielstand in Cloud speichern</button>
             <button id="loadFromCloudBtn" class="mass-btn" style="background:#6e5a3a;">📥 Spielstand aus Cloud laden</button>
-            <div class="info-text" style="margin-top: 10px;">
-                ⚠️ Achtung: Laden überschreibt deinen aktuellen Fortschritt!
-            </div>
         </div>
     </div>
+    
     <div id="achievementsView" class="achievements-section hidden">
         <div style="font-size:1.3rem; text-align:center; margin-bottom:15px;">🏆 Erfolge</div>
         <div id="achievementsList" class="achievement-list"></div>
     </div>
+    
     <div id="handbookView" class="handbook-grid hidden">
         <div class="handbook-slot" style="grid-column:1/-1;">
             <div class="status" style="background:#3a5a3a; font-size:1.2rem;">📖 OFFIZIELLES FARM-HANDBUCH</div>
@@ -1185,20 +1176,8 @@
         <div class="market-title">🧺 Wochenmarkt</div>
         <div class="price-panel" id="pricePanel"></div>
         <div class="products-list" id="marketList"></div>
-        <div class="info-text">
-            🌤️ Wetter beeinflusst das Pflanzenwachstum! | 💹 Preise ändern sich dynamisch (Saison, Trends, Angebot/Nachfrage)<br>
-            👁️ Nur freigeschaltete Pflanzen werden angezeigt!<br>
-            🌍 Multiplayer ab Level 5: Bestenliste, globale Preise, Handel & CHAT!<br>
-            🧙 NPC-Besucher kommen zufällig vorbei und bieten besondere Deals!<br>
-            👤 Account: Spielstand auf allen Geräten synchronisieren!<br>
-            📋 Quests: Tägliche und wöchentliche Aufgaben für extra Belohnungen!<br>
-            🎁 Login-Bonus: Täglich einloggen und Gold kassieren!<br>
-            🔬 Forschung: Investiere Gold und Ressourcen für permanente Boni!<br>
-            💾 Auto-Save: Dein Spielstand wird alle 5 Minuten automatisch gespeichert!<br>
-            📖 Handbuch: Alle Infos zu Pflanzen, Tieren, Crafting, XP und mehr!
-        </div>
     </div>
-    <footer>✨ Account-System: Mit E-Mail/Passwort auf mehreren Geräten spielen! | Version 3.0</footer>
+    <footer>✨ Account-System | Version 3.0</footer>
 </div>
 </div>
 
@@ -1210,6 +1189,80 @@
 <div id="eventOverlay" class="event-overlay hidden"></div>
 
 <script>
+  
+    
+    // ==================== LOGIN & AUTH ====================
+    const loginScreenElem = document.getElementById("loginScreen"), gameWrapperElem = document.getElementById("gameWrapper"), loginModeElem = document.getElementById("loginMode"), registerModeElem = document.getElementById("registerMode"), loginErrorMsgElem = document.getElementById("loginErrorMsg");
+    function showLoginError(msg) { loginErrorMsgElem.innerText = msg; setTimeout(() => { loginErrorMsgElem.innerText = ""; }, 3000); }
+    function initFirebase() { try { firebase.initializeApp(firebaseConfig); database = firebase.database(); auth = firebase.auth(); firebaseInitialized = true; console.log("Firebase initialisiert!"); auth.onAuthStateChanged((user) => { currentUser = user; updateAuthUI(); updateTopLoginStatus(); checkAdminStatus(); if (user) { loginScreenElem.classList.add("hidden"); gameWrapperElem.classList.remove("hidden"); showToast(`👋 Willkommen ${user.email}!`, false); loadGameFromLocal(); loadGameFromCloud(); updateOnlineStatus(); updateLeaderboard(); loadLoginBonusData(); loadQuests(); loadResearchProgress(); checkLoginBonus(); startAutoSave(); initRealPlayDays(); startRealDayCheck(); } else { loginScreenElem.classList.remove("hidden"); gameWrapperElem.classList.add("hidden"); updateTopLoginStatus(); updateLeaderboard(); if (document.getElementById("loginEmailScreen")) document.getElementById("loginEmailScreen").value = ""; if (document.getElementById("loginPasswordScreen")) document.getElementById("loginPasswordScreen").value = ""; if (document.getElementById("registerEmailScreen")) document.getElementById("registerEmailScreen").value = ""; if (document.getElementById("registerPasswordScreen")) document.getElementById("registerPasswordScreen").value = ""; loginModeElem.style.display = "block"; registerModeElem.style.display = "none"; } }); return true; } catch(e) { console.warn("Firebase Fehler:", e); return false; } }
+    document.getElementById("doLoginBtn").onclick = async () => { const email = document.getElementById("loginEmailScreen").value, password = document.getElementById("loginPasswordScreen").value; if (!email || !password) { showLoginError("❌ Bitte E-Mail und Passwort eingeben!"); return; } try { await auth.signInWithEmailAndPassword(email, password); } catch(err) { showLoginError("❌ " + err.message); } };
+    document.getElementById("doRegisterBtn").onclick = async () => { const email = document.getElementById("registerEmailScreen").value, password = document.getElementById("registerPasswordScreen").value; if (!email || !password) { showLoginError("❌ Bitte E-Mail und Passwort eingeben!"); return; } if (password.length < 6) { showLoginError("❌ Passwort muss mindestens 6 Zeichen lang sein!"); return; } try { await auth.createUserWithEmailAndPassword(email, password); } catch(err) { showLoginError("❌ " + err.message); } };
+    document.getElementById("showRegisterBtn").onclick = () => { loginModeElem.style.display = "none"; registerModeElem.style.display = "block"; loginErrorMsgElem.innerText = ""; };
+    document.getElementById("showLoginBtn").onclick = () => { registerModeElem.style.display = "none"; loginModeElem.style.display = "block"; loginErrorMsgElem.innerText = ""; };
+    async function register() { const email = document.getElementById("loginEmail").value, password = document.getElementById("loginPassword").value; if (!email || !password) { showToast("❌ Bitte E-Mail und Passwort eingeben!", true); return; } if (password.length < 6) { showToast("❌ Passwort muss mindestens 6 Zeichen lang sein!", true); return; } try { await auth.createUserWithEmailAndPassword(email, password); showToast("✅ Account erstellt! Du bist jetzt eingeloggt.", false); } catch(err) { showToast("❌ Fehler: " + err.message, true); } }
+    async function login() { const email = document.getElementById("loginEmail").value, password = document.getElementById("loginPassword").value; if (!email || !password) { showToast("❌ Bitte E-Mail und Passwort eingeben!", true); return; } try { await auth.signInWithEmailAndPassword(email, password); showToast("✅ Eingeloggt!", false); } catch(err) { showToast("❌ Fehler: " + err.message, true); } }
+    async function logout() { try { await removeOnlineStatus(); await auth.signOut(); showToast("🔓 Ausgeloggt", false); setTimeout(() => updateLeaderboard(), 1000); } catch(err) { showToast("❌ Fehler beim Ausloggen", true); } }
+    
+    function updateAuthUI() {
+    const user = firebase.auth().currentUser;
+    const adminPanel = document.getElementById('admin-panel');
+
+    if (user) {
+        // Zwingt den Browser, lokale alte Daten zu vergessen
+        // localStorage.clear(); 
+        console.log("Lokaler Speicher wurde bereinigt.");
+
+        // Dein Admin-Check
+        database.ref('leaderboard/Udo/isAdmin').once('value', (snapshot) => {
+            if (snapshot.val() === true && adminPanel) {
+                adminPanel.style.display = 'flex';
+            }
+        });
+    } else {
+        if (adminPanel) adminPanel.style.display = 'none';
+    }
+}
+
+
+    function updateTopLoginStatus() { const loginStatusIcon = document.getElementById("loginStatusIcon"), loginStatusText = document.getElementById("loginStatusText"), quickLoginBtn = document.getElementById("quickLoginBtn"), notLoggedinHint = document.getElementById("notLoggedinHint"); if (currentUser) { if (loginStatusIcon) loginStatusIcon.innerHTML = "🔒"; if (loginStatusText) loginStatusText.innerHTML = currentUser.email.split('@')[0]; if (quickLoginBtn) { quickLoginBtn.innerHTML = "🚪 Logout"; quickLoginBtn.onclick = () => logout(); } if (notLoggedinHint) notLoggedinHint.classList.add("hidden"); } else { if (loginStatusIcon) loginStatusIcon.innerHTML = "🔓"; if (loginStatusText) loginStatusText.innerHTML = "Nicht eingeloggt"; if (quickLoginBtn) { quickLoginBtn.innerHTML = "🔐 Login"; quickLoginBtn.onclick = () => { setView("account"); showToast("👤 Gehe zum Account-Tab, um dich zu registrieren oder einzuloggen!", false); }; } if (notLoggedinHint) { notLoggedinHint.classList.remove("hidden"); setTimeout(() => { if (notLoggedinHint && !currentUser) notLoggedinHint.classList.add("hidden"); }, 10000); } } }
+    document.getElementById("notLoggedinHint")?.addEventListener("click", () => { setView("account"); const hint = document.getElementById("notLoggedinHint"); if (hint) hint.classList.add("hidden"); });
+    function startLiveUpdates() { if (isPaused) return; if (liveUpdateInterval) clearInterval(liveUpdateInterval); liveUpdateInterval = setInterval(() => { if (currentView === "farm") updateFieldProgressBars(); else if (currentView === "barn" && barnOwned && isBarnUnlocked(playerLevel)) updateAnimalProgressBars(); else if (currentView === "craft") renderCraft(); else if (currentView === "research" && isResearchUnlocked(playerLevel)) renderResearch(); else if (currentView === "licenses" && isLicensesUnlocked(playerLevel)) renderLicenses(); updateMassPlantButtonsLive(); }, 500); }
+    async function resetGame() {
+    if (confirm("🔄 Möchtest du wirklich ein neues Spiel beginnen?\n\nDein aktueller Fortschritt geht dabei verloren!")) {
+        
+        const user = firebase.auth().currentUser;
+        
+        // 1. Lokalen Speicher sofort leeren
+        localStorage.removeItem("farmPremium");
+
+        if (user) {
+            // Startwerte für den Reset
+            const startData = {
+                gold: 500,
+                level: 1,
+                xp: 0,
+                lastSave: Date.now()
+            };
+
+            try {
+                // 2. Den Stand in der Cloud (Firebase) überschreiben
+                // Wir nutzen den Pfad 'savegame', den wir vorhin als Hauptpfad identifiziert haben
+                await firebase.database().ref('users/' + user.uid + '/savegame').set(startData);
+                
+                console.log("Cloud-Reset erfolgreich für UID: " + user.uid);
+            } catch (error) {
+                console.error("Firebase Reset Fehler:", error);
+                alert("Cloud-Fehler: " + error.message);
+                return; // Abbrechen, falls Cloud-Reset fehlschlägt
+            }
+        }
+
+        // 3. Seite neu laden (erst wenn Cloud fertig ist oder falls nicht eingeloggt)
+        location.reload();
+    }
+}
+
+    
     // ==================== FIREBASE KONFIGURATION ====================
     const firebaseConfig = {
         apiKey: "AIzaSyDGIXQQe6xG-EOFpisBdNfzguG7g_JSs9g",
@@ -1292,7 +1345,7 @@
         pig: { name: "Schwein", emoji: "🐷", product: "Trüffel", productKey: "truffle", productEmoji: "🍄", basePrice: 35, buyCost: 1200, productionTime: 180000, feedCost: 5, levelRequired: 6, upgradeCost: 1200 },
         ...EXTENDED_ANIMALS
     };
-    
+     
     // ==================== REZEPTE ====================
     const EXTENDED_RECIPES = {
         butter: { name: "Butter", emoji: "🧈", input: { milk: 2 }, output: "butter", outputName: "Butter", outputEmoji: "🧈", basePrice: 35, craftTime: 25000, inputNames: { milk: "Milch" } },
@@ -1501,7 +1554,7 @@
             </div>
         `;
     }
-    
+      
     // ==================== NPC-BESUCHER SYSTEM ====================
     const NPC_TYPES = {
         travelingMerchant: { name: "Wandernder Händler", emoji: "🧙", greeting: "Grüß Gott! Seltene Waren zu fairen Preisen!", offersSpecialItems: true, priceMultiplier: 0.8, sellMultiplier: 1.3 },
@@ -1645,6 +1698,7 @@
             case "permanent": researchBonuses.sellPriceBonus *= 1.05; showEvent("📜 Handelslizenz erworben!", "Permanente +5% auf alle Verkaufspreise!"); saveGameToLocal(); break;
         }
     }
+  
     
     function acceptNPCHelp() {
         if (!activeNPC || !activeNPC.helpsHarvest) return;
@@ -1755,6 +1809,8 @@
     async function adminDeleteChatMessage(messageId) { if (!isAdmin) return; if (!firebaseInitialized || !database) return; if (confirm("Diese Nachricht löschen?")) { await database.ref('chat/' + messageId).remove(); showToast("✅ Nachricht gelöscht", false); } }
     async function adminClearChat() { if (!isAdmin) return; if (confirm("⚠️ GESAMTEN CHAT löschen?")) { await database.ref('chat').remove(); chatMessages = []; renderChatMessages(); showToast("🗑️ Chat komplett gelöscht", false); } }
     
+  
+
     // ==================== ADMIN-SPIELERLISTE ====================
     async function adminLoadAllPlayers() {
         if (!isAdmin || !firebaseInitialized || !database) return;
@@ -1800,6 +1856,7 @@
     let currentView = "farm";
     let autoSaveInterval = null, lastCloudSave = 0, lastCloudLoad = 0;
     
+  
     // ==================== HILFSFUNKTIONEN ====================
     function initPricesAndInventory() {
         for (let cropId of Object.keys(CROPS)) inventory[cropId] = 0;
@@ -1990,7 +2047,7 @@
             updateQuestProgress("harvest", amount);
         }
     }
-    
+  
     function massHarvest() {
         if (isPaused) { showToast("⏸️ Spiel ist pausiert! Drücke Start, um fortzufahren.", true); return; }
         let harvested = 0;
@@ -2054,6 +2111,7 @@
     
     function updateFieldProgressBars() { const elements = document.querySelectorAll("#farmView .field"); for (let i = 0; i < elements.length && i < fields.length; i++) { const f = fields[i]; const el = elements[i]; if (f.owned && f.cropId && !f.isReady) { const progress = getFieldProgress(f); const statusDiv = el.querySelector(".status"); if (statusDiv) statusDiv.innerText = `${progress}%`; const fillBar = el.querySelector(".progress-bar-fill"); if (fillBar) fillBar.style.width = `${progress}%`; } } }
     
+   
     // ==================== TIERE ====================
     function getAnimalProgress(animal) { if (!animal || animal.isReady) return animal?.isReady ? 100 : 0; if (!animal.productionStartTime) return 0; let prodTime = ANIMALS[animal.type].productionTime; if (barnUpgrades.speedBoost) prodTime = Math.floor(prodTime * 0.7); prodTime = Math.floor(prodTime * getAnimalProdModifier()); const elapsed = Date.now() - animal.productionStartTime; return Math.min(99, Math.floor((elapsed / prodTime) * 100)); }
     
@@ -2131,6 +2189,7 @@
     
     function updateAnimalProgressBars() { const elements = document.querySelectorAll("#barnView .animal-slot"); for (let i = 0; i < elements.length && i < animals.length; i++) { const a = animals[i]; const el = elements[i]; if (a && !a.isReady) { const progress = getAnimalProgress(a); const statusDiv = el.querySelector(".status"); if (statusDiv && !statusDiv.innerText.includes("Auto-Sammler")) statusDiv.innerText = `${progress}%`; const fillBar = el.querySelector(".progress-bar-fill"); if (fillBar) fillBar.style.width = `${progress}%`; } } }
     
+  
     // ==================== VERARBEITUNG ====================
     function getMaxCraftable(recipeId) { const recipe = RECIPES[recipeId]; let max = Infinity; for (let [res, qty] of Object.entries(recipe.input)) max = Math.min(max, Math.floor((inventory[res] || 0) / qty)); return max; }
     
@@ -2182,7 +2241,7 @@
         document.querySelectorAll(".craft-qty-btn").forEach(btn => btn.addEventListener("click", () => { const recipeId = btn.dataset.recipe; let qty = btn.dataset.qty === "max" ? getMaxCraftable(recipeId) : parseInt(btn.dataset.qty); if (qty > 0) setQuantity(recipeId, qty); }));
         document.querySelectorAll(".craft-btn").forEach(btn => btn.addEventListener("click", () => startCraft(btn.dataset.recipe, parseInt(btn.dataset.qty) || 1)));
     }
-    
+     
     // ==================== MARKT & PREISE ====================
     function renderPricePanel() {
         if (!pricePanel) return;
@@ -2249,6 +2308,8 @@
     
     function renderResearch() { const container = document.getElementById("researchView"); if (!container) return; container.innerHTML = ""; if (!isResearchUnlocked(playerLevel)) { container.innerHTML = `<div class="research-slot" style="grid-column:1/-1; background:#4a3a2a;"><div class="research-icon">🔒</div><div class="research-name">Noch nicht freigeschaltet</div><div class="status">Erreiche Level 9, um die Forschung freizuschalten!</div></div>`; return; } for (let [id, r] of Object.entries(RESEARCH)) { const isCompleted = completedResearch.includes(id); const p = researchProgress[id]; const isActive = p?.activeResearch !== null && p?.activeResearch === true; if (!p) { researchProgress[id] = { goldPaid: 0, resourcesPaid: {}, activeResearch: null, timerId: null }; for (let res of Object.keys(r.resources)) researchProgress[id].resourcesPaid[res] = 0; } const goldNeeded = r.goldCost; const goldPaid = p?.goldPaid || 0; const goldRemaining = goldNeeded - goldPaid; let allResourcesPaid = true; let resourcesHtml = '<div class="research-cost" style="font-size:0.7rem;">'; for (let [res, needed] of Object.entries(r.resources)) { const paid = p?.resourcesPaid[res] || 0; const remaining = needed - paid; const available = inventory[res] || 0; const names = { carrot:"🥕 Karotte", wheat:"🌾 Weizen", tomato:"🍅 Tomate", strawberry:"🍓 Erdbeere", pumpkin:"🎃 Kürbis", pineapple:"🍍 Ananas", coffee:"☕ Kaffee", egg:"🥚 Ei", milk:"🥛 Milch", truffle:"🍄 Trüffel", flour:"🌾 Mehl", cheese:"🧀 Käse", bread:"🍞 Brot" }; resourcesHtml += `<div style="display:flex; justify-content:space-between; align-items:center; margin:3px 0;"><span>${names[res] || res}: ${paid}/${needed}</span>${remaining > 0 && !isCompleted && !isActive ? `<button class="research-pay-resource-btn" data-research="${id}" data-resource="${res}" style="background:#4a6e8b; border:none; border-radius:20px; padding:2px 8px; font-size:0.6rem;">+1 einzahlen</button>` : ''}</div>`; if (remaining > 0) allResourcesPaid = false; } resourcesHtml += '</div>'; const totalNeeded = goldNeeded + Object.values(r.resources).reduce((a,b)=>a+b,0); const totalPaid = goldPaid + Object.values(p?.resourcesPaid || {}).reduce((a,b)=>a+b,0); const percent = totalNeeded > 0 ? (totalPaid / totalNeeded) * 100 : 0; let statusHtml = "", actionHtml = ""; if (isCompleted) { statusHtml = `<div class="status" style="background:#2a6a2a;">✅ Freigeschaltet (Aktiv)</div>`; } else if (isActive) { const remainingTime = Math.max(0, Math.ceil((p.activeResearch - Date.now()) / 1000)); const minutes = Math.floor(remainingTime / 60); const seconds = remainingTime % 60; statusHtml = `<div class="status" style="background:#f5a623;">⏳ Forschung läuft... ${minutes}:${seconds.toString().padStart(2,'0')} min</div>`; } else { const canStart = goldPaid >= goldNeeded && allResourcesPaid; statusHtml = `<div class="status">📦 Fortschritt: ${Math.floor(percent)}%</div>`; actionHtml = `<div style="margin-top:8px;">${goldRemaining > 0 ? `<button class="research-pay-gold-btn" data-research="${id}" style="background:#f5a623; border:none; border-radius:20px; padding:4px 8px; margin:2px; font-size:0.7rem;">💰 Gold einzahlen (${Math.min(goldRemaining, 100)}💰)</button>` : ''}${canStart ? `<button class="research-start-btn" data-research="${id}" style="background:#2c6e6e; border:none; border-radius:20px; padding:6px 12px; margin:5px; font-weight:bold;">🔬 Forschung starten</button>` : ''}</div>`; } const div = document.createElement("div"); div.className = "research-slot" + (isCompleted ? " completed" : "") + (isActive ? " researching" : ""); div.innerHTML = `<div class="research-icon" style="font-size:1.5rem;">${r.emoji}</div><div class="research-name" style="font-weight:bold;">${r.name}</div><div class="status" style="font-size:0.65rem;">${r.description}</div><div class="status" style="background:#3a5a3a; font-size:0.65rem;">📂 ${r.category}</div><div class="research-cost" style="font-size:0.7rem;">💰 Gold: ${goldPaid}/${goldNeeded}</div>${resourcesHtml}<div class="progress-bar-container" style="margin:8px 0;"><div class="progress-bar-fill" style="width: ${percent}%;"></div></div>${statusHtml}${actionHtml}`; container.appendChild(div); } document.querySelectorAll(".research-pay-gold-btn").forEach(btn => { btn.removeEventListener("click", payGoldForResearch); btn.addEventListener("click", payGoldForResearch); }); document.querySelectorAll(".research-pay-resource-btn").forEach(btn => { btn.removeEventListener("click", payResourceForResearch); btn.addEventListener("click", payResourceForResearch); }); document.querySelectorAll(".research-start-btn").forEach(btn => { btn.removeEventListener("click", startResearch); btn.addEventListener("click", startResearch); }); }
     
+  
+ 
     // ==================== LIZENZEN ====================
     function buyLicense(licenseId) { const license = LICENSES[licenseId]; if (!license) return; if (playerLevel < license.levelRequired) { showToast(`🔒 Lizenz wird auf Level ${license.levelRequired} freigeschaltet!`, true); return; } if (ownedLicenses.includes(licenseId)) { showToast("✅ Diese Lizenz besitzt du bereits!", true); return; } if (playerGold >= license.cost) { playerGold -= license.cost; ownedLicenses.push(licenseId); updateMoneyUI(); renderLicenses(); updateMassPlantButtons(); renderFields(); renderPricePanel(); renderMarket(); saveGameToLocal(); showToast(`📜 ${license.name} gekauft! Neue Pflanzen verfügbar!`); checkAchievements(); } else showToast(`❌ Nicht genug Gold! Benötigt: ${license.cost} Gold`, true); }
     
@@ -2320,9 +2381,17 @@
     
     function importGame(file) { const reader = new FileReader(); reader.onload = (e) => { try { const data = JSON.parse(e.target.result); playerGold = data.gold; inventory = data.inventory; currentDay = data.day; maxStorage = data.maxStorage; playerLevel = data.playerLevel || 1; playerXP = data.playerXP || 0; completedResearch = data.completedResearch || []; ownedLicenses = data.ownedLicenses || []; if (data.researchProgress) researchProgress = data.researchProgress; else initResearchProgress(); if (data.currentWeather) currentWeather = data.currentWeather; applyResearchBonuses(); for (let i = 0; i < fields.length && i < data.fields.length; i++) { fields[i].owned = data.fields[i].owned; fields[i].cropId = data.fields[i].cropId; fields[i].plantedAt = data.fields[i].plantedAt; fields[i].isReady = data.fields[i].isReady; } barnOwned = data.barnOwned; barnUpgrades = data.barnUpgrades || { autoCollector: false, speedBoost: false }; animals = data.animals || []; for (let a of animals) { if (!a.isReady && a.productionStartTime) startAnimalProduction(a, animals.indexOf(a)); } achievements = data.achievements || achievements; stats = data.stats || stats; updateMoneyUI(); updateLevelUI(); updateStorageUI(); renderFields(); renderPricePanel(); renderMarket(); if (isBarnUnlocked(playerLevel) && barnOwned) renderBarn(); updateViewButtons(); updateMassPlantButtons(); const weather = WEATHER_TYPES[currentWeather] || WEATHER_TYPES.sunny; const weatherEl = document.getElementById("weatherInfo"); weatherEl.innerHTML = weather.emoji + " " + weather.name; weatherEl.className = "weather-info " + weather.color; showToast("📂 Spielstand importiert!"); saveGameToLocal(); updateLeaderboard(); } catch(err) { showToast("Fehler beim Import!", true); } }; reader.readAsText(file); }
     
-    // ==================== CLOUD-SPEICHER (GERÄTEÜBERGREIFEND) ====================
-    function startAutoSave() { if (autoSaveInterval) clearInterval(autoSaveInterval); autoSaveInterval = setInterval(async () => { if (currentUser && !isPaused) await autoSaveToCloud(); }, 5 * 60 * 1000); }
+// ==================== CLOUD-SPEICHER (GERÄTEÜBERGREIFEND) ====================
+
+    // Startet das automatische Speichern alle 5 Minuten
+    function startAutoSave() { 
+        if (autoSaveInterval) clearInterval(autoSaveInterval); 
+        autoSaveInterval = setInterval(async () => { 
+            if (currentUser && !isPaused) await autoSaveToCloud(); 
+        }, 5 * 60 * 1000); 
+    }
     
+    // Kern-Funktion: Schiebt den aktuellen Stand zu Firebase
     async function autoSaveToCloud() {
         if (!currentUser) return;
         try {
@@ -2349,55 +2418,52 @@
             await database.ref('users/' + currentUser.uid + '/savegame').set(saveData);
             await database.ref('users/' + currentUser.uid + '/gameVersion').set(CURRENT_GAME_VERSION);
             lastCloudSave = Date.now();
-            console.log("Cloud-Save durchgeführt");
-        } catch(err) { console.warn("Auto-Save fehlgeschlagen:", err); }
-    }
-    
-    async function loadGameFromCloud() {
-    if (!currentUser) return;
-    try {
-        const snapshot = await database.ref("users/" + currentUser.uid + "/savegame").once("value");
-        const data = snapshot.val();
-
-        if (data) {
-            // Daten vorhanden -> Laden
-            gold = data.gold !== undefined ? data.gold : 500;
-            xp = data.xp !== undefined ? data.xp : 0;
-            level = data.level !== undefined ? data.level : 1;
-            // Falls du noch mehr Werte hast (z.B. ClickPower), hier ergänzen
-            console.log("✅ Cloud-Daten geladen");
-        } else {
-            // KEINE Daten vorhanden (nach Reset) -> Startwerte setzen
-            console.log("ℹ️ Neuer Spielstand wird initialisiert...");
-            gold = 500;
-            xp = 0;
-            level = 1;
-            // Sofort einmal speichern, damit die Cloud nicht mehr leer ist
-            await saveGameToCloud();
+            console.log("✅ Cloud-Save erfolgreich");
+        } catch(err) { 
+            console.warn("Auto-Save fehlgeschlagen:", err); 
         }
-        updateUI(); 
-    } catch (error) {
-        console.error("Fehler beim Laden:", error);
-        // Hier kommt die rote Meldung her, die du gesehen hast
-        showToast("Fehler beim Laden der Cloud-Daten", true);
     }
-}
 
-    
+    // Button-Funktion: Manuelles Speichern
     async function saveGameToCloud() {
         if (!currentUser) { showToast("❌ Bitte zuerst einloggen!", true); return; }
         await autoSaveToCloud();
-        showToast("💾 Spielstand in der Cloud gespeichert! Du kannst jetzt auf jedem Gerät weiterspielen!", false);
+        showToast("💾 Spielstand in der Cloud gespeichert!", false);
     }
     
+    // Kern-Funktion: Holt Daten von Firebase
+    async function loadGameFromCloud() {
+        if (!currentUser) return;
+        try {
+            const snapshot = await database.ref("users/" + currentUser.uid + "/savegame").once("value");
+            const data = snapshot.val();
+
+            if (data) {
+                // Hier rufen wir die apply-Funktion auf, die alles verarbeitet
+                await applyCloudData(data);
+                console.log("✅ Cloud-Daten erfolgreich geladen und angewendet");
+            } else {
+                console.log("ℹ️ Kein Cloud-Spielstand gefunden. Starte neu.");
+                playerGold = 500;
+                playerXP = 0;
+                playerLevel = 1;
+                await autoSaveToCloud(); // Ersten Stand in Cloud anlegen
+            }
+        } catch (error) {
+            console.error("Fehler beim Laden:", error);
+            showToast("❌ Fehler beim Laden der Cloud-Daten", true);
+        }
+    }
+    
+    // Verarbeitet geladene Daten (Cloud ODER Lokal) und startet Timer
     async function applyCloudData(data) {
         playerGold = data.gold;
-        inventory = data.inventory;
-        currentDay = data.day;
-        playerLevel = data.playerLevel;
-        playerXP = data.playerXP;
-        maxStorage = data.maxStorage;
-        barnOwned = data.barnOwned;
+        inventory = data.inventory || {};
+        currentDay = data.day || 1;
+        playerLevel = data.playerLevel || 1;
+        playerXP = data.playerXP || 0;
+        maxStorage = data.maxStorage || 50;
+        barnOwned = data.barnOwned || false;
         barnUpgrades = data.barnUpgrades || { autoCollector: false, speedBoost: false };
         animals = data.animals || [];
         achievements = data.achievements || achievements;
@@ -2407,6 +2473,7 @@
         ownedLicenses = data.ownedLicenses || [];
         if (data.currentWeather) currentWeather = data.currentWeather;
         
+        // Felder wiederherstellen & Timer starten
         for (let i = 0; i < fields.length && i < data.fields.length; i++) {
             fields[i].owned = data.fields[i].owned;
             fields[i].cropId = data.fields[i].cropId;
@@ -2418,13 +2485,16 @@
             }
         }
         
-        for (let a of animals) {
+        // Tiere wiederherstellen & Produktion starten
+        for (let i = 0; i < animals.length; i++) {
+            const a = animals[i];
             if (!a.isReady && a.productionStartTime) {
                 if (a.timerId) clearTimeout(a.timerId);
-                startAnimalProduction(a, animals.indexOf(a));
+                startAnimalProduction(a, i);
             }
         }
         
+        // Komplette UI aktualisieren
         updateMoneyUI();
         updateLevelUI();
         updateStorageUI();
@@ -2435,19 +2505,44 @@
         updateViewButtons();
         updateMassPlantButtons();
         
+        // Wetter-Anzeige korrigieren
         const weather = WEATHER_TYPES[currentWeather] || WEATHER_TYPES.sunny;
         const weatherEl = document.getElementById("weatherInfo");
-        weatherEl.innerHTML = weather.emoji + " " + weather.name;
-        weatherEl.className = "weather-info " + weather.color;
+        if (weatherEl) {
+            weatherEl.innerHTML = weather.emoji + " " + weather.name;
+            weatherEl.className = "weather-info " + weather.color;
+        }
         
-        saveGameToLocal();
+        saveGameToLocal(); // Lokal spiegeln
     }
     
-    function saveGameToLocalWithTimestamp() { const saveData = { gold: playerGold, inventory, day: currentDay, maxStorage, fields: fields.map(f => ({ owned: f.owned, cropId: f.cropId, plantedAt: f.plantedAt, isReady: f.isReady })), barnOwned, barnUpgrades, animals: animals.map(a => ({ type: a.type, name: a.name, isReady: a.isReady, productionStartTime: a.productionStartTime })), achievements, stats, playerLevel, playerXP, completedResearch, researchProgress, ownedLicenses, currentWeather, timestamp: Date.now() }; localStorage.setItem("farmPremium", JSON.stringify(saveData)); if (currentUser) localStorage.setItem(`lastLocalSave_${currentUser.uid}`, Date.now().toString()); }
-    function saveGameToLocal() { saveGameToLocalWithTimestamp(); }
+    // Lokale Backups (Browser-Speicher)
+    function saveGameToLocal() {
+        const saveData = { 
+            gold: playerGold, inventory, day: currentDay, maxStorage, 
+            fields: fields.map(f => ({ owned: f.owned, cropId: f.cropId, plantedAt: f.plantedAt, isReady: f.isReady })), 
+            barnOwned, barnUpgrades, 
+            animals: animals.map(a => ({ type: a.type, name: a.name, isReady: a.isReady, productionStartTime: a.productionStartTime })), 
+            achievements, stats, playerLevel, playerXP, completedResearch, researchProgress, ownedLicenses, currentWeather, 
+            timestamp: Date.now() 
+        };
+        localStorage.setItem("farmPremium", JSON.stringify(saveData));
+        if (currentUser) localStorage.setItem(`lastLocalSave_${currentUser.uid}`, Date.now().toString());
+    }
     
-    function loadGameFromLocal() { const raw = localStorage.getItem("farmPremium"); if (!raw) return false; try { const data = JSON.parse(raw); playerGold = data.gold; inventory = data.inventory; currentDay = data.day; playerLevel = data.playerLevel || 1; playerXP = data.playerXP || 0; maxStorage = data.maxStorage; barnOwned = data.barnOwned; barnUpgrades = data.barnUpgrades || { autoCollector: false, speedBoost: false }; animals = data.animals || []; achievements = data.achievements || achievements; stats = data.stats || stats; completedResearch = data.completedResearch || []; ownedLicenses = data.ownedLicenses || []; if (data.researchProgress) researchProgress = data.researchProgress; else initResearchProgress(); if (data.currentWeather) currentWeather = data.currentWeather; applyResearchBonuses(); for (let i = 0; i < fields.length && i < data.fields.length; i++) { fields[i].owned = data.fields[i].owned; fields[i].cropId = data.fields[i].cropId; fields[i].plantedAt = data.fields[i].plantedAt; fields[i].isReady = data.fields[i].isReady; if (fields[i].cropId && !fields[i].isReady && fields[i].plantedAt) startFieldTimer(i, fields[i].cropId); } for (let a of animals) { if (!a.isReady && a.productionStartTime) startAnimalProduction(a, animals.indexOf(a)); } updateMoneyUI(); updateLevelUI(); updateStorageUI(); renderFields(); renderPricePanel(); renderMarket(); if (isBarnUnlocked(playerLevel) && barnOwned) renderBarn(); updateViewButtons(); updateMassPlantButtons(); const weather = WEATHER_TYPES[currentWeather] || WEATHER_TYPES.sunny; const weatherEl = document.getElementById("weatherInfo"); weatherEl.innerHTML = weather.emoji + " " + weather.name; weatherEl.className = "weather-info " + weather.color; if (currentUser) localStorage.setItem(`lastLocalSave_${currentUser.uid}`, data.timestamp || Date.now()); return true; } catch(e) { return false; } }
-    
+    function loadGameFromLocal() {
+        const raw = localStorage.getItem("farmPremium");
+        if (!raw) return false;
+        try {
+            const data = JSON.parse(raw);
+            applyCloudData(data); // Nutzt die gleiche Logik wie Cloud
+            applyResearchBonuses();
+            return true;
+        } catch(e) { 
+            return false; 
+        }
+    }
+
     // ==================== ERFOLGE ====================
     function checkAchievements() { if (barnOwned && !achievements.firstBarn) { achievements.firstBarn = true; showToast("🏆 Erfolg: Stallbesitzer!"); addXP(10); } if (animals.length >= 1 && !achievements.firstAnimal) { achievements.firstAnimal = true; showToast("🏆 Erfolg: Erster tierischer Freund!"); addXP(10); } if (animals.length >= 5 && !achievements.fiveAnimals) { achievements.fiveAnimals = true; showToast("🏆 Erfolg: Tierliebhaber (5 Tiere)!"); addXP(20); } if (fields.filter(f => f.owned).length >= 12 && !achievements.maxFields) { achievements.maxFields = true; showToast("🏆 Erfolg: Voll ausgebaut (12 Felder)!"); addXP(30); } if (maxStorage >= 200 && !achievements.maxStorage) { achievements.maxStorage = true; showToast("🏆 Erfolg: Großes Lagerhaus (200+)!"); addXP(20); } if (stats.totalOrders >= 5 && !achievements.completeOrder) { achievements.completeOrder = true; showToast("🏆 Erfolg: Auftragsprofi (5 Aufträge)!"); addXP(15); } if (playerGold >= 5000 && !achievements.richPlayer) { achievements.richPlayer = true; showToast("🏆 Erfolg: Reich (5000+ Gold)!"); addXP(25); } if (stats.totalCrafts >= 10 && !achievements.masterCrafter) { achievements.masterCrafter = true; showToast("🏆 Erfolg: Meisterhandwerker (10 Verarbeitungen)!"); addXP(20); } if (playerLevel >= 15 && !achievements.level15) { achievements.level15 = true; showToast("🏆 Erfolg: Meisterfarmer (Level 15)!"); addXP(50); } if (playerLevel >= 30 && !achievements.level30) { achievements.level30 = true; showToast("🏆 Erfolg: Legende (Level 30)!"); addXP(100); } if (playerLevel >= 50 && !achievements.level50) { achievements.level50 = true; showToast("🏆 Erfolg: Mythos (Level 50)!"); addXP(200); } if (completedResearch.length >= 1 && !achievements.firstResearch) { achievements.firstResearch = true; showToast("🏆 Erfolg: Erste Forschung!"); addXP(20); } if (completedResearch.length >= 4 && !achievements.masterResearcher) { achievements.masterResearcher = true; showToast("🏆 Erfolg: Meisterforscher (4 Forschungen)!"); addXP(30); } if (ownedLicenses.length >= 1 && !achievements.firstLicense) { achievements.firstLicense = true; showToast("🏆 Erfolg: Erste Lizenz!"); addXP(25); } if (ownedLicenses.length >= 8 && !achievements.masterCollector) { achievements.masterCollector = true; showToast("🏆 Erfolg: Meistersammler (Alle Lizenzen)!"); addXP(60); } renderAchievements(); }
     
@@ -2504,79 +2599,7 @@
     function completeOrder() { if (isPaused) { showToast("⏸️ Spiel ist pausiert!", true); return; } if (!activeOrder || !activeOrder.accepted) return; if (inventory[activeOrder.productId] >= activeOrder.amount) { removeFromInventory(activeOrder.productId, activeOrder.amount); playerGold += activeOrder.totalReward; stats.totalOrders++; stats.totalGoldEarned += activeOrder.totalReward; updateMoneyUI(); addXP(20); showToast(`💰 Auftrag erfüllt! +${activeOrder.totalReward} Gold +20 XP`); activeOrder = null; if (orderInterval) clearInterval(orderInterval); renderOrders(); startOrderPause(5 * 60); saveGameToLocal(); checkAchievements(); updateLeaderboard(); } else showToast(`❌ Nicht genug ${activeOrder.displayName}! Benötigt: ${activeOrder.amount}`, true); }
     function renderOrders() { if (!ordersContainer) return; if (!activeOrder) { const pauseRemaining = Math.max(0, Math.ceil((orderPauseUntil - Date.now()) / 1000)); if (pauseRemaining > 0) ordersContainer.innerHTML = `<div style="text-align:center; padding:15px;">⏳ Neuer Händler in ${Math.floor(pauseRemaining / 60)}:${(pauseRemaining % 60).toString().padStart(2, '0')} Minuten...</div>`; else ordersContainer.innerHTML = `<div style="text-align:center; padding:15px;">📭 Keine aktiven Aufträge. Händler kommt bald...</div>`; return; } const status = activeOrder.accepted ? "🏃‍♂️ ANGENOMMEN - Lieferzeit" : "🆕 NEU - Entscheidungszeit"; const timeDisplay = activeOrder.accepted ? `${Math.floor(activeOrder.deliveryTimeLeft / 60)}:${(activeOrder.deliveryTimeLeft % 60).toString().padStart(2, '0')} h` : `${activeOrder.timeLeft}s`; ordersContainer.innerHTML = `<div class="order-card"><div>📦 ${status}</div><div style="font-size:1.3rem;">${activeOrder.emoji} ${activeOrder.amount}x ${activeOrder.displayName}</div><div>💰 Basis: ${globalMarketPrices[activeOrder.productId] * activeOrder.amount} | 🎁 Bonus: +${activeOrder.rewardBonus}</div><div>💎 Gesamt: <strong style="color:#b44;">${activeOrder.totalReward} Gold</strong></div><div class="order-timer">⏱️ ${timeDisplay}</div>${!activeOrder.accepted ? `<button class="accept-order-btn" id="acceptOrderBtn">👍 Annehmen</button>` : `<div><button class="accept-order-btn" id="completeOrderBtn" style="background:#3a8c3a;">📦 Liefern</button><button class="cancel-order-btn" id="cancelOrderBtn">❌ Abbrechen</button></div>`}</div>`; document.getElementById("acceptOrderBtn")?.addEventListener("click", acceptOrder); document.getElementById("completeOrderBtn")?.addEventListener("click", completeOrder); document.getElementById("cancelOrderBtn")?.addEventListener("click", cancelOrder); }
     
-    // ==================== ADMIN-FUNKTIONEN ====================
-    function checkAdminStatus() {
-    // Wir prüfen beides: Deine ID ODER ob deine Email in der Liste steht
-    const isExplicitAdmin = (currentUser && currentUser.uid === 'Hb9Btkhn3UOBJLjapmwXfsDi05z2');
-    const isEmailAdmin = (currentUser && typeof ADMIN_EMAILS !== 'undefined' && ADMIN_EMAILS.includes(currentUser.email));
-
-    if (isExplicitAdmin || isEmailAdmin) {
-        isAdmin = true;
-        // Dein HTML-Bereich heißt laut dem Fund "adminSection"
-        const section = document.getElementById("adminSection");
-        if (section) section.classList.remove("hidden");
-        
-        console.log("👑 Admin-Status verifiziert!");
-
-        // Diese Funktionen laden zusätzliche Admin-Daten (Bestenliste/Spielerliste)
-        if (typeof loadBannedPlayers === 'function') loadBannedPlayers();
-        if (typeof adminLoadAllPlayers === 'function') adminLoadAllPlayers();
-    } else {
-        isAdmin = false;
-        const section = document.getElementById("adminSection");
-        if (section) section.classList.add("hidden");
-    }
-}
-
-    async function loadBannedPlayers() { if (!firebaseInitialized || !database) return; const snapshot = await database.ref('bannedPlayers').once('value'); const data = snapshot.val(); bannedPlayers = []; if (data) for (let id in data) bannedPlayers.push({ name: id, ...data[id] }); updateBannedListDisplay(); }
-    async function banPlayer(playerName) { if (!isAdmin) { showToast("❌ Keine Admin-Rechte!", true); return; } if (!playerName) { showToast("❌ Bitte Spielername eingeben!", true); return; } try { await database.ref('bannedPlayers/' + playerName).set({ bannedAt: Date.now(), bannedBy: currentUser.email }); showToast(`🚫 Spieler "${playerName}" wurde gebannt!`, false); await loadBannedPlayers(); await updateLeaderboard(); } catch(err) { showToast("❌ Fehler beim Bannen: " + err.message, true); } }
-    async function unbanPlayer(playerName) { if (!isAdmin) { showToast("❌ Keine Admin-Rechte!", true); return; } if (!playerName) { showToast("❌ Bitte Spielername eingeben!", true); return; } try { await database.ref('bannedPlayers/' + playerName).remove(); showToast(`✅ Bann für "${playerName}" aufgehoben!`, false); await loadBannedPlayers(); await updateLeaderboard(); } catch(err) { showToast("❌ Fehler: " + err.message, true); } }
-    async function removePlayerFromLeaderboard(playerName) { if (!isAdmin) { showToast("❌ Keine Admin-Rechte!", true); return; } if (!playerName) { showToast("❌ Bitte Spielername eingeben!", true); return; } try { await database.ref('leaderboard/' + playerName).remove(); showToast(`🗑️ Spieler "${playerName}" aus Bestenliste entfernt!`, false); await updateLeaderboard(); } catch(err) { showToast("❌ Fehler: " + err.message, true); } }
-    async function clearAllLeaderboard() { if (!isAdmin) { showToast("❌ Keine Admin-Rechte!", true); return; } if (confirm("⚠️ ACHTUNG! Das löscht ALLE Einträge aus der Bestenliste!")) { try { await database.ref('leaderboard').remove(); showToast("🗑️ Bestenliste komplett geleert!", false); await updateLeaderboard(); } catch(err) { showToast("❌ Fehler: " + err.message, true); } } }
-    async function adminCleanupOldEntries() { if (!isAdmin) { showToast("❌ Keine Admin-Rechte!", true); return; } const oneWeekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000); const allEntries = await database.ref('leaderboard').once('value'); const updates = {}; let deletedCount = 0; allEntries.forEach(child => { const entry = child.val(); if (entry.timestamp && entry.timestamp < oneWeekAgo) { updates[child.key] = null; deletedCount++; } }); if (deletedCount > 0) { await database.ref('leaderboard').update(updates); showToast(`🧹 ${deletedCount} alte Einträge gelöscht!`, false); } else showToast("Keine alten Einträge gefunden.", false); await updateLeaderboard(); }
-    async function globalReset() {
-    if (confirm("⚠️ ACHTUNG: GLOBALER RESET!\n\nDies setzt ALLES zurück (Gold, XP, Level und lokale Einstellungen). Fortfahren?")) {
-        
-        const user = firebase.auth().currentUser;
-
-        // 1. Lokalen Browser-Speicher komplett leeren
-        localStorage.clear(); 
-        console.log("Lokaler Speicher (LocalStorage) wurde komplett geleert.");
-
-        if (user) {
-            try {
-                // 2. Startwerte für die Cloud definieren
-                const startData = {
-                    gold: 500,
-                    level: 1,
-                    xp: 0,
-                    lastSave: Date.now(),
-                    firstStart: true
-                };
-
-                // 3. In Firebase den savegame-Zweig überschreiben
-                // Da du Admin bist (Hb9Btkhn3UOBJLjapmwXfsDi05z2), lässt Firebase dich das tun!
-                await firebase.database().ref('users/' + user.uid + '/savegame').set(startData);
-                
-                console.log("Cloud-Daten wurden global zurückgesetzt.");
-            } catch (error) {
-                console.error("Globaler Reset Fehler:", error);
-                alert("Fehler beim Cloud-Reset: " + error.message);
-                return;
-            }
-        }
-
-        // 4. Alles neu laden
-        showToast("🚀 Globaler Reset abgeschlossen!", false);
-        setTimeout(() => { location.reload(); }, 1000);
-    }
-}
-
-    function updateBannedListDisplay() { const container = document.getElementById("bannedListDisplay"); if (!container) return; if (bannedPlayers.length === 0) { container.innerHTML = "Keine gebannten Spieler."; return; } container.innerHTML = "🚫 Gebannte Spieler: " + bannedPlayers.map(p => `<span style="color:#c44; margin:0 5px;">${p.name}</span>`).join(", "); }
-    function extendAdminSection() { const adminSection = document.getElementById("adminSection"); if (!adminSection || !isAdmin) return; const existingBtn = document.getElementById("adminRefreshPlayersBtn"); if (!existingBtn) { const playerListDiv = document.createElement("div"); playerListDiv.id = "adminPlayerListContainerExt"; playerListDiv.style.marginTop = "15px"; playerListDiv.innerHTML = `<div class="admin-title">👥 ALLE SPIELER (unabhängig von Level)</div><div id="adminPlayerList" style="max-height: 300px; overflow-y: auto; background: #3a3022; border-radius: 20px; padding: 10px;"></div><button id="adminRefreshPlayersBtn" class="admin-btn" style="margin-top: 10px;">🔄 Spielerliste aktualisieren</button>`; adminSection.appendChild(playerListDiv); document.getElementById("adminRefreshPlayersBtn")?.addEventListener("click", () => adminLoadAllPlayers()); } }
-    function bindAdminButtons() { document.getElementById("adminCleanupBtn")?.addEventListener("click", () => adminCleanupOldEntries()); document.getElementById("adminClearAllBtn")?.addEventListener("click", () => clearAllLeaderboard()); document.getElementById("adminGlobalResetBtn")?.addEventListener("click", () => adminGlobalReset()); document.getElementById("adminClearChatBtn")?.addEventListener("click", () => adminClearChat()); document.getElementById("adminRemovePlayerBtn")?.addEventListener("click", () => { const name = document.getElementById("adminPlayerName").value; if (name) removePlayerFromLeaderboard(name); }); document.getElementById("adminBanPlayerBtn")?.addEventListener("click", () => { const name = document.getElementById("adminPlayerName").value; if (name) banPlayer(name); }); document.getElementById("adminUnbanPlayerBtn")?.addEventListener("click", () => { const name = document.getElementById("adminPlayerName").value; if (name) unbanPlayer(name); }); }
-    
-    // ==================== REALE SPIELTAGE ====================
+     // ==================== REALE SPIELTAGE ====================
     function initRealPlayDays() { if (!currentUser) return; const storageKey = `realPlayDays_${currentUser.uid}`; const firstLoginKey = `firstLogin_${currentUser.uid}`; const savedFirstLogin = localStorage.getItem(firstLoginKey); if (savedFirstLogin) firstLoginDate = new Date(parseInt(savedFirstLogin)); else { firstLoginDate = new Date(); localStorage.setItem(firstLoginKey, firstLoginDate.getTime().toString()); } const savedDays = localStorage.getItem(storageKey); realPlayDays = savedDays ? parseInt(savedDays) : 1; checkAndUpdateRealDay(); }
     function checkAndUpdateRealDay() { if (!currentUser) return; const lastCheckKey = `lastDayCheck_${currentUser.uid}`; const lastCheck = localStorage.getItem(lastCheckKey); if (lastCheck) { const lastDate = new Date(parseInt(lastCheck)); const today = new Date(); if (lastDate.getDate() !== today.getDate() || lastDate.getMonth() !== today.getMonth() || lastDate.getFullYear() !== today.getFullYear()) { realPlayDays++; localStorage.setItem(`realPlayDays_${currentUser.uid}`, realPlayDays.toString()); showToast(`📅 Tag ${realPlayDays} deiner Farm-Reise! 🎉`, false); } } localStorage.setItem(lastCheckKey, Date.now().toString()); updateRealDayDisplay(); }
     function updateRealDayDisplay() { const daySpanEl = document.getElementById("dayCount"); if (daySpanEl && currentUser) { daySpanEl.innerHTML = realPlayDays; daySpanEl.title = `🎉 Du spielst seit ${realPlayDays} Tagen!`; } }
@@ -2695,77 +2718,142 @@
         `;
     }
     
-    // ==================== LOGIN & AUTH ====================
-    const loginScreenElem = document.getElementById("loginScreen"), gameWrapperElem = document.getElementById("gameWrapper"), loginModeElem = document.getElementById("loginMode"), registerModeElem = document.getElementById("registerMode"), loginErrorMsgElem = document.getElementById("loginErrorMsg");
-    function showLoginError(msg) { loginErrorMsgElem.innerText = msg; setTimeout(() => { loginErrorMsgElem.innerText = ""; }, 3000); }
-    function initFirebase() { try { firebase.initializeApp(firebaseConfig); database = firebase.database(); auth = firebase.auth(); firebaseInitialized = true; console.log("Firebase initialisiert!"); auth.onAuthStateChanged((user) => { currentUser = user; updateAuthUI(); updateTopLoginStatus(); checkAdminStatus(); if (user) { loginScreenElem.classList.add("hidden"); gameWrapperElem.classList.remove("hidden"); showToast(`👋 Willkommen ${user.email}!`, false); loadGameFromLocal(); loadGameFromCloud(); updateOnlineStatus(); updateLeaderboard(); loadLoginBonusData(); loadQuests(); loadResearchProgress(); checkLoginBonus(); startAutoSave(); initRealPlayDays(); startRealDayCheck(); } else { loginScreenElem.classList.remove("hidden"); gameWrapperElem.classList.add("hidden"); updateTopLoginStatus(); updateLeaderboard(); if (document.getElementById("loginEmailScreen")) document.getElementById("loginEmailScreen").value = ""; if (document.getElementById("loginPasswordScreen")) document.getElementById("loginPasswordScreen").value = ""; if (document.getElementById("registerEmailScreen")) document.getElementById("registerEmailScreen").value = ""; if (document.getElementById("registerPasswordScreen")) document.getElementById("registerPasswordScreen").value = ""; loginModeElem.style.display = "block"; registerModeElem.style.display = "none"; } }); return true; } catch(e) { console.warn("Firebase Fehler:", e); return false; } }
-    document.getElementById("doLoginBtn").onclick = async () => { const email = document.getElementById("loginEmailScreen").value, password = document.getElementById("loginPasswordScreen").value; if (!email || !password) { showLoginError("❌ Bitte E-Mail und Passwort eingeben!"); return; } try { await auth.signInWithEmailAndPassword(email, password); } catch(err) { showLoginError("❌ " + err.message); } };
-    document.getElementById("doRegisterBtn").onclick = async () => { const email = document.getElementById("registerEmailScreen").value, password = document.getElementById("registerPasswordScreen").value; if (!email || !password) { showLoginError("❌ Bitte E-Mail und Passwort eingeben!"); return; } if (password.length < 6) { showLoginError("❌ Passwort muss mindestens 6 Zeichen lang sein!"); return; } try { await auth.createUserWithEmailAndPassword(email, password); } catch(err) { showLoginError("❌ " + err.message); } };
-    document.getElementById("showRegisterBtn").onclick = () => { loginModeElem.style.display = "none"; registerModeElem.style.display = "block"; loginErrorMsgElem.innerText = ""; };
-    document.getElementById("showLoginBtn").onclick = () => { registerModeElem.style.display = "none"; loginModeElem.style.display = "block"; loginErrorMsgElem.innerText = ""; };
-    async function register() { const email = document.getElementById("loginEmail").value, password = document.getElementById("loginPassword").value; if (!email || !password) { showToast("❌ Bitte E-Mail und Passwort eingeben!", true); return; } if (password.length < 6) { showToast("❌ Passwort muss mindestens 6 Zeichen lang sein!", true); return; } try { await auth.createUserWithEmailAndPassword(email, password); showToast("✅ Account erstellt! Du bist jetzt eingeloggt.", false); } catch(err) { showToast("❌ Fehler: " + err.message, true); } }
-    async function login() { const email = document.getElementById("loginEmail").value, password = document.getElementById("loginPassword").value; if (!email || !password) { showToast("❌ Bitte E-Mail und Passwort eingeben!", true); return; } try { await auth.signInWithEmailAndPassword(email, password); showToast("✅ Eingeloggt!", false); } catch(err) { showToast("❌ Fehler: " + err.message, true); } }
-    async function logout() { try { await removeOnlineStatus(); await auth.signOut(); showToast("🔓 Ausgeloggt", false); setTimeout(() => updateLeaderboard(), 1000); } catch(err) { showToast("❌ Fehler beim Ausloggen", true); } }
-    
-    function updateAuthUI() {
-    const user = firebase.auth().currentUser;
-    const adminPanel = document.getElementById('admin-panel');
+    // ==================== ADMIN-FUNKTIONEN ====================
+    function checkAdminStatus() {
+    // Wir prüfen beides: Deine ID ODER ob deine Email in der Liste steht
+    const isExplicitAdmin = (currentUser && currentUser.uid === 'Hb9Btkhn3UOBJLjapmwXfsDi05z2');
+    const isEmailAdmin = (currentUser && typeof ADMIN_EMAILS !== 'undefined' && ADMIN_EMAILS.includes(currentUser.email));
 
-    if (user) {
-        // Zwingt den Browser, lokale alte Daten zu vergessen
-        // localStorage.clear(); 
-        console.log("Lokaler Speicher wurde bereinigt.");
+    if (isExplicitAdmin || isEmailAdmin) {
+        isAdmin = true;
+        // Dein HTML-Bereich heißt laut dem Fund "adminSection"
+        const section = document.getElementById("adminSection");
+        if (section) section.classList.remove("hidden");
+        
+        console.log("👑 Admin-Status verifiziert!");
 
-        // Dein Admin-Check
-        database.ref('leaderboard/Udo/isAdmin').once('value', (snapshot) => {
-            if (snapshot.val() === true && adminPanel) {
-                adminPanel.style.display = 'flex';
-            }
-        });
+        // Diese Funktionen laden zusätzliche Admin-Daten (Bestenliste/Spielerliste)
+        if (typeof loadBannedPlayers === 'function') loadBannedPlayers();
+        if (typeof adminLoadAllPlayers === 'function') adminLoadAllPlayers();
     } else {
-        if (adminPanel) adminPanel.style.display = 'none';
+        isAdmin = false;
+        const section = document.getElementById("adminSection");
+        if (section) section.classList.add("hidden");
     }
 }
 
-
-    function updateTopLoginStatus() { const loginStatusIcon = document.getElementById("loginStatusIcon"), loginStatusText = document.getElementById("loginStatusText"), quickLoginBtn = document.getElementById("quickLoginBtn"), notLoggedinHint = document.getElementById("notLoggedinHint"); if (currentUser) { if (loginStatusIcon) loginStatusIcon.innerHTML = "🔒"; if (loginStatusText) loginStatusText.innerHTML = currentUser.email.split('@')[0]; if (quickLoginBtn) { quickLoginBtn.innerHTML = "🚪 Logout"; quickLoginBtn.onclick = () => logout(); } if (notLoggedinHint) notLoggedinHint.classList.add("hidden"); } else { if (loginStatusIcon) loginStatusIcon.innerHTML = "🔓"; if (loginStatusText) loginStatusText.innerHTML = "Nicht eingeloggt"; if (quickLoginBtn) { quickLoginBtn.innerHTML = "🔐 Login"; quickLoginBtn.onclick = () => { setView("account"); showToast("👤 Gehe zum Account-Tab, um dich zu registrieren oder einzuloggen!", false); }; } if (notLoggedinHint) { notLoggedinHint.classList.remove("hidden"); setTimeout(() => { if (notLoggedinHint && !currentUser) notLoggedinHint.classList.add("hidden"); }, 10000); } } }
-    document.getElementById("notLoggedinHint")?.addEventListener("click", () => { setView("account"); const hint = document.getElementById("notLoggedinHint"); if (hint) hint.classList.add("hidden"); });
-    function startLiveUpdates() { if (isPaused) return; if (liveUpdateInterval) clearInterval(liveUpdateInterval); liveUpdateInterval = setInterval(() => { if (currentView === "farm") updateFieldProgressBars(); else if (currentView === "barn" && barnOwned && isBarnUnlocked(playerLevel)) updateAnimalProgressBars(); else if (currentView === "craft") renderCraft(); else if (currentView === "research" && isResearchUnlocked(playerLevel)) renderResearch(); else if (currentView === "licenses" && isLicensesUnlocked(playerLevel)) renderLicenses(); updateMassPlantButtonsLive(); }, 500); }
-    async function resetGame() {
-    if (confirm("🔄 Möchtest du wirklich ein neues Spiel beginnen?\n\nDein aktueller Fortschritt geht dabei verloren!")) {
+    async function loadBannedPlayers() { if (!firebaseInitialized || !database) return; const snapshot = await database.ref('bannedPlayers').once('value'); const data = snapshot.val(); bannedPlayers = []; if (data) for (let id in data) bannedPlayers.push({ name: id, ...data[id] }); updateBannedListDisplay(); }
+    async function banPlayer(playerName) { if (!isAdmin) { showToast("❌ Keine Admin-Rechte!", true); return; } if (!playerName) { showToast("❌ Bitte Spielername eingeben!", true); return; } try { await database.ref('bannedPlayers/' + playerName).set({ bannedAt: Date.now(), bannedBy: currentUser.email }); showToast(`🚫 Spieler "${playerName}" wurde gebannt!`, false); await loadBannedPlayers(); await updateLeaderboard(); } catch(err) { showToast("❌ Fehler beim Bannen: " + err.message, true); } }
+    async function unbanPlayer(playerName) { if (!isAdmin) { showToast("❌ Keine Admin-Rechte!", true); return; } if (!playerName) { showToast("❌ Bitte Spielername eingeben!", true); return; } try { await database.ref('bannedPlayers/' + playerName).remove(); showToast(`✅ Bann für "${playerName}" aufgehoben!`, false); await loadBannedPlayers(); await updateLeaderboard(); } catch(err) { showToast("❌ Fehler: " + err.message, true); } }
+    async function removePlayerFromLeaderboard(playerName) { if (!isAdmin) { showToast("❌ Keine Admin-Rechte!", true); return; } if (!playerName) { showToast("❌ Bitte Spielername eingeben!", true); return; } try { await database.ref('leaderboard/' + playerName).remove(); showToast(`🗑️ Spieler "${playerName}" aus Bestenliste entfernt!`, false); await updateLeaderboard(); } catch(err) { showToast("❌ Fehler: " + err.message, true); } }
+    async function clearAllLeaderboard() { if (!isAdmin) { showToast("❌ Keine Admin-Rechte!", true); return; } if (confirm("⚠️ ACHTUNG! Das löscht ALLE Einträge aus der Bestenliste!")) { try { await database.ref('leaderboard').remove(); showToast("🗑️ Bestenliste komplett geleert!", false); await updateLeaderboard(); } catch(err) { showToast("❌ Fehler: " + err.message, true); } } }
+    async function adminCleanupOldEntries() { if (!isAdmin) { showToast("❌ Keine Admin-Rechte!", true); return; } const oneWeekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000); const allEntries = await database.ref('leaderboard').once('value'); const updates = {}; let deletedCount = 0; allEntries.forEach(child => { const entry = child.val(); if (entry.timestamp && entry.timestamp < oneWeekAgo) { updates[child.key] = null; deletedCount++; } }); if (deletedCount > 0) { await database.ref('leaderboard').update(updates); showToast(`🧹 ${deletedCount} alte Einträge gelöscht!`, false); } else showToast("Keine alten Einträge gefunden.", false); await updateLeaderboard(); }
+    async function globalReset() {
+    if (confirm("⚠️ ACHTUNG: GLOBALER RESET!\n\nDies setzt ALLES zurück (Gold, XP, Level und lokale Einstellungen). Fortfahren?")) {
         
         const user = firebase.auth().currentUser;
-        
-        // 1. Lokalen Speicher sofort leeren
-        localStorage.removeItem("farmPremium");
+
+        // 1. Lokalen Browser-Speicher komplett leeren
+        localStorage.clear(); 
+        console.log("Lokaler Speicher (LocalStorage) wurde komplett geleert.");
 
         if (user) {
-            // Startwerte für den Reset
-            const startData = {
-                gold: 500,
-                level: 1,
-                xp: 0,
-                lastSave: Date.now()
-            };
-
             try {
-                // 2. Den Stand in der Cloud (Firebase) überschreiben
-                // Wir nutzen den Pfad 'savegame', den wir vorhin als Hauptpfad identifiziert haben
+                // 2. Startwerte für die Cloud definieren
+                const startData = {
+                    gold: 500,
+                    level: 1,
+                    xp: 0,
+                    lastSave: Date.now(),
+                    firstStart: true
+                };
+
+                // 3. In Firebase den savegame-Zweig überschreiben
+                // Da du Admin bist (Hb9Btkhn3UOBJLjapmwXfsDi05z2), lässt Firebase dich das tun!
                 await firebase.database().ref('users/' + user.uid + '/savegame').set(startData);
                 
-                console.log("Cloud-Reset erfolgreich für UID: " + user.uid);
+                console.log("Cloud-Daten wurden global zurückgesetzt.");
             } catch (error) {
-                console.error("Firebase Reset Fehler:", error);
-                alert("Cloud-Fehler: " + error.message);
-                return; // Abbrechen, falls Cloud-Reset fehlschlägt
+                console.error("Globaler Reset Fehler:", error);
+                alert("Fehler beim Cloud-Reset: " + error.message);
+                return;
             }
         }
 
-        // 3. Seite neu laden (erst wenn Cloud fertig ist oder falls nicht eingeloggt)
-        location.reload();
+        // 4. Alles neu laden
+        showToast("🚀 Globaler Reset abgeschlossen!", false);
+        setTimeout(() => { location.reload(); }, 1000);
     }
 }
 
+    function updateBannedListDisplay() { const container = document.getElementById("bannedListDisplay"); if (!container) return; if (bannedPlayers.length === 0) { container.innerHTML = "Keine gebannten Spieler."; return; } container.innerHTML = "🚫 Gebannte Spieler: " + bannedPlayers.map(p => `<span style="color:#c44; margin:0 5px;">${p.name}</span>`).join(", "); }
+    function extendAdminSection() { const adminSection = document.getElementById("adminSection"); if (!adminSection || !isAdmin) return; const existingBtn = document.getElementById("adminRefreshPlayersBtn"); if (!existingBtn) { const playerListDiv = document.createElement("div"); playerListDiv.id = "adminPlayerListContainerExt"; playerListDiv.style.marginTop = "15px"; playerListDiv.innerHTML = `<div class="admin-title">👥 ALLE SPIELER (unabhängig von Level)</div><div id="adminPlayerList" style="max-height: 300px; overflow-y: auto; background: #3a3022; border-radius: 20px; padding: 10px;"></div><button id="adminRefreshPlayersBtn" class="admin-btn" style="margin-top: 10px;">🔄 Spielerliste aktualisieren</button>`; adminSection.appendChild(playerListDiv); document.getElementById("adminRefreshPlayersBtn")?.addEventListener("click", () => adminLoadAllPlayers()); } }
+    function bindAdminButtons() { document.getElementById("adminCleanupBtn")?.addEventListener("click", () => adminCleanupOldEntries()); document.getElementById("adminClearAllBtn")?.addEventListener("click", () => clearAllLeaderboard()); document.getElementById("adminGlobalResetBtn")?.addEventListener("click", () => adminGlobalReset()); document.getElementById("adminClearChatBtn")?.addEventListener("click", () => adminClearChat()); document.getElementById("adminRemovePlayerBtn")?.addEventListener("click", () => { const name = document.getElementById("adminPlayerName").value; if (name) removePlayerFromLeaderboard(name); }); document.getElementById("adminBanPlayerBtn")?.addEventListener("click", () => { const name = document.getElementById("adminPlayerName").value; if (name) banPlayer(name); }); document.getElementById("adminUnbanPlayerBtn")?.addEventListener("click", () => { const name = document.getElementById("adminPlayerName").value; if (name) unbanPlayer(name); }); }
+    
+    
+// --- ADMIN BONUS SYSTEM FÜR UDO ---
+async function giveGlobalBonus() {
+    if (typeof isAdmin === 'undefined' || !isAdmin) {
+        alert("❌ Zugriff verweigert!");
+        return;
+    }
+
+    const goldBonus = parseInt(prompt("Wieviel GOLD soll JEDER Spieler erhalten?", "1000"));
+    const xpBonus = parseInt(prompt("Wieviel XP soll JEDER Spieler erhalten?", "500"));
+
+    if (isNaN(goldBonus) || isNaN(xpBonus)) return;
+
+    try {
+        // 1. Leaderboard aktualisieren (für die Rangliste)
+        const snapshot = await database.ref('leaderboard').once('value');
+        const allPlayers = snapshot.val();
+
+        if (allPlayers) {
+            const updates = {};
+            for (let playerName in allPlayers) {
+                updates[`leaderboard/${playerName}/gold`] = (allPlayers[playerName].gold || 0) + goldBonus;
+                updates[`leaderboard/${playerName}/xp`] = (allPlayers[playerName].xp || 0) + xpBonus;
+            }
+            await database.ref().update(updates);
+        }
+
+       // 2. DAS WICHTIGSTE: Dein eigenes Gold im Spiel direkt erhöhen
+        // Wir nutzen die Variablen, die dein Spiel sowieso schon verwendet
+        if (typeof userGold !== 'undefined') {
+            userGold += goldBonus;
+            if (typeof userXP !== 'undefined') userXP += xpBonus;
+
+            // Speichert es direkt in DEINEM User-Ordner (unter der kryptischen ID)
+            // auth.currentUser.uid ist genau diese Buchstaben-Zahlen-Folge
+            const myUid = firebase.auth().currentUser.uid;
+            await database.ref('users/' + myUid).update({
+                gold: userGold,
+                xp: userXP
+            });
+            
+            // Anzeige im Spiel aktualisieren
+            if (typeof updateUI === 'function') updateUI(); 
+        }
+
+        alert(`✅ Bonus verteilt! Dein Gold-Stand wurde direkt im Spiel aktualisiert.`);
+        
+    } catch (err) {
+        alert("Fehler: " + err.message);
+    }
+}
+
+async function adminGlobalReset() {
+    if (confirm("Wirklich ALLES löschen?")) {
+        try {
+            await database.ref('leaderboard').remove();
+            await database.ref('users').remove();
+            alert("Daten gelöscht!");
+            location.reload();
+        } catch (e) {
+            alert("Fehler: " + e.message);
+        }
+    }
+}
     
     // ==================== INIT ====================
     async function init() {
@@ -2865,71 +2953,8 @@ async function adminGlobalReset() {
         alert("Fehler beim Reset: " + err.message);
     }
 }
-
-// --- ADMIN BONUS SYSTEM FÜR UDO ---
-async function giveGlobalBonus() {
-    if (typeof isAdmin === 'undefined' || !isAdmin) {
-        alert("❌ Zugriff verweigert!");
-        return;
-    }
-
-    const goldBonus = parseInt(prompt("Wieviel GOLD soll JEDER Spieler erhalten?", "1000"));
-    const xpBonus = parseInt(prompt("Wieviel XP soll JEDER Spieler erhalten?", "500"));
-
-    if (isNaN(goldBonus) || isNaN(xpBonus)) return;
-
-    try {
-        // 1. Leaderboard aktualisieren (für die Rangliste)
-        const snapshot = await database.ref('leaderboard').once('value');
-        const allPlayers = snapshot.val();
-
-        if (allPlayers) {
-            const updates = {};
-            for (let playerName in allPlayers) {
-                updates[`leaderboard/${playerName}/gold`] = (allPlayers[playerName].gold || 0) + goldBonus;
-                updates[`leaderboard/${playerName}/xp`] = (allPlayers[playerName].xp || 0) + xpBonus;
-            }
-            await database.ref().update(updates);
-        }
-
-       // 2. DAS WICHTIGSTE: Dein eigenes Gold im Spiel direkt erhöhen
-        // Wir nutzen die Variablen, die dein Spiel sowieso schon verwendet
-        if (typeof userGold !== 'undefined') {
-            userGold += goldBonus;
-            if (typeof userXP !== 'undefined') userXP += xpBonus;
-
-            // Speichert es direkt in DEINEM User-Ordner (unter der kryptischen ID)
-            // auth.currentUser.uid ist genau diese Buchstaben-Zahlen-Folge
-            const myUid = firebase.auth().currentUser.uid;
-            await database.ref('users/' + myUid).update({
-                gold: userGold,
-                xp: userXP
-            });
-            
-            // Anzeige im Spiel aktualisieren
-            if (typeof updateUI === 'function') updateUI(); 
-        }
-
-        alert(`✅ Bonus verteilt! Dein Gold-Stand wurde direkt im Spiel aktualisiert.`);
-        
-    } catch (err) {
-        alert("Fehler: " + err.message);
-    }
-}
-
-async function adminGlobalReset() {
-    if (confirm("Wirklich ALLES löschen?")) {
-        try {
-            await database.ref('leaderboard').remove();
-            await database.ref('users').remove();
-            alert("Daten gelöscht!");
-            location.reload();
-        } catch (e) {
-            alert("Fehler: " + e.message);
-        }
-    }
-}
-
+    
+    
 // --- PASSIVER ADMIN-SYNC (KEIN ZWANG) ---
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
