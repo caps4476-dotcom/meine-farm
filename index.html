@@ -1911,7 +1911,40 @@
     function removeFromInventory(productKey, amount = 1) { if (inventory[productKey] >= amount) { inventory[productKey] -= amount; updateStorageUI(); updateMassPlantButtonsLive(); return true; } return false; }
     function upgradeStorage() { if (playerGold >= 500) { playerGold -= 500; maxStorage += 50; updateMoneyUI(); updateStorageUI(); saveGameToLocal(); showToast(`🏚️ Lager auf ${maxStorage} erweitert!`); checkAchievements(); } else showToast(`Nicht genug Gold! 500 benötigt.`, true); }
     function updateMoneyUI() { if (moneySpan) moneySpan.innerText = Math.floor(playerGold); }
-    function updateLevelUI() { if (levelValueSpan) levelValueSpan.innerText = playerLevel; const neededXP = getXPNeededForNextLevel(); const percent = Math.min(100, (playerXP / neededXP) * 100); if (xpBarFill) xpBarFill.style.width = `${percent}%`; if (xpCurrentSpan) xpCurrentSpan.innerText = playerXP; if (xpNextSpan) xpNextSpan.innerText = neededXP; }
+    function updateLevelUI() {
+    // Wir holen uns die XP direkt aus der globalen Variable
+    const xpValue = window.playerXP || 0;
+    const lvlValue = window.playerLevel || 1;
+
+    console.log("Anzeige-Update: XP ist " + xpValue);
+
+    // Wir versuchen alle gängigen IDs zu finden, falls du sie mal umbenannt hast
+    const xpElements = [
+        document.getElementById("playerXP"),
+        document.getElementById("playerXPDisplay"),
+        document.getElementById("xp-display")
+    ];
+
+    const lvlElements = [
+        document.getElementById("playerLevel"),
+        document.getElementById("playerLevelDisplay"),
+        document.getElementById("level-display")
+    ];
+
+    // Wir schreiben den Wert in JEDES Feld, das wir finden
+    xpElements.forEach(el => { if(el) el.innerText = xpValue; });
+    lvlElements.forEach(el => { if(el) el.innerText = lvlValue; });
+
+    // Falls du einen Fortschrittsbalken hast (ID: xpBarFill)
+    const bar = document.getElementById("xpBarFill");
+    if (bar) {
+        // Beispiel-Berechnung: Level-Up bei 2000 XP
+        let needed = 2000; 
+        let progress = Math.min(100, (xpValue / needed) * 100);
+        bar.style.width = progress + "%";
+    }
+}
+
     function addXP(amount) { if (isPaused) return; playerXP += amount; updateLevelUI(); checkAndApplyLevelUp(); saveGameToLocal(); }
     
     function checkAndApplyLevelUp() {
@@ -2456,22 +2489,24 @@
     }
     
     // Verarbeitet geladene Daten (Cloud ODER Lokal) und startet Timer
-    async function applyCloudData(data) {
+  async function applyCloudData(data) {
     if (!data) return;
 
-    // GOLD
-    playerGold = data.gold !== undefined ? data.gold : playerGold;
+    // --- HIER WIRD AUFGERÄUMT ---
     
-    // INVENTAR & REST
-    inventory = data.inventory || {};
-    currentDay = data.day || 1;
-    maxStorage = data.maxStorage || 50;
+    // 1. Gold laden
+    window.playerGold = Number(data.gold || 0);
     
-    // LEVEL (Sicherheits-Check für beide Namen)
-    playerLevel = data.playerLevel || data.level || 1;
+    // 2. XP & Level laden (Wir nehmen den Namen aus Firebase)
+    window.playerXP = Number(data.playerXP || data.xp || 0);
+    window.playerLevel = Number(data.playerLevel || data.level || 1);
+
+    // 3. Inventar & Tag
+    window.inventory = data.inventory || {};
+    window.currentDay = data.day || 1;
     
-    // XP (Sicherheits-Check für beide Namen)
-    playerXP = data.playerXP || data.xp || 0;
+    // --- AB HIER GEHT DEIN ALTER CODE WEITER ---
+    // (Also der Teil mit barnOwned, animals, fields etc.)
 
     barnOwned = data.barnOwned || false;
     barnUpgrades = data.barnUpgrades || { autoCollector: false, speedBoost: false };
