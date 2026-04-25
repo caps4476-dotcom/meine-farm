@@ -2465,103 +2465,18 @@
     }
     
     // Kern-Funktion: Holt Daten von Firebase
-    async function loadGameFromCloud() {
-    if (!currentUser) return;
-    try {
-        const snapshot = await database.ref("users/" + currentUser.uid + "/savegame").once("value");
-        const data = snapshot.val();
-
-        if (data) {
-            // Hier rufen wir die apply-Funktion auf
-            await applyCloudData(data);
-            console.log("✅ Cloud-Daten erfolgreich geladen und angewendet");
-        } else {
-            console.log("ℹ️ Kein Cloud-Spielstand gefunden. Starte neu.");
-            window.playerGold = 500;
-            window.playerXP = 0;
-            window.playerLevel = 1;
-            // Falls vorhanden, UI direkt zeigen
-            if (typeof updateMoneyUI === 'function') updateMoneyUI();
-            if (typeof updateLevelUI === 'function') updateLevelUI();
-            await autoSaveToCloud(); 
-        }
-    } catch (error) {
-        console.error("Fehler beim Laden:", error);
-        if (typeof showToast === 'function') showToast("❌ Fehler beim Laden der Cloud-Daten", true);
-    }
-}
-
-async function applyCloudData(data) {
+    async function applyCloudData(data) {
     if (!data) return;
-
-    console.log("🛠️ Verarbeite Daten:", data);
-
-    // 1. GOLD
     window.playerGold = Number(data.gold || 0);
-
-    // 2. XP & LEVEL (Nimmt den höchsten Wert aus 'xp' und 'playerXP')
-    const xp1 = Number(data.playerXP || 0);
-    const xp2 = Number(data.xp || 0);
-    window.playerXP = Math.max(xp1, xp2);
-
-    const lvl1 = Number(data.playerLevel || 1);
-    const lvl2 = Number(data.level || 1);
-    window.playerLevel = Math.max(lvl1, lvl2);
-
-    // 3. BASIS-DATEN
-    window.inventory = data.inventory || {};
-    window.currentDay = data.day || 1;
-    window.maxStorage = data.maxStorage || 50;
-
-    // 4. STALL & FORTSCHRITT
-    window.barnOwned = data.barnOwned || false;
-    window.barnUpgrades = data.barnUpgrades || { autoCollector: false, speedBoost: false };
-    window.animals = data.animals || [];
-    window.achievements = data.achievements || (typeof achievements !== 'undefined' ? achievements : {});
-    window.stats = data.stats || (typeof stats !== 'undefined' ? stats : {});
-    window.completedResearch = data.completedResearch || [];
-    window.researchProgress = data.researchProgress || {};
-    window.ownedLicenses = data.ownedLicenses || [];
-
-    if (data.currentWeather) window.currentWeather = data.currentWeather;
-
-    // 5. FELDER WIEDERHERSTELLEN
-    if (data.fields && Array.isArray(data.fields)) {
-        for (let i = 0; i < fields.length && i < data.fields.length; i++) {
-            fields[i].owned = data.fields[i].owned;
-            fields[i].cropId = data.fields[i].cropId;
-            fields[i].plantedAt = data.fields[i].plantedAt;
-            fields[i].isReady = data.fields[i].isReady;
-            
-            if (fields[i].cropId && !fields[i].isReady && fields[i].plantedAt) {
-                if (fields[i].timerId) clearTimeout(fields[i].timerId);
-                if (typeof startFieldTimer === 'function') startFieldTimer(i, fields[i].cropId);
-            }
-        }
-    }
-
-    // 6. TIERE STARTEN
-    if (window.animals && window.animals.length > 0) {
-        for (let i = 0; i < window.animals.length; i++) {
-            const a = window.animals[i];
-            if (!a.isReady && a.productionStartTime) {
-                if (a.timerId) clearTimeout(a.timerId);
-                if (typeof startAnimalProduction === 'function') startAnimalProduction(a, i);
-            }
-        }
-    }
-
-    // 7. UI-UPDATE (Damit die 1155 XP sofort sichtbar sind)
+    window.playerXP = Number(data.playerXP || data.xp || 0);
+    window.playerLevel = Number(data.playerLevel || data.level || 1);
+    
     if (typeof updateMoneyUI === 'function') updateMoneyUI();
     if (typeof updateLevelUI === 'function') updateLevelUI();
-    if (typeof updateStorageUI === 'function') updateStorageUI();
-    if (typeof renderFields === 'function') renderFields();
-    if (typeof renderPricePanel === 'function') renderPricePanel();
-    if (typeof renderMarket === 'function') renderMarket();
-    if (typeof updateViewButtons === 'function') updateViewButtons();
-
-    console.log("✅ Fertig geladen: Gold " + window.playerGold + ", XP " + window.playerXP); }
+    console.log("Notfall-Check: Daten geladen");
 }
+
+
 
     
     // Tiere wiederherstellen
