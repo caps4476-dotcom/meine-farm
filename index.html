@@ -2892,7 +2892,7 @@ async function giveGlobalBonus() {
             await database.ref().update(updates);
         }
 
-        // 2. DAS WICHTIGSTE: Dein eigenes Gold im Spiel direkt erhöhen
+       // 2. DAS WICHTIGSTE: Dein eigenes Gold im Spiel direkt erhöhen
         // Wir nutzen die Variablen, die dein Spiel sowieso schon verwendet
         if (typeof userGold !== 'undefined') {
             userGold += goldBonus;
