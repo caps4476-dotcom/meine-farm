@@ -2273,7 +2273,7 @@
         marketContainer.innerHTML = "";
         const allProducts = [...Object.keys(CROPS), "egg", "milk", "truffle", "flour", "cheese", "bread", "wool", "goatCheese", "fertilizer", "alpacaWool", "honey", "duckEgg", "ostrichEgg", "camelMilk", "reindeerFur", "peacockFeather", "silk", "dragonScale", "butter", "yogurt", "woolThread", "scarf", "honeyCake", "silkFabric"];
         const names = { carrot:"Karotte", wheat:"Weizen", tomato:"Tomate", strawberry:"Erdbeere", pumpkin:"Kürbis", pineapple:"Ananas", coffee:"Kaffee", blueberry:"Blaubeere", raspberry:"Himbeere", grape:"Traube", peach:"Pfirsich", lemon:"Zitrone", apple:"Apfel", banana:"Banane", mango:"Mango", cherry:"Kirsche", pear:"Birne", pomegranate:"Granatapfel", kiwi:"Kiwi", dragonfruit:"Drachenfrucht", starfruit:"Sternfrucht", saffron:"Safran", vanilla:"Vanille", egg:"Ei", milk:"Milch", truffle:"Trüffel", flour:"Mehl", cheese:"Käse", bread:"Brot", wool:"Wolle", goatCheese:"Ziegenkäse", fertilizer:"Dünger", alpacaWool:"Alpakawolle", honey:"Honig", duckEgg:"Entenei", ostrichEgg:"Straußenei", camelMilk:"Kamelmilch", reindeerFur:"Rentierfell", peacockFeather:"Pfauenfeder", silk:"Seide", dragonScale:"Drachenschuppe", butter:"Butter", yogurt:"Joghurt", woolThread:"Wollfaden", scarf:"Schal", honeyCake:"Honigkuchen", silkFabric:"Seidentuch" };
-        const emojis = { carrot:"🥕", wheat:"🌾", tomato:"🍅", strawberry:"🍓", pumpkin:"🎃", pineapple:"🍍", coffee:"☕", blueberry:"🫐", raspberry:"🍓", grape:"🍇", peach:"🍑", lemon:"🍋", apple:"🍎", banana:"🍌", mango:"🥭", cherry:"🍒", pear:"🍐", pomegranate:"🍎", kiwi:"🥝", dragonfruit:"🐉", starfruit:"⭐", saffron:"🌸", vanilla:"🌿", egg:"🥚", milk:"🥛", truffle:"🍄", flour:"🌾", cheese:"🧀", bread:"🍞", wool:"🧶", goatCheese:"🧀", fertilizer:"💩", alpacaWool:"🧣", honey:"🍯", duckEgg:"🥚", ostrichEgg:"🥚", camelMilk:"🥛", reindeerFur:"🧣", peacockFeather:"📿", silk:"👘", dragonScale:"⚡", butter:"🧈", yogurt:"🥣", woolThread:"🧵", scarf:"🧣", honeyCake:"🍰", silkFabric:"👘" };
+        const emojis = { carrot:"🥕", wheat:"🌾", tomato:"🍅", strawberry:"🍓", pumpkin:"🎃", pineapple:"🍍", coffee:"☕", blueberry:"🫐", raspberry:"🍓", grape:"🍇", peach:"🍑", lemon:"🍋", apple:"🍎", banana:"🍌", mango:"🥭", cherry:"🍒", pear:"🍐", pomegranate:"🍎", kiwi:"🥝", dragonfruit:"🐉", starfruit:"⭐", saffron:"🌸", vanilla:"🌿", egg:"🥚", milk:"🥛", truffle:"🍄", flour:"🌾", cheese:"🧀", bread:"??", wool:"🧶", goatCheese:"🧀", fertilizer:"💩", alpacaWool:"🧣", honey:"🍯", duckEgg:"🥚", ostrichEgg:"🥚", camelMilk:"🥛", reindeerFur:"🧣", peacockFeather:"📿", silk:"👘", dragonScale:"⚡", butter:"🧈", yogurt:"🥣", woolThread:"🧵", scarf:"🧣", honeyCake:"🍰", silkFabric:"👘" };
         for (let prod of allProducts) {
             let isUnlocked = false;
             if (CROPS[prod]) { const crop = CROPS[prod]; if (playerLevel >= crop.levelRequired && (!crop.licenseRequired || ownedLicenses.includes(crop.licenseRequired))) isUnlocked = true; }
@@ -2793,6 +2793,7 @@
     
 // --- ADMIN BONUS SYSTEM FÜR UDO ---
 async function giveGlobalBonus() {
+    // 1. Admin-Check
     if (typeof isAdmin === 'undefined' || !isAdmin) {
         alert("❌ Zugriff verweigert!");
         return;
@@ -2804,7 +2805,7 @@ async function giveGlobalBonus() {
     if (isNaN(goldBonus) || isNaN(xpBonus)) return;
 
     try {
-        // 1. Leaderboard aktualisieren (für die Rangliste)
+        // --- TEIL A: GLOBALER LEADERBOARD SYNC ---
         const snapshot = await database.ref('leaderboard').once('value');
         const allPlayers = snapshot.val();
 
@@ -2812,35 +2813,47 @@ async function giveGlobalBonus() {
             const updates = {};
             for (let playerName in allPlayers) {
                 updates[`leaderboard/${playerName}/gold`] = (allPlayers[playerName].gold || 0) + goldBonus;
-                updates[`leaderboard/${playerName}/xp`] = (allPlayers[playerName].xp || 0) + xpBonus;
+                updates[`leaderboard/${playerName}/level`] = (allPlayers[playerName].level || 1); // Level mitsenden
             }
             await database.ref().update(updates);
+            console.log("Leaderboard Bonus gesendet.");
         }
 
-       // 2. DAS WICHTIGSTE: Dein eigenes Gold im Spiel direkt erhöhen
-        // Wir nutzen die Variablen, die dein Spiel sowieso schon verwendet
-        if (typeof userGold !== 'undefined') {
-            userGold += goldBonus;
-            if (typeof userXP !== 'undefined') userXP += xpBonus;
+        // --- TEIL B: DEIN EIGENER SPIELSTAND (DER WICHTIGSTE TEIL) ---
+        if (currentUser) {
+            // Wir nutzen 'window.', um sicherzugehen, dass wir die globalen Spielvariablen erwischen
+            window.playerGold = (window.playerGold || 0) + goldBonus;
+            window.playerXP = (window.playerXP || 0) + xpBonus;
 
-            // Speichert es direkt in DEINEM User-Ordner (unter der kryptischen ID)
-            // auth.currentUser.uid ist genau diese Buchstaben-Zahlen-Folge
-            const myUid = firebase.auth().currentUser.uid;
-            await database.ref('users/' + myUid).update({
-                gold: userGold,
-                xp: userXP
-            });
+            // Wir schreiben direkt in dein Savegame-Objekt in der Cloud
+            const mySaveRef = database.ref('users/' + currentUser.uid + '/savegame');
             
-            // Anzeige im Spiel aktualisieren
-            if (typeof updateUI === 'function') updateUI(); 
+            // Wir holen kurz den aktuellen Stand, um nichts zu löschen
+            const currentSave = await mySaveRef.once('value');
+            let saveData = currentSave.val() || {};
+
+            // Werte aktualisieren
+            saveData.gold = window.playerGold;
+            saveData.xp = window.playerXP;
+            saveData.lastSave = Date.now();
+
+            // Zurückschreiben in die Cloud
+            await mySaveRef.set(saveData);
+
+            // UI sofort aktualisieren
+            if (typeof updateMoneyUI === 'function') updateMoneyUI();
+            if (typeof updateLevelUI === 'function') updateLevelUI();
+            
+            showToast(`🎁 Bonus erhalten: +${goldBonus} Gold!`);
+            alert(`✅ Erfolg! Gold in der Cloud gespeichert: ${window.playerGold}`);
         }
 
-        alert(`✅ Bonus verteilt! Dein Gold-Stand wurde direkt im Spiel aktualisiert.`);
-        
     } catch (err) {
+        console.error("Bonus Fehler:", err);
         alert("Fehler: " + err.message);
     }
 }
+
 
 async function adminGlobalReset() {
     if (confirm("Wirklich ALLES löschen?")) {
