@@ -2457,23 +2457,35 @@
     
     // Verarbeitet geladene Daten (Cloud ODER Lokal) und startet Timer
     async function applyCloudData(data) {
-        playerGold = data.gold;
-        inventory = data.inventory || {};
-        currentDay = data.day || 1;
-        playerLevel = data.playerLevel || 1;
-        playerXP = data.playerXP || 0;
-        maxStorage = data.maxStorage || 50;
-        barnOwned = data.barnOwned || false;
-        barnUpgrades = data.barnUpgrades || { autoCollector: false, speedBoost: false };
-        animals = data.animals || [];
-        achievements = data.achievements || achievements;
-        stats = data.stats || stats;
-        completedResearch = data.completedResearch || [];
-        researchProgress = data.researchProgress || {};
-        ownedLicenses = data.ownedLicenses || [];
-        if (data.currentWeather) currentWeather = data.currentWeather;
-        
-        // Felder wiederherstellen & Timer starten
+    if (!data) return;
+
+    // GOLD
+    playerGold = data.gold !== undefined ? data.gold : playerGold;
+    
+    // INVENTAR & REST
+    inventory = data.inventory || {};
+    currentDay = data.day || 1;
+    maxStorage = data.maxStorage || 50;
+    
+    // LEVEL (Sicherheits-Check für beide Namen)
+    playerLevel = data.playerLevel || data.level || 1;
+    
+    // XP (Sicherheits-Check für beide Namen)
+    playerXP = data.playerXP || data.xp || 0;
+
+    barnOwned = data.barnOwned || false;
+    barnUpgrades = data.barnUpgrades || { autoCollector: false, speedBoost: false };
+    animals = data.animals || [];
+    achievements = data.achievements || achievements;
+    stats = data.stats || stats;
+    completedResearch = data.completedResearch || [];
+    researchProgress = data.researchProgress || {};
+    ownedLicenses = data.ownedLicenses || [];
+    
+    if (data.currentWeather) currentWeather = data.currentWeather;
+    
+    // Felder wiederherstellen
+    if (data.fields) {
         for (let i = 0; i < fields.length && i < data.fields.length; i++) {
             fields[i].owned = data.fields[i].owned;
             fields[i].cropId = data.fields[i].cropId;
@@ -2484,37 +2496,40 @@
                 startFieldTimer(i, fields[i].cropId);
             }
         }
-        
-        // Tiere wiederherstellen & Produktion starten
-        for (let i = 0; i < animals.length; i++) {
-            const a = animals[i];
-            if (!a.isReady && a.productionStartTime) {
-                if (a.timerId) clearTimeout(a.timerId);
-                startAnimalProduction(a, i);
-            }
-        }
-        
-        // Komplette UI aktualisieren
-        updateMoneyUI();
-        updateLevelUI();
-        updateStorageUI();
-        renderFields();
-        renderPricePanel();
-        renderMarket();
-        if (isBarnUnlocked(playerLevel)) renderBarn();
-        updateViewButtons();
-        updateMassPlantButtons();
-        
-        // Wetter-Anzeige korrigieren
-        const weather = WEATHER_TYPES[currentWeather] || WEATHER_TYPES.sunny;
-        const weatherEl = document.getElementById("weatherInfo");
-        if (weatherEl) {
-            weatherEl.innerHTML = weather.emoji + " " + weather.name;
-            weatherEl.className = "weather-info " + weather.color;
-        }
-        
-        saveGameToLocal(); // Lokal spiegeln
     }
+    
+    // Tiere wiederherstellen
+    for (let i = 0; i < animals.length; i++) {
+        const a = animals[i];
+        if (!a.isReady && a.productionStartTime) {
+            if (a.timerId) clearTimeout(a.timerId);
+            startAnimalProduction(a, i);
+        }
+    }
+    
+    // Komplette UI aktualisieren
+    updateMoneyUI();
+    updateLevelUI();
+    updateStorageUI();
+    renderFields();
+    renderPricePanel();
+    renderMarket();
+    if (typeof isBarnUnlocked === 'function' && isBarnUnlocked(playerLevel)) renderBarn();
+    updateViewButtons();
+    if (typeof updateMassPlantButtons === 'function') updateMassPlantButtons();
+    
+    // Wetter-Anzeige
+    const weather = (typeof WEATHER_TYPES !== 'undefined' && WEATHER_TYPES[currentWeather]) ? WEATHER_TYPES[currentWeather] : {emoji: "☀️", name: "Sonnig", color: "yellow"};
+    const weatherEl = document.getElementById("weatherInfo");
+    if (weatherEl) {
+        weatherEl.innerHTML = weather.emoji + " " + weather.name;
+        weatherEl.className = "weather-info " + weather.color;
+    }
+    
+    saveGameToLocal(); 
+    console.log("✅ Cloud-Daten erfolgreich geladen (Gold: " + playerGold + ", XP: " + playerXP + ")");
+}
+
     
     // Lokale Backups (Browser-Speicher)
     function saveGameToLocal() {
