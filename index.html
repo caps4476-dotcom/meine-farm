@@ -1922,37 +1922,36 @@
     function upgradeStorage() { if (playerGold >= 500) { playerGold -= 500; maxStorage += 50; updateMoneyUI(); updateStorageUI(); saveGameToLocal(); showToast(`🏚️ Lager auf ${maxStorage} erweitert!`); checkAchievements(); } else showToast(`Nicht genug Gold! 500 benötigt.`, true); }
     function updateMoneyUI() { if (moneySpan) moneySpan.innerText = Math.floor(playerGold); }
     function updateLevelUI() {
-    // Wir holen uns die XP direkt aus der globalen Variable
-    const xpValue = window.playerXP || 0;
-    const lvlValue = window.playerLevel || 1;
+    const xpValue = window.playerXP || playerXP || 0;
+    const lvlValue = window.playerLevel || playerLevel || 1;
 
-    console.log("Anzeige-Update: XP ist " + xpValue);
-
-    // Wir versuchen alle gängigen IDs zu finden, falls du sie mal umbenannt hast
+    // XP-Zahl anzeigen in allen moeglichen Elementen
     const xpElements = [
         document.getElementById("playerXP"),
         document.getElementById("playerXPDisplay"),
         document.getElementById("xp-display")
     ];
-
     const lvlElements = [
         document.getElementById("playerLevel"),
         document.getElementById("playerLevelDisplay"),
         document.getElementById("level-display")
     ];
-
-    // Wir schreiben den Wert in JEDES Feld, das wir finden
     xpElements.forEach(el => { if(el) el.innerText = xpValue; });
     lvlElements.forEach(el => { if(el) el.innerText = lvlValue; });
 
-    // Falls du einen Fortschrittsbalken hast (ID: xpBarFill)
+    // XP-Balken mit der echten Level-Formel berechnen
     const bar = document.getElementById("xpBarFill");
     if (bar) {
-        // Beispiel-Berechnung: Level-Up bei 2000 XP
-        let needed = 2000; 
-        let progress = Math.min(100, (xpValue / needed) * 100);
+        const needed = (lvlValue <= 10) ? 200 + (lvlValue - 1) * 50
+                     : (lvlValue <= 20) ? 650 + (lvlValue - 10) * 80
+                     : (lvlValue <= 30) ? 1450 + (lvlValue - 20) * 120
+                     : 2650 + (lvlValue - 30) * 200;
+        const progress = Math.min(100, (xpValue / needed) * 100);
         bar.style.width = progress + "%";
     }
+    // Level-Info Badge aktualisieren falls vorhanden
+    const levelInfo = document.getElementById("levelInfo");
+    if (levelInfo) levelInfo.innerHTML = `⭐ Level ${lvlValue} | ${xpValue} XP`;
 }
 
     function addXP(amount) { if (isPaused) return; playerXP += amount; updateLevelUI(); checkAndApplyLevelUp(); saveGameToLocal(); }
@@ -2577,8 +2576,17 @@ window.playerLevel = parseInt(data.playerLevel || data.level) || 1;
         weatherEl.className = "weather-info " + weather.color;
     }
     
-    saveGameToLocal(); 
-    console.log("✅ Cloud-Daten erfolgreich geladen (Gold: " + playerGold + ", XP: " + playerXP + ")");
+    // Nur lokal speichern (KEIN Cloud-Save hier - wir haben die Daten gerade von der Cloud!)
+    const localData = { 
+        gold: playerGold, inventory, day: currentDay, maxStorage, 
+        fields: fields.map(f => ({ owned: f.owned, cropId: f.cropId, plantedAt: f.plantedAt, isReady: f.isReady })), 
+        barnOwned, barnUpgrades, 
+        animals: animals.map(a => ({ type: a.type, name: a.name, isReady: a.isReady, productionStartTime: a.productionStartTime })), 
+        achievements, stats, playerLevel, playerXP, completedResearch, researchProgress, ownedLicenses, currentWeather, 
+        timestamp: Date.now() 
+    };
+    localStorage.setItem("farmPremium", JSON.stringify(localData));
+    console.log("✅ Cloud-Daten geladen - Gold: " + playerGold + ", XP: " + playerXP + ", Level: " + playerLevel);
 }
 
     
@@ -2942,13 +2950,14 @@ async function giveGlobalBonus() {
         initResearchProgress();
         initPriceSystem();
         
-        // 1. Lokale Daten zuerst (schneller Fallback fuer den Start)
+        // 1. Lokale Daten als schnellen Fallback laden (nur fuer Anzeige bis Cloud bereit)
         if (!loadGameFromLocal()) {
             for (let key in globalMarketPrices) globalMarketPrices[key] = basePrices[key];
             playerGold = 500; initPricesAndInventory(); maxStorage = 50; playerLevel = 1; playerXP = 0;
             completedResearch = []; ownedLicenses = []; currentWeather = "sunny";
             initResearchProgress(); applyResearchBonuses();
-            updateMoneyUI(); updateLevelUI(); updateStorageUI(); renderFields(); renderPricePanel(); renderMarket(); saveGameToLocal();
+            updateMoneyUI(); updateLevelUI(); updateStorageUI(); renderFields(); renderPricePanel(); renderMarket();
+            // KEIN saveGameToLocal() hier - wir wollen die Cloud nicht mit Startwerten ueberschreiben!
         }
 
         // 2. Firebase starten — bei erfolgreichem Login laedt onAuthStateChanged die Cloud-Daten
