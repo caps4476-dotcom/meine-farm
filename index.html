@@ -2886,8 +2886,6 @@ async function giveGlobalBonus() {
             // Werte aktualisieren
             saveData.gold = window.playerGold;
             saveData.xp = window.playerXP;
-            saveData.playerXP = window.playerXP;
-            saveData.playerLevel = window.playerLevel;
             saveData.lastSave = Date.now();
 
             // Zurückschreiben in die Cloud
@@ -2929,7 +2927,7 @@ async function giveGlobalBonus() {
             updateMoneyUI(); updateLevelUI(); updateStorageUI(); renderFields(); renderPricePanel(); renderMarket(); saveGameToLocal();
         }
         
-        startTimer(); startLiveUpdates(); startNPCSpawner(); startRealDayCheck();
+        startTimer(); startLiveUpdates(); startNPCSpawner(); startRealDayCheck(); startAutoSave();
         renderNPCInUI();
         
         document.getElementById("harvestAllBtn").onclick = () => massHarvest();
@@ -3036,6 +3034,7 @@ if (typeof firebase !== 'undefined' && firebase.auth) firebase.auth().onAuthStat
         });
     }
 });
+} // Ende: firebase safety check
 
 
 
