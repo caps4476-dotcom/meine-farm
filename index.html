@@ -1940,15 +1940,23 @@
     lvlElements.forEach(el => { if(el) el.innerText = lvlValue; });
 
     // XP-Balken mit der echten Level-Formel berechnen
+    const needed = (lvlValue <= 10) ? 200 + (lvlValue - 1) * 50
+                 : (lvlValue <= 20) ? 650 + (lvlValue - 10) * 80
+                 : (lvlValue <= 30) ? 1450 + (lvlValue - 20) * 120
+                 : 2650 + (lvlValue - 30) * 200;
+
+    // "0/300 XP" Anzeige aktualisieren
+    const xpCurrentEl = document.getElementById("xpCurrent");
+    const xpNextEl = document.getElementById("xpNext");
+    if (xpCurrentEl) xpCurrentEl.innerText = xpValue;
+    if (xpNextEl) xpNextEl.innerText = needed;
+
     const bar = document.getElementById("xpBarFill");
     if (bar) {
-        const needed = (lvlValue <= 10) ? 200 + (lvlValue - 1) * 50
-                     : (lvlValue <= 20) ? 650 + (lvlValue - 10) * 80
-                     : (lvlValue <= 30) ? 1450 + (lvlValue - 20) * 120
-                     : 2650 + (lvlValue - 30) * 200;
         const progress = Math.min(100, (xpValue / needed) * 100);
         bar.style.width = progress + "%";
     }
+
     // Level-Info Badge aktualisieren falls vorhanden
     const levelInfo = document.getElementById("levelInfo");
     if (levelInfo) levelInfo.innerHTML = `⭐ Level ${lvlValue} | ${xpValue} XP`;
