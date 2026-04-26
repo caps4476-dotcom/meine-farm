@@ -2036,7 +2036,30 @@
         else showToast(`❌ Keine freien Felder oder zu wenig Gold!`, true);
     }
     
-    function startFieldTimer(fieldIdx, cropId) { if (isPaused) return; const f = fields[fieldIdx]; const crop = CROPS[cropId]; const growTime = Math.floor(crop.growTime * getGrowthModifier()); f.plantedAt = Date.now(); f.timerId = setTimeout(() => { if (fields[fieldIdx] && fields[fieldIdx].cropId === cropId) { fields[fieldIdx].isReady = true; renderFields(); saveGameToLocal(); showToast(`🌱 ${crop.name} auf Feld ${fieldIdx+1} ist bereit!`); } }, growTime); }
+    function startFieldTimer(fieldIdx, cropId) {
+        if (isPaused) return;
+        const f = fields[fieldIdx];
+        const crop = CROPS[cropId];
+        const growTime = Math.floor(crop.growTime * getGrowthModifier());
+        // plantedAt NICHT überschreiben - wurde bereits gesetzt (beim Pflanzen oder beim Laden)
+        const elapsed = f.plantedAt ? (Date.now() - f.plantedAt) : 0;
+        const remaining = Math.max(0, growTime - elapsed);
+        // Wenn schon fertig, sofort als bereit markieren
+        if (remaining <= 0) {
+            fields[fieldIdx].isReady = true;
+            renderFields();
+            return;
+        }
+        if (f.timerId) clearTimeout(f.timerId);
+        f.timerId = setTimeout(() => {
+            if (fields[fieldIdx] && fields[fieldIdx].cropId === cropId) {
+                fields[fieldIdx].isReady = true;
+                renderFields();
+                saveGameToLocal();
+                showToast(`🌱 ${crop.name} auf Feld ${fieldIdx+1} ist bereit!`);
+            }
+        }, remaining);
+    }
     function getOwnedFieldsCount() { return fields.filter(f => f.owned).length; }
     function getPriceForNextField() { const owned = getOwnedFieldsCount(); if (owned < 4) return 0; let idx = owned - 4; return idx < FIELD_PRICES.length ? FIELD_PRICES[idx] : 999999; }
     
@@ -2062,7 +2085,7 @@
         playerGold -= crop.seedCost;
         f.cropId = cropId; f.plantedAt = Date.now(); f.isReady = false;
         if (f.timerId) clearTimeout(f.timerId);
-        startFieldTimer(fieldIdx, cropId);
+        startFieldTimer(fieldIdx, cropId); // plantedAt ist bereits gesetzt
         updateMoneyUI(); renderFields(); saveGameToLocal(); updateQuestProgress("plant", 1); addXP(2);
     }
     
