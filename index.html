@@ -1209,17 +1209,15 @@
     const adminPanel = document.getElementById('admin-panel');
 
     if (user) {
-        // Zwingt den Browser, lokale alte Daten zu vergessen
-        // localStorage.clear(); 
-        console.log("Lokaler Speicher wurde bereinigt.");
-
-        // Dein Admin-Check
-        database.ref('leaderboard/Udo/isAdmin').once('value', (snapshot) => {
-            if (snapshot.val() === true && adminPanel) {
-                adminPanel.style.display = 'flex';
-            }
-        });
+        // Sofort prüfen ob E-Mail in der Admin-Liste ist
+        isAdmin = ADMIN_EMAILS.includes(user.email);
+        if (isAdmin && adminPanel) {
+            adminPanel.style.display = 'flex';
+        } else if (adminPanel) {
+            adminPanel.style.display = 'none';
+        }
     } else {
+        isAdmin = false;
         if (adminPanel) adminPanel.style.display = 'none';
     }
 }
