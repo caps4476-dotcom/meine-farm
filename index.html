@@ -1193,7 +1193,7 @@
     // ==================== LOGIN & AUTH ====================
     const loginScreenElem = document.getElementById("loginScreen"), gameWrapperElem = document.getElementById("gameWrapper"), loginModeElem = document.getElementById("loginMode"), registerModeElem = document.getElementById("registerMode"), loginErrorMsgElem = document.getElementById("loginErrorMsg");
     function showLoginError(msg) { loginErrorMsgElem.innerText = msg; setTimeout(() => { loginErrorMsgElem.innerText = ""; }, 3000); }
-    function initFirebase() { try { if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); } database = firebase.database(); auth = firebase.auth(); firebaseInitialized = true; console.log("Firebase initialisiert!"); auth.onAuthStateChanged((user) => { currentUser = user; updateAuthUI(); updateTopLoginStatus(); checkAdminStatus(); if (user) { loginScreenElem.classList.add("hidden"); gameWrapperElem.classList.remove("hidden"); showToast(`👋 Willkommen ${user.email}!`, false); loadGameFromLocal(); loadGameFromCloud(); updateOnlineStatus(); updateLeaderboard(); loadLoginBonusData(); loadQuests(); loadResearchProgress(); checkLoginBonus(); startAutoSave(); initRealPlayDays(); startRealDayCheck(); } else { loginScreenElem.classList.remove("hidden"); gameWrapperElem.classList.add("hidden"); updateTopLoginStatus(); updateLeaderboard(); if (document.getElementById("loginEmailScreen")) document.getElementById("loginEmailScreen").value = ""; if (document.getElementById("loginPasswordScreen")) document.getElementById("loginPasswordScreen").value = ""; if (document.getElementById("registerEmailScreen")) document.getElementById("registerEmailScreen").value = ""; if (document.getElementById("registerPasswordScreen")) document.getElementById("registerPasswordScreen").value = ""; loginModeElem.style.display = "block"; registerModeElem.style.display = "none"; } }); return true; } catch(e) { console.warn("Firebase Fehler:", e); return false; } }
+    function initFirebase() { try { if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); } database = firebase.database(); auth = firebase.auth(); firebaseInitialized = true; console.log("Firebase initialisiert!"); auth.onAuthStateChanged((user) => { currentUser = user; updateAuthUI(); updateTopLoginStatus(); checkAdminStatus(); if (user) { loginScreenElem.classList.add("hidden"); gameWrapperElem.classList.remove("hidden"); showToast(`👋 Willkommen ${user.email}!`, false); loadGameFromCloud(); updateOnlineStatus(); updateLeaderboard(); loadLoginBonusData(); loadQuests(); loadResearchProgress(); checkLoginBonus(); startAutoSave(); initRealPlayDays(); startRealDayCheck(); } else { loginScreenElem.classList.remove("hidden"); gameWrapperElem.classList.add("hidden"); updateTopLoginStatus(); updateLeaderboard(); if (document.getElementById("loginEmailScreen")) document.getElementById("loginEmailScreen").value = ""; if (document.getElementById("loginPasswordScreen")) document.getElementById("loginPasswordScreen").value = ""; if (document.getElementById("registerEmailScreen")) document.getElementById("registerEmailScreen").value = ""; if (document.getElementById("registerPasswordScreen")) document.getElementById("registerPasswordScreen").value = ""; loginModeElem.style.display = "block"; registerModeElem.style.display = "none"; } }); return true; } catch(e) { console.warn("Firebase Fehler:", e); return false; } }
     document.getElementById("doLoginBtn").onclick = async () => { const email = document.getElementById("loginEmailScreen").value, password = document.getElementById("loginPasswordScreen").value; if (!email || !password) { showLoginError("❌ Bitte E-Mail und Passwort eingeben!"); return; } if (!auth) { showLoginError("❌ Verbindung wird aufgebaut, bitte kurz warten..."); setTimeout(() => document.getElementById("doLoginBtn").click(), 2000); return; } try { await auth.signInWithEmailAndPassword(email, password); } catch(err) { showLoginError("❌ " + err.message); } };
     document.getElementById("doRegisterBtn").onclick = async () => { const email = document.getElementById("registerEmailScreen").value, password = document.getElementById("registerPasswordScreen").value; if (!email || !password) { showLoginError("❌ Bitte E-Mail und Passwort eingeben!"); return; } if (password.length < 6) { showLoginError("❌ Passwort muss mindestens 6 Zeichen lang sein!"); return; } if (!auth) { showLoginError("❌ Verbindung wird aufgebaut, bitte kurz warten..."); return; } try { await auth.createUserWithEmailAndPassword(email, password); } catch(err) { showLoginError("❌ " + err.message); } };
     document.getElementById("showRegisterBtn").onclick = () => { loginModeElem.style.display = "none"; registerModeElem.style.display = "block"; loginErrorMsgElem.innerText = ""; };
@@ -2474,15 +2474,17 @@
         showToast("💾 Spielstand in der Cloud gespeichert!", false);
     }
     
+    let isLoadingFromCloud = false;
+
     // Kern-Funktion: Holt Daten von Firebase
     async function loadGameFromCloud() {
         if (!currentUser) return;
+        isLoadingFromCloud = true;
         try {
             const snapshot = await database.ref("users/" + currentUser.uid + "/savegame").once("value");
             const data = snapshot.val();
 
             if (data) {
-                // Hier rufen wir die apply-Funktion auf, die alles verarbeitet
                 await applyCloudData(data);
                 console.log("✅ Cloud-Daten erfolgreich geladen und angewendet");
             } else {
@@ -2490,12 +2492,14 @@
                 playerGold = 500;
                 playerXP = 0;
                 playerLevel = 1;
-                await autoSaveToCloud(); // Ersten Stand in Cloud anlegen
+                isLoadingFromCloud = false;
+                await autoSaveToCloud();
             }
         } catch (error) {
             console.error("Fehler beim Laden:", error);
             showToast("❌ Fehler beim Laden der Cloud-Daten", true);
         }
+        isLoadingFromCloud = false;
     }
     
     // Verarbeitet geladene Daten (Cloud ODER Lokal) und startet Timer
@@ -2590,8 +2594,8 @@ window.playerLevel = parseInt(data.playerLevel || data.level) || 1;
         };
         localStorage.setItem("farmPremium", JSON.stringify(saveData));
         if (currentUser) localStorage.setItem(`lastLocalSave_${currentUser.uid}`, Date.now().toString());
-        // Auch in die Cloud speichern wenn eingeloggt
-        if (currentUser && firebaseInitialized && typeof autoSaveToCloud === 'function') {
+        // Auch in die Cloud speichern wenn eingeloggt (aber nicht waehrend Cloud-Laden)
+        if (currentUser && firebaseInitialized && !isLoadingFromCloud && typeof autoSaveToCloud === 'function') {
             autoSaveToCloud().catch(e => console.warn("Cloud-Save fehlgeschlagen:", e));
         }
     }
