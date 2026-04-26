@@ -1195,7 +1195,7 @@
     // ==================== LOGIN & AUTH ====================
     const loginScreenElem = document.getElementById("loginScreen"), gameWrapperElem = document.getElementById("gameWrapper"), loginModeElem = document.getElementById("loginMode"), registerModeElem = document.getElementById("registerMode"), loginErrorMsgElem = document.getElementById("loginErrorMsg");
     function showLoginError(msg) { loginErrorMsgElem.innerText = msg; setTimeout(() => { loginErrorMsgElem.innerText = ""; }, 3000); }
-    function initFirebase() { try { if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); } database = firebase.database(); auth = firebase.auth(); firebaseInitialized = true; console.log("Firebase initialisiert!"); auth.onAuthStateChanged((user) => { authReady = true; currentUser = user; updateAuthUI(); updateTopLoginStatus(); checkAdminStatus(); if (user) { loginScreenElem.classList.add("hidden"); gameWrapperElem.classList.remove("hidden"); // Spielername aus Cloud laden, dann Spiel starten database.ref('users/' + user.uid + '/playerName').once('value').then((nameSnap) => { const cloudName = nameSnap.val(); if (cloudName) { playerName = cloudName; localStorage.setItem("farmPlayerName", playerName); } else if (!playerName) { let eingabe = ""; while (!eingabe || eingabe.trim().length < 2) { eingabe = prompt("👋 Willkommen! Bitte gib deinen Spielernamen ein (min. 2 Zeichen):") || ""; } playerName = eingabe.trim(); localStorage.setItem("farmPlayerName", playerName); database.ref('users/' + user.uid + '/playerName').set(playerName); } const nameInput = document.getElementById("playerNameInput"); if (nameInput) nameInput.value = playerName; showToast(`👋 Willkommen ${playerName}!`, false); }).catch(() => { showToast(`👋 Willkommen!`, false); }); loadGameFromCloud(); updateOnlineStatus(); updateLeaderboard(); loadLoginBonusData(); loadQuests(); loadResearchProgress(); checkLoginBonus(); startAutoSave(); initRealPlayDays(); startRealDayCheck(); } else { loginScreenElem.classList.remove("hidden"); gameWrapperElem.classList.add("hidden"); updateTopLoginStatus(); updateLeaderboard(); if (document.getElementById("loginEmailScreen")) document.getElementById("loginEmailScreen").value = ""; if (document.getElementById("loginPasswordScreen")) document.getElementById("loginPasswordScreen").value = ""; if (document.getElementById("registerEmailScreen")) document.getElementById("registerEmailScreen").value = ""; if (document.getElementById("registerPasswordScreen")) document.getElementById("registerPasswordScreen").value = ""; loginModeElem.style.display = "block"; registerModeElem.style.display = "none"; } }); return true; } catch(e) { console.warn("Firebase Fehler:", e); return false; } }
+    function initFirebase() { try { if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); } database = firebase.database(); auth = firebase.auth(); firebaseInitialized = true; console.log("Firebase initialisiert!"); auth.onAuthStateChanged((user) => { authReady = true; currentUser = user; updateAuthUI(); updateTopLoginStatus(); checkAdminStatus(); if (user) { loginScreenElem.classList.add("hidden"); gameWrapperElem.classList.remove("hidden"); showToast(`👋 Willkommen!`, false); loadGameFromCloud(); updateOnlineStatus(); updateLeaderboard(); loadLoginBonusData(); loadQuests(); loadResearchProgress(); checkLoginBonus(); startAutoSave(); initRealPlayDays(); startRealDayCheck(); } else { loginScreenElem.classList.remove("hidden"); gameWrapperElem.classList.add("hidden"); updateTopLoginStatus(); updateLeaderboard(); if (document.getElementById("loginEmailScreen")) document.getElementById("loginEmailScreen").value = ""; if (document.getElementById("loginPasswordScreen")) document.getElementById("loginPasswordScreen").value = ""; if (document.getElementById("registerEmailScreen")) document.getElementById("registerEmailScreen").value = ""; if (document.getElementById("registerPasswordScreen")) document.getElementById("registerPasswordScreen").value = ""; loginModeElem.style.display = "block"; registerModeElem.style.display = "none"; } }); return true; } catch(e) { console.warn("Firebase Fehler:", e); return false; } }
     document.getElementById("doLoginBtn").onclick = async () => { const email = document.getElementById("loginEmailScreen").value, password = document.getElementById("loginPasswordScreen").value; if (!email || !password) { showLoginError("❌ Bitte E-Mail und Passwort eingeben!"); return; } if (!auth) { showLoginError("❌ Verbindung wird aufgebaut, bitte kurz warten..."); setTimeout(() => document.getElementById("doLoginBtn").click(), 2000); return; } try { await auth.signInWithEmailAndPassword(email, password); } catch(err) { showLoginError("❌ " + err.message); } };
     document.getElementById("doRegisterBtn").onclick = async () => { const email = document.getElementById("registerEmailScreen").value, password = document.getElementById("registerPasswordScreen").value; if (!email || !password) { showLoginError("❌ Bitte E-Mail und Passwort eingeben!"); return; } if (password.length < 6) { showLoginError("❌ Passwort muss mindestens 6 Zeichen lang sein!"); return; } if (!auth) { showLoginError("❌ Verbindung wird aufgebaut, bitte kurz warten..."); return; } try { await auth.createUserWithEmailAndPassword(email, password); } catch(err) { showLoginError("❌ " + err.message); } };
     document.getElementById("showRegisterBtn").onclick = () => { loginModeElem.style.display = "none"; registerModeElem.style.display = "block"; loginErrorMsgElem.innerText = ""; };
@@ -2522,6 +2522,26 @@
         if (!currentUser) return;
         isLoadingFromCloud = true;
         try {
+            // Spielername laden
+            const nameSnap = await database.ref('users/' + currentUser.uid + '/playerName').once('value');
+            const cloudName = nameSnap.val();
+            if (cloudName) {
+                playerName = cloudName;
+                localStorage.setItem("farmPlayerName", playerName);
+                const nameInput = document.getElementById("playerNameInput");
+                if (nameInput) nameInput.value = playerName;
+            } else if (!playerName) {
+                let eingabe = prompt("👋 Willkommen! Bitte gib deinen Spielernamen ein:") || "";
+                if (eingabe.trim().length >= 2) {
+                    playerName = eingabe.trim();
+                    localStorage.setItem("farmPlayerName", playerName);
+                    database.ref('users/' + currentUser.uid + '/playerName').set(playerName);
+                    const nameInput = document.getElementById("playerNameInput");
+                    if (nameInput) nameInput.value = playerName;
+                }
+            }
+
+            // Spielstand laden
             const snapshot = await database.ref("users/" + currentUser.uid + "/savegame").once("value");
             const data = snapshot.val();
 
