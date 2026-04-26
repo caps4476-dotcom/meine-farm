@@ -1043,8 +1043,6 @@
         <button id="nextDayBtn" class="mass-btn next-day-btn">⏩ Nächster Tag</button>
         <button id="upgradeStorageBtn" class="mass-btn upgrade-storage-btn">🏚️ Lager +50 (500💰)</button>
         <button id="cleanupLeaderboardBtn" class="mass-btn cleanup-btn">🧹 Bestenliste</button>
-        <button id="exportBtn" class="mass-btn export-btn">💾 Export</button>
-        <button id="importBtn" class="mass-btn import-btn">📂 Import</button>
         <button id="resetGameBtn" class="mass-btn reset-btn">🔄 Neues Spiel</button>
         <input type="file" id="importFile" style="display:none" accept=".json">
     </div>
@@ -3143,9 +3141,7 @@ async function forceSaveNow() {
         document.getElementById("nextDayBtn").onclick = () => nextDay();
         document.getElementById("upgradeStorageBtn").onclick = () => upgradeStorage();
         document.getElementById("cleanupLeaderboardBtn").onclick = () => manualCleanup();
-        document.getElementById("exportBtn").onclick = () => exportGame();
-        document.getElementById("importBtn").onclick = () => document.getElementById("importFile").click();
-        document.getElementById("importFile").onchange = (e) => { if(e.target.files[0]) importGame(e.target.files[0]); };
+        
         document.getElementById("resetGameBtn").onclick = () => resetGame();
         document.getElementById("viewFarmBtn").onclick = () => setView("farm");
         document.getElementById("viewBarnBtn").onclick = () => setView("barn");
