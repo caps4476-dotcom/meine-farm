@@ -1193,7 +1193,7 @@
     // ==================== LOGIN & AUTH ====================
     const loginScreenElem = document.getElementById("loginScreen"), gameWrapperElem = document.getElementById("gameWrapper"), loginModeElem = document.getElementById("loginMode"), registerModeElem = document.getElementById("registerMode"), loginErrorMsgElem = document.getElementById("loginErrorMsg");
     function showLoginError(msg) { loginErrorMsgElem.innerText = msg; setTimeout(() => { loginErrorMsgElem.innerText = ""; }, 3000); }
-    function initFirebase() { try { if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); } database = firebase.database(); auth = firebase.auth(); firebaseInitialized = true; console.log("Firebase initialisiert!"); auth.onAuthStateChanged((user) => { currentUser = user; updateAuthUI(); updateTopLoginStatus(); checkAdminStatus(); if (user) { loginScreenElem.classList.add("hidden"); gameWrapperElem.classList.remove("hidden"); showToast(`👋 Willkommen ${user.email}!`, false); loadGameFromCloud(); updateOnlineStatus(); updateLeaderboard(); loadLoginBonusData(); loadQuests(); loadResearchProgress(); checkLoginBonus(); startAutoSave(); initRealPlayDays(); startRealDayCheck(); } else { loginScreenElem.classList.remove("hidden"); gameWrapperElem.classList.add("hidden"); updateTopLoginStatus(); updateLeaderboard(); if (document.getElementById("loginEmailScreen")) document.getElementById("loginEmailScreen").value = ""; if (document.getElementById("loginPasswordScreen")) document.getElementById("loginPasswordScreen").value = ""; if (document.getElementById("registerEmailScreen")) document.getElementById("registerEmailScreen").value = ""; if (document.getElementById("registerPasswordScreen")) document.getElementById("registerPasswordScreen").value = ""; loginModeElem.style.display = "block"; registerModeElem.style.display = "none"; } }); return true; } catch(e) { console.warn("Firebase Fehler:", e); return false; } }
+    function initFirebase() { try { if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); } database = firebase.database(); auth = firebase.auth(); firebaseInitialized = true; console.log("Firebase initialisiert!"); auth.onAuthStateChanged((user) => { authReady = true; currentUser = user; updateAuthUI(); updateTopLoginStatus(); checkAdminStatus(); if (user) { loginScreenElem.classList.add("hidden"); gameWrapperElem.classList.remove("hidden"); showToast(`👋 Willkommen ${user.email}!`, false); loadGameFromCloud(); updateOnlineStatus(); updateLeaderboard(); loadLoginBonusData(); loadQuests(); loadResearchProgress(); checkLoginBonus(); startAutoSave(); initRealPlayDays(); startRealDayCheck(); } else { loginScreenElem.classList.remove("hidden"); gameWrapperElem.classList.add("hidden"); updateTopLoginStatus(); updateLeaderboard(); if (document.getElementById("loginEmailScreen")) document.getElementById("loginEmailScreen").value = ""; if (document.getElementById("loginPasswordScreen")) document.getElementById("loginPasswordScreen").value = ""; if (document.getElementById("registerEmailScreen")) document.getElementById("registerEmailScreen").value = ""; if (document.getElementById("registerPasswordScreen")) document.getElementById("registerPasswordScreen").value = ""; loginModeElem.style.display = "block"; registerModeElem.style.display = "none"; } }); return true; } catch(e) { console.warn("Firebase Fehler:", e); return false; } }
     document.getElementById("doLoginBtn").onclick = async () => { const email = document.getElementById("loginEmailScreen").value, password = document.getElementById("loginPasswordScreen").value; if (!email || !password) { showLoginError("❌ Bitte E-Mail und Passwort eingeben!"); return; } if (!auth) { showLoginError("❌ Verbindung wird aufgebaut, bitte kurz warten..."); setTimeout(() => document.getElementById("doLoginBtn").click(), 2000); return; } try { await auth.signInWithEmailAndPassword(email, password); } catch(err) { showLoginError("❌ " + err.message); } };
     document.getElementById("doRegisterBtn").onclick = async () => { const email = document.getElementById("registerEmailScreen").value, password = document.getElementById("registerPasswordScreen").value; if (!email || !password) { showLoginError("❌ Bitte E-Mail und Passwort eingeben!"); return; } if (password.length < 6) { showLoginError("❌ Passwort muss mindestens 6 Zeichen lang sein!"); return; } if (!auth) { showLoginError("❌ Verbindung wird aufgebaut, bitte kurz warten..."); return; } try { await auth.createUserWithEmailAndPassword(email, password); } catch(err) { showLoginError("❌ " + err.message); } };
     document.getElementById("showRegisterBtn").onclick = () => { loginModeElem.style.display = "none"; registerModeElem.style.display = "block"; loginErrorMsgElem.innerText = ""; };
@@ -1262,6 +1262,21 @@
 }
 
     
+    // ==================== GAME VERSION ====================
+    const CURRENT_GAME_VERSION = "3.0";
+    
+    let firebaseInitialized = false;
+    let database = null;
+    let auth = null;
+    let currentUser = null;
+    let authReady = false; // Wird true sobald Firebase den Login-Status geprueft hat
+    let playerName = localStorage.getItem("farmPlayerName") || "";
+    
+    // ==================== ADMIN/MODERATOR SYSTEM ====================
+    const ADMIN_EMAILS = ["caps4476@web.de"];
+    let isAdmin = false;
+    let bannedPlayers = [];
+
     // ==================== FIREBASE KONFIGURATION ====================
     const firebaseConfig = {
         apiKey: "AIzaSyDGIXQQe6xG-EOFpisBdNfzguG7g_JSs9g",
@@ -1274,29 +1289,12 @@
     };
 
     // Firebase sofort starten damit Login-Button sofort funktioniert
-    // (initFirebase wird spaeter in init() nochmal aufgerufen - das ist abgesichert)
     try {
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         database = firebase.database();
         auth = firebase.auth();
         firebaseInitialized = true;
     } catch(e) { console.warn("Fruehes Firebase-Init fehlgeschlagen:", e); }
-    
-    // ==================== GAME VERSION ====================
-    const CURRENT_GAME_VERSION = "3.0";
-    
-    let firebaseInitialized = false;
-    let database = null;
-    let auth = null;
-    let currentUser = null;
-    let playerName = localStorage.getItem("farmPlayerName") || "";
-    
-    // ==================== ADMIN/MODERATOR SYSTEM ====================
-    const ADMIN_EMAILS = ["caps4476@web.de"];
-    let isAdmin = false;
-    let bannedPlayers = [];
     
     // ==================== LOGIN-BONUS SYSTEM ====================
     const LOGIN_BONUSES = [
@@ -2436,6 +2434,7 @@
     // Kern-Funktion: Schiebt den aktuellen Stand zu Firebase
     async function autoSaveToCloud() {
         if (!currentUser) return;
+        if (!authReady) return; // Warten bis Firebase Login-Status bestaetigt hat
         try {
             const saveData = {
                 gold: playerGold,
