@@ -1958,14 +1958,16 @@
     
     function checkAndApplyLevelUp() {
         let leveledUp = false;
-        while (playerXP >= getXPNeededForNextLevel()) {
-            playerXP -= getXPNeededForNextLevel();
+        let needed = getXPNeededForNextLevel();
+        while (playerXP >= needed) {
+            playerXP -= needed; // Überschuss-XP bleibt erhalten
             playerLevel++;
             leveledUp = true;
             showToast(`🎉 LEVEL UP! Du hast Level ${playerLevel} erreicht! 🎉`);
             const newAnimals = []; for (let [id, animal] of Object.entries(ANIMALS)) if (animal.levelRequired === playerLevel) newAnimals.push(`${animal.emoji} ${animal.name}`);
             if (newAnimals.length > 0) showEvent(`⭐ Level ${playerLevel} erreicht!`, `Neue Tiere freigeschaltet: ${newAnimals.join(", ")}`);
             updateMassPlantButtons(); renderFields(); renderPricePanel(); renderMarket(); if (isBarnUnlocked(playerLevel)) renderBarn();
+            needed = getXPNeededForNextLevel(); // Neuen Wert für nächstes Level holen
         }
         if (leveledUp) { updateLevelUI(); updateViewButtons(); if (isCraftingUnlocked(playerLevel)) renderCraft(); if (isResearchUnlocked(playerLevel)) renderResearch(); if (isLicensesUnlocked(playerLevel)) renderLicenses(); saveGameToLocal(); }
     }
