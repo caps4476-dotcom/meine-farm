@@ -964,13 +964,8 @@
 <body>
   
   
-<div id="admin-panel" style="position: fixed; top: 0; left: 0; width: 100%; background: rgba(0, 0, 0, 0.9); color: white; padding: 8px; text-align: center; z-index: 10000; border-bottom: 2px solid #ff9800; display: flex; justify-content: center; align-items: center; gap: 10px; font-family: sans-serif;">
-    <span style="font-size: 14px; font-weight: bold; color: #ff9800;">🛠 ADMIN</span>
-    <button onclick="adminGlobalReset()" style="background: #9c27b0; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Reset</button>
-    <button onclick="giveGlobalBonus()" style="background: #e67e22; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">🎁 Bonus</button>
-    <button onclick="debugFirebase()" style="background: #27ae60; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">🔍 Debug</button>
-    <button onclick="forceSaveNow()" style="background: #2980b9; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">💾 Jetzt Speichern</button>
-    <button onclick="this.parentElement.style.display='none'" style="background: #444; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">X</button>
+<div id="admin-panel" style="position: fixed; top: 0; right: 10px; z-index: 10000; display: none;">
+    <button onclick="setView('multiplayer'); document.getElementById('adminSection').classList.remove('hidden'); document.getElementById('adminSection').scrollIntoView({behavior:'smooth'});" style="background:#ff9800; color:white; border:none; padding:6px 14px; border-radius:0 0 10px 10px; cursor:pointer; font-weight:bold; font-size:13px;">🛠️ ADMIN</button>
 </div>
 
 <div style="height: 50px;"></div>
@@ -1093,33 +1088,32 @@
         </div>
         
         <div id="adminSection" class="admin-section hidden" style="grid-column:1/-1;">
-            <div style="background: #4a1a1a; padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 2px solid red;">
-                <h3 style="color: #ff6666; margin-top: 0;">☢️ KRITISCHE ADMIN-ZENTRALE</h3>
-                <p style="font-size: 0.8em; color: #ccc;">Hiermit löschst du die gesamte Datenbank für den Live-Gang.</p>
-                <button onclick="adminGlobalReset()" class="admin-btn" style="background: #cc0000; font-weight: bold;">
-                    🔥 KOMPLETTES SPIEL RESETTEN (WIPE)
-                </button>
+            <div class="admin-title" style="color:#ff9800; font-size:1.1rem;">🛠️ ADMIN-ZENTRALE</div>
+
+            <!-- Schnellaktionen -->
+            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;">
+                <button onclick="debugFirebase()" style="background:#27ae60; color:white; border:none; padding:8px 14px; border-radius:8px; cursor:pointer;">🔍 Debug</button>
+                <button onclick="forceSaveNow()" style="background:#2980b9; color:white; border:none; padding:8px 14px; border-radius:8px; cursor:pointer;">💾 Jetzt Speichern</button>
+                <button onclick="giveGlobalBonus()" style="background:#e67e22; color:white; border:none; padding:8px 14px; border-radius:8px; cursor:pointer;">🎁 Bonus vergeben</button>
+                <button onclick="adminGlobalReset()" style="background:#cc0000; color:white; border:none; padding:8px 14px; border-radius:8px; cursor:pointer;">🔥 Globaler Reset</button>
             </div>
-            <div class="admin-title">🛡️ ADMIN-BEREICH</div>
-            <div>
-                <button id="adminCleanupBtn" class="admin-btn danger">🧹 Alle alten Einträge löschen (7+ Tage)</button>
-                <button id="adminClearAllBtn" class="admin-btn danger">⚠️ KOMPLETTE Bestenliste leeren</button>
-                <button id="adminGlobalResetBtn" class="admin-btn admin-reset-btn" style="background:#8b0000; border:2px solid #ff4444;">⚠️ GLOBALEN RESET ausführen</button>
-                <button id="adminClearChatBtn" class="admin-btn warning">💬 CHAT leeren</button>
-            </div>
-            <div style="margin-top: 10px;">
-                <div>👤 Spieler verwalten:</div>
-                <div style="display: flex; gap: 5px; flex-wrap: wrap; margin-top: 5px;">
+
+            <!-- Spieler verwalten -->
+            <div style="margin-top:15px;">
+                <div class="admin-title">🛡️ SPIELER VERWALTEN</div>
+                <div style="display:flex; gap:5px; flex-wrap:wrap; margin-top:8px;">
                     <input type="text" id="adminPlayerName" placeholder="Spielername" style="background:#3a3022; border-radius:30px; padding:5px 10px; color:white; border:none;">
-                    <button id="adminRemovePlayerBtn" class="admin-btn danger">🗑️ Aus Bestenliste entfernen</button>
-                    <button id="adminBanPlayerBtn" class="admin-btn warning">🚫 Spieler bannen</button>
+                    <button id="adminRemovePlayerBtn" class="admin-btn danger">🗑️ Aus Bestenliste</button>
+                    <button id="adminBanPlayerBtn" class="admin-btn warning">🚫 Bannen</button>
                     <button id="adminUnbanPlayerBtn" class="admin-btn">✅ Bann aufheben</button>
                 </div>
             </div>
-            <div id="adminPlayerListContainer" style="margin-top: 15px;">
+
+            <!-- Spielerliste -->
+            <div id="adminPlayerListContainer" style="margin-top:15px;">
                 <div class="admin-title">👥 ALLE SPIELER</div>
-                <div id="adminPlayerList" style="max-height: 300px; overflow-y: auto; background: #3a3022; border-radius: 20px; padding: 10px;"></div>
-                <button id="adminRefreshPlayersBtn" class="admin-btn" style="margin-top: 10px;">🔄 Aktualisieren</button>
+                <div id="adminPlayerList" style="max-height:300px; overflow-y:auto; background:#3a3022; border-radius:20px; padding:10px;"></div>
+                <button id="adminRefreshPlayersBtn" class="admin-btn" style="margin-top:10px;">🔄 Aktualisieren</button>
             </div>
         </div>
     </div>
@@ -2539,7 +2533,35 @@
                 }
             }
 
-            // Spielstand laden
+        // Echtzeit-Listener fuer Admin-Bonus (bekommt Bonus sofort ohne Reload)
+        database.ref('globalBonus').on('value', (snap) => {
+            const bonus = snap.val();
+            if (!bonus || !currentUser) return;
+            const lastSeen = parseInt(localStorage.getItem('lastBonusSeen_' + currentUser.uid) || '0');
+            if (bonus.timestamp > lastSeen) {
+                localStorage.setItem('lastBonusSeen_' + currentUser.uid, bonus.timestamp);
+                playerGold = (playerGold || 0) + (bonus.gold || 0);
+                if (typeof addXP === 'function') addXP(bonus.xp || 0);
+                else playerXP = (playerXP || 0) + (bonus.xp || 0);
+                updateMoneyUI(); updateLevelUI();
+                showToast(`🎁 Admin-Bonus erhalten: +${bonus.gold} Gold, +${bonus.xp} XP!`);
+                saveGameToLocal();
+            }
+        });
+
+        // Echtzeit-Listener fuer globalen Reset
+        database.ref('globalResetTime').on('value', (snap) => {
+            const resetTime = snap.val();
+            if (!resetTime) return;
+            const lastReset = parseInt(localStorage.getItem('lastResetSeen') || '0');
+            if (resetTime > lastReset && resetTime > Date.now() - 60000) {
+                localStorage.setItem('lastResetSeen', resetTime);
+                localStorage.removeItem('farmPremium');
+                location.reload();
+            }
+        });
+
+        // Spielstand laden
             const snapshot = await database.ref("users/" + currentUser.uid + "/savegame").once("value");
             const data = snapshot.val();
 
@@ -2996,8 +3018,16 @@ async function giveGlobalBonus() {
             await database.ref().update(updates);
         }
 
+        // --- TEIL C: Echtzeit-Signal an alle eingeloggten Spieler senden ---
+        await database.ref('globalBonus').set({
+            gold: goldBonus,
+            xp: xpBonus,
+            timestamp: Date.now(),
+            sentBy: currentUser.email
+        });
+
         showToast(`🎁 Bonus verteilt: +${goldBonus} Gold, +${xpBonus} XP!`);
-        alert(`✅ Erfolg! Bonus an ${updatedCount} Spieler verteilt.\nDein Gold: ${window.playerGold}`);
+        alert(`✅ Erfolg! Bonus an ${updatedCount} Spieler verteilt.\nEingeloggte Spieler bekommen es sofort!`);
 
     } catch (err) {
         console.error("Bonus Fehler:", err);
@@ -3152,33 +3182,38 @@ async function forceSaveNow() {
     init();
     // --- ADMIN RESET SYSTEM FÜR UDO ---
 async function adminGlobalReset() {
-    // Prüft ob du als Udo eingeloggt bist und Admin-Status hast
-    if (typeof isAdmin === 'undefined' || !isAdmin) {
-        alert("❌ Zugriff verweigert: Nur Admin Udo darf das!");
-        return;
-    }
-    
-    const bestätigung = confirm("Hallo Udo! Möchtest du wirklich alle Farmen (Gold/XP) zurücksetzen?\n\nDie Accounts bleiben erhalten, aber das Leaderboard wird geleert.");
-    if (!bestätigung) return;
-    
+    if (!isAdmin) { alert("❌ Zugriff verweigert!"); return; }
+
+    const bestaetigung = confirm("⚠️ ACHTUNG!\n\nDas löscht ALLE Spielstände aller Spieler komplett!\nDie Accounts bleiben erhalten.\n\nWirklich fortfahren?");
+    if (!bestaetigung) return;
+    const nochmal = confirm("🔴 Letzte Warnung!\n\nAlle Gold, XP, Felder und Fortschritte werden gelöscht!\n\nJetzt wirklich resetten?");
+    if (!nochmal) return;
+
     try {
-        // 1. Globalen Reset-Zeitstempel für alle Clients setzen
-        await database.ref('globalResetTime').set(Date.now());
-        
-        // 2. Das komplette Leaderboard leeren
+        // 1. Alle Spielstände laden und auf Startwerte zurücksetzen
+        const usersSnap = await database.ref('users').once('value');
+        const allUsers = usersSnap.val();
+        if (allUsers) {
+            for (let uid in allUsers) {
+                await database.ref('users/' + uid + '/savegame').set({
+                    gold: 500, playerXP: 0, playerLevel: 1, inventory: {},
+                    day: 1, maxStorage: 50, barnOwned: false, barnUpgrades: {},
+                    animals: [], completedResearch: [], researchProgress: {},
+                    ownedLicenses: [], currentWeather: "sunny",
+                    fields: Array(20).fill(null).map((_, i) => ({ owned: i < 4, cropId: null, plantedAt: null, isReady: false })),
+                    timestamp: Date.now()
+                });
+            }
+        }
+        // 2. Leaderboard leeren
         await database.ref('leaderboard').remove();
-        
-        // 3. Deinen Admin-Status (Udo) sofort wieder in die DB schreiben
-        await database.ref('leaderboard/Udo').set({
-            gold: 0,
-            xp: 0,
-            isAdmin: true
-        });
-        
-        alert("✅ Reset erfolgreich! Die Seite wird nun neu geladen.");
+        // 3. Reset-Signal an alle Clients senden (Echtzeit)
+        await database.ref('globalResetTime').set(Date.now());
+
+        alert(`✅ Reset abgeschlossen! ${allUsers ? Object.keys(allUsers).length : 0} Spieler zurückgesetzt.\nDie Seite wird neu geladen.`);
         location.reload();
     } catch(err) {
-        alert("Fehler beim Reset: " + err.message);
+        alert("❌ Fehler beim Reset: " + err.message);
     }
 }
     
