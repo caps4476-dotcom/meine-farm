@@ -1188,7 +1188,7 @@
     // ==================== LOGIN & AUTH ====================
     const loginScreenElem = document.getElementById("loginScreen"), gameWrapperElem = document.getElementById("gameWrapper"), loginModeElem = document.getElementById("loginMode"), registerModeElem = document.getElementById("registerMode"), loginErrorMsgElem = document.getElementById("loginErrorMsg");
     function showLoginError(msg) { loginErrorMsgElem.innerText = msg; setTimeout(() => { loginErrorMsgElem.innerText = ""; }, 3000); }
-    function initFirebase() { try { if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); } database = firebase.database(); auth = firebase.auth(); firebaseInitialized = true; console.log("Firebase initialisiert!"); auth.onAuthStateChanged((user) => { authReady = true; currentUser = user; updateAuthUI(); updateTopLoginStatus(); checkAdminStatus(); if (user) { loginScreenElem.classList.add("hidden"); gameWrapperElem.classList.remove("hidden"); showToast(`👋 Willkommen!`, false); loadGameFromCloud(); updateOnlineStatus(); updateLeaderboard(); loadLoginBonusData(); loadQuests(); loadResearchProgress(); checkLoginBonus(); startAutoSave(); initRealPlayDays(); startRealDayCheck(); } else { loginScreenElem.classList.remove("hidden"); gameWrapperElem.classList.add("hidden"); updateTopLoginStatus(); updateLeaderboard(); if (document.getElementById("loginEmailScreen")) document.getElementById("loginEmailScreen").value = ""; if (document.getElementById("loginPasswordScreen")) document.getElementById("loginPasswordScreen").value = ""; if (document.getElementById("registerEmailScreen")) document.getElementById("registerEmailScreen").value = ""; if (document.getElementById("registerPasswordScreen")) document.getElementById("registerPasswordScreen").value = ""; loginModeElem.style.display = "block"; registerModeElem.style.display = "none"; } }); return true; } catch(e) { console.warn("Firebase Fehler:", e); return false; } }
+    function initFirebase() { try { if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); } database = firebase.database(); auth = firebase.auth(); firebaseInitialized = true; console.log("Firebase initialisiert!"); auth.onAuthStateChanged((user) => { authReady = true; currentUser = user; updateAuthUI(); updateTopLoginStatus(); checkAdminStatus(); if (user) { loginScreenElem.classList.add("hidden"); gameWrapperElem.classList.remove("hidden"); showToast(`👋 Willkommen!`, false); loadGameFromCloud(); updateOnlineStatus(); updateLeaderboard(); loadLoginBonusData(); loadQuests(); loadResearchProgress(); checkLoginBonus(); startAutoSave(); startSessionCheck(); initRealPlayDays(); startRealDayCheck(); } else { stopSessionCheck(); loginScreenElem.classList.remove("hidden"); gameWrapperElem.classList.add("hidden"); updateTopLoginStatus(); updateLeaderboard(); if (document.getElementById("loginEmailScreen")) document.getElementById("loginEmailScreen").value = ""; if (document.getElementById("loginPasswordScreen")) document.getElementById("loginPasswordScreen").value = ""; if (document.getElementById("registerEmailScreen")) document.getElementById("registerEmailScreen").value = ""; if (document.getElementById("registerPasswordScreen")) document.getElementById("registerPasswordScreen").value = ""; loginModeElem.style.display = "block"; registerModeElem.style.display = "none"; } }); return true; } catch(e) { console.warn("Firebase Fehler:", e); return false; } }
     document.getElementById("doLoginBtn").onclick = async () => { const email = document.getElementById("loginEmailScreen").value, password = document.getElementById("loginPasswordScreen").value; if (!email || !password) { showLoginError("❌ Bitte E-Mail und Passwort eingeben!"); return; } if (!auth) { showLoginError("❌ Verbindung wird aufgebaut, bitte kurz warten..."); setTimeout(() => document.getElementById("doLoginBtn").click(), 2000); return; } try { await auth.signInWithEmailAndPassword(email, password); } catch(err) { showLoginError("❌ " + err.message); } };
     document.getElementById("doRegisterBtn").onclick = async () => { const email = document.getElementById("registerEmailScreen").value, password = document.getElementById("registerPasswordScreen").value; if (!email || !password) { showLoginError("❌ Bitte E-Mail und Passwort eingeben!"); return; } if (password.length < 6) { showLoginError("❌ Passwort muss mindestens 6 Zeichen lang sein!"); return; } if (!auth) { showLoginError("❌ Verbindung wird aufgebaut, bitte kurz warten..."); return; } try { await auth.createUserWithEmailAndPassword(email, password); } catch(err) { showLoginError("❌ " + err.message); } };
     document.getElementById("showRegisterBtn").onclick = () => { loginModeElem.style.display = "none"; registerModeElem.style.display = "block"; loginErrorMsgElem.innerText = ""; };
@@ -2482,6 +2482,42 @@
         autoSaveInterval = setInterval(async () => { 
             if (currentUser && !isPaused) await autoSaveToCloud(); 
         }, 5 * 60 * 1000); 
+    }
+
+    // ==================== SESSION SYSTEM ====================
+    let currentSessionToken = null;
+    let sessionCheckInterval = null;
+
+    async function startSessionCheck() {
+        if (!currentUser || !database) return;
+
+        // Neues Session-Token erstellen und in Cloud schreiben
+        currentSessionToken = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+        await database.ref('users/' + currentUser.uid + '/activeSession').set(currentSessionToken);
+        console.log("Session gestartet:", currentSessionToken);
+
+        // Alle 30 Sekunden prüfen ob Session noch aktuell ist
+        if (sessionCheckInterval) clearInterval(sessionCheckInterval);
+        sessionCheckInterval = setInterval(async () => {
+            if (!currentUser || !database) return;
+            try {
+                const snap = await database.ref('users/' + currentUser.uid + '/activeSession').once('value');
+                const cloudToken = snap.val();
+                if (cloudToken && cloudToken !== currentSessionToken) {
+                    // Anderes Gerät hat sich eingeloggt!
+                    clearInterval(sessionCheckInterval);
+                    clearInterval(autoSaveInterval);
+                    alert("⚠️ Du wurdest auf einem anderen Gerät eingeloggt.\nDieses Gerät wird jetzt abgemeldet.");
+                    await auth.signOut();
+                }
+            } catch(e) { console.warn("Session-Check Fehler:", e); }
+        }, 30000);
+    }
+
+    function stopSessionCheck() {
+        if (sessionCheckInterval) clearInterval(sessionCheckInterval);
+        sessionCheckInterval = null;
+        currentSessionToken = null;
     }
     
     // Kern-Funktion: Schiebt den aktuellen Stand zu Firebase
