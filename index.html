@@ -1144,8 +1144,7 @@
         </div>
         <div class="account-slot" style="grid-column:1/-1;">
             <div class="status" style="background:#3a5a3a;">☁️ CLOUD-SPEICHER</div>
-            <button id="saveToCloudBtn" class="mass-btn" style="background:#2c6e6e;">💾 Spielstand in Cloud speichern</button>
-            <button id="loadFromCloudBtn" class="mass-btn" style="background:#6e5a3a;">📥 Spielstand aus Cloud laden</button>
+        
         </div>
     </div>
     
@@ -1782,22 +1781,27 @@
     }
     
     async function sendChatMessage() {
-        if (!chatEnabled || !firebaseInitialized || !database) { showToast("❌ Chat nicht verfügbar", true); return; }
-        if (!currentUser) { showToast("❌ Bitte einloggen um zu chatten!", true); setView("account"); return; }
+        if (!currentUser) { showToast("❌ Bitte einloggen um zu chatten!", true); return; }
+        if (!firebaseInitialized || !database) { showToast("❌ Keine Firebase-Verbindung!", true); return; }
+        if (!chatEnabled) { 
+            await initChat(); // Nochmal versuchen zu initialisieren
+        }
         const input = document.getElementById("chatInput");
-        const message = input.value.trim();
+        const message = input?.value.trim();
         if (!message) return;
         if (message.length > 200) { showToast("❌ Nachricht zu lang (max. 200 Zeichen)", true); return; }
         const lastMessage = localStorage.getItem(`lastChat_${currentUser.uid}`);
-        if (lastMessage && Date.now() - parseInt(lastMessage) < 3000) { showToast("❌ Bitte warte 3 Sekunden zwischen Nachrichten", true); return; }
-        const playerNameInput = document.getElementById("playerNameInput");
-        const displayName = playerNameInput?.value || playerName || currentUser.email?.split('@')[0] || "Anonymous";
+        if (lastMessage && Date.now() - parseInt(lastMessage) < 3000) { showToast("❌ Bitte warte 3 Sekunden!", true); return; }
+        const displayName = playerName || currentUser.email?.split('@')[0] || "Anonym";
         const chatMessage = { name: displayName, message: message, timestamp: Date.now(), uid: currentUser.uid, isAdmin: isAdmin };
         try {
             await database.ref('chat').push(chatMessage);
             input.value = "";
             localStorage.setItem(`lastChat_${currentUser.uid}`, Date.now().toString());
-        } catch(err) { showToast("❌ Fehler beim Senden: " + err.message, true); }
+        } catch(err) { 
+            showToast("❌ Fehler: " + err.message, true);
+            console.error("Chat Fehler:", err);
+        }
     }
     
     function renderChatMessages() {
@@ -2682,6 +2686,7 @@ window.playerLevel = parseInt(data.playerLevel || data.level) || 1;
     };
     localStorage.setItem("farmPremium", JSON.stringify(localData));
     console.log("✅ Cloud-Daten geladen - Gold: " + playerGold + ", XP: " + playerXP + ", Level: " + playerLevel);
+    initChat();
 }
 
     
@@ -3168,8 +3173,7 @@ async function forceSaveNow() {
         document.getElementById("registerBtn").onclick = () => register();
         document.getElementById("loginBtn").onclick = () => login();
         document.getElementById("logoutBtn").onclick = () => logout();
-        document.getElementById("saveToCloudBtn").onclick = () => saveGameToCloud();
-        document.getElementById("loadFromCloudBtn").onclick = () => loadGameFromCloud();
+        
         document.getElementById("savePlayerNameBtn")?.addEventListener("click", async () => { const nameInput = document.getElementById("playerNameInput"); if (nameInput && nameInput.value.trim().length >= 2) { playerName = nameInput.value.trim(); localStorage.setItem("farmPlayerName", playerName); if (currentUser && database) { await database.ref('users/' + currentUser.uid + '/playerName').set(playerName); } showToast(`👤 Name gespeichert: ${playerName}`); updateLeaderboard(); updateOnlineStatus(); } else showToast("❌ Name muss mindestens 2 Zeichen haben!", true); });
         document.getElementById("refreshLeaderboardBtn")?.addEventListener("click", () => updateLeaderboard());
         document.getElementById("createTradeOfferBtn")?.addEventListener("click", () => createTradeOffer());
