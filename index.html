@@ -1193,9 +1193,9 @@
     // ==================== LOGIN & AUTH ====================
     const loginScreenElem = document.getElementById("loginScreen"), gameWrapperElem = document.getElementById("gameWrapper"), loginModeElem = document.getElementById("loginMode"), registerModeElem = document.getElementById("registerMode"), loginErrorMsgElem = document.getElementById("loginErrorMsg");
     function showLoginError(msg) { loginErrorMsgElem.innerText = msg; setTimeout(() => { loginErrorMsgElem.innerText = ""; }, 3000); }
-    function initFirebase() { try { firebase.initializeApp(firebaseConfig); database = firebase.database(); auth = firebase.auth(); firebaseInitialized = true; console.log("Firebase initialisiert!"); auth.onAuthStateChanged((user) => { currentUser = user; updateAuthUI(); updateTopLoginStatus(); checkAdminStatus(); if (user) { loginScreenElem.classList.add("hidden"); gameWrapperElem.classList.remove("hidden"); showToast(`👋 Willkommen ${user.email}!`, false); loadGameFromLocal(); loadGameFromCloud(); updateOnlineStatus(); updateLeaderboard(); loadLoginBonusData(); loadQuests(); loadResearchProgress(); checkLoginBonus(); startAutoSave(); initRealPlayDays(); startRealDayCheck(); } else { loginScreenElem.classList.remove("hidden"); gameWrapperElem.classList.add("hidden"); updateTopLoginStatus(); updateLeaderboard(); if (document.getElementById("loginEmailScreen")) document.getElementById("loginEmailScreen").value = ""; if (document.getElementById("loginPasswordScreen")) document.getElementById("loginPasswordScreen").value = ""; if (document.getElementById("registerEmailScreen")) document.getElementById("registerEmailScreen").value = ""; if (document.getElementById("registerPasswordScreen")) document.getElementById("registerPasswordScreen").value = ""; loginModeElem.style.display = "block"; registerModeElem.style.display = "none"; } }); return true; } catch(e) { console.warn("Firebase Fehler:", e); return false; } }
-    document.getElementById("doLoginBtn").onclick = async () => { const email = document.getElementById("loginEmailScreen").value, password = document.getElementById("loginPasswordScreen").value; if (!email || !password) { showLoginError("❌ Bitte E-Mail und Passwort eingeben!"); return; } try { await auth.signInWithEmailAndPassword(email, password); } catch(err) { showLoginError("❌ " + err.message); } };
-    document.getElementById("doRegisterBtn").onclick = async () => { const email = document.getElementById("registerEmailScreen").value, password = document.getElementById("registerPasswordScreen").value; if (!email || !password) { showLoginError("❌ Bitte E-Mail und Passwort eingeben!"); return; } if (password.length < 6) { showLoginError("❌ Passwort muss mindestens 6 Zeichen lang sein!"); return; } try { await auth.createUserWithEmailAndPassword(email, password); } catch(err) { showLoginError("❌ " + err.message); } };
+    function initFirebase() { try { if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); } database = firebase.database(); auth = firebase.auth(); firebaseInitialized = true; console.log("Firebase initialisiert!"); auth.onAuthStateChanged((user) => { currentUser = user; updateAuthUI(); updateTopLoginStatus(); checkAdminStatus(); if (user) { loginScreenElem.classList.add("hidden"); gameWrapperElem.classList.remove("hidden"); showToast(`👋 Willkommen ${user.email}!`, false); loadGameFromLocal(); loadGameFromCloud(); updateOnlineStatus(); updateLeaderboard(); loadLoginBonusData(); loadQuests(); loadResearchProgress(); checkLoginBonus(); startAutoSave(); initRealPlayDays(); startRealDayCheck(); } else { loginScreenElem.classList.remove("hidden"); gameWrapperElem.classList.add("hidden"); updateTopLoginStatus(); updateLeaderboard(); if (document.getElementById("loginEmailScreen")) document.getElementById("loginEmailScreen").value = ""; if (document.getElementById("loginPasswordScreen")) document.getElementById("loginPasswordScreen").value = ""; if (document.getElementById("registerEmailScreen")) document.getElementById("registerEmailScreen").value = ""; if (document.getElementById("registerPasswordScreen")) document.getElementById("registerPasswordScreen").value = ""; loginModeElem.style.display = "block"; registerModeElem.style.display = "none"; } }); return true; } catch(e) { console.warn("Firebase Fehler:", e); return false; } }
+    document.getElementById("doLoginBtn").onclick = async () => { const email = document.getElementById("loginEmailScreen").value, password = document.getElementById("loginPasswordScreen").value; if (!email || !password) { showLoginError("❌ Bitte E-Mail und Passwort eingeben!"); return; } if (!auth) { showLoginError("❌ Verbindung wird aufgebaut, bitte kurz warten..."); setTimeout(() => document.getElementById("doLoginBtn").click(), 2000); return; } try { await auth.signInWithEmailAndPassword(email, password); } catch(err) { showLoginError("❌ " + err.message); } };
+    document.getElementById("doRegisterBtn").onclick = async () => { const email = document.getElementById("registerEmailScreen").value, password = document.getElementById("registerPasswordScreen").value; if (!email || !password) { showLoginError("❌ Bitte E-Mail und Passwort eingeben!"); return; } if (password.length < 6) { showLoginError("❌ Passwort muss mindestens 6 Zeichen lang sein!"); return; } if (!auth) { showLoginError("❌ Verbindung wird aufgebaut, bitte kurz warten..."); return; } try { await auth.createUserWithEmailAndPassword(email, password); } catch(err) { showLoginError("❌ " + err.message); } };
     document.getElementById("showRegisterBtn").onclick = () => { loginModeElem.style.display = "none"; registerModeElem.style.display = "block"; loginErrorMsgElem.innerText = ""; };
     document.getElementById("showLoginBtn").onclick = () => { registerModeElem.style.display = "none"; loginModeElem.style.display = "block"; loginErrorMsgElem.innerText = ""; };
     async function register() { const email = document.getElementById("loginEmail").value, password = document.getElementById("loginPassword").value; if (!email || !password) { showToast("❌ Bitte E-Mail und Passwort eingeben!", true); return; } if (password.length < 6) { showToast("❌ Passwort muss mindestens 6 Zeichen lang sein!", true); return; } try { await auth.createUserWithEmailAndPassword(email, password); showToast("✅ Account erstellt! Du bist jetzt eingeloggt.", false); } catch(err) { showToast("❌ Fehler: " + err.message, true); } }
@@ -1272,6 +1272,17 @@
         messagingSenderId: "128865736959",
         appId: "1:128865736959:web:5098b60b3cd22be6fd54ca"
     };
+
+    // Firebase sofort starten damit Login-Button sofort funktioniert
+    // (initFirebase wird spaeter in init() nochmal aufgerufen - das ist abgesichert)
+    try {
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        database = firebase.database();
+        auth = firebase.auth();
+        firebaseInitialized = true;
+    } catch(e) { console.warn("Fruehes Firebase-Init fehlgeschlagen:", e); }
     
     // ==================== GAME VERSION ====================
     const CURRENT_GAME_VERSION = "3.0";
@@ -2579,6 +2590,10 @@ window.playerLevel = parseInt(data.playerLevel || data.level) || 1;
         };
         localStorage.setItem("farmPremium", JSON.stringify(saveData));
         if (currentUser) localStorage.setItem(`lastLocalSave_${currentUser.uid}`, Date.now().toString());
+        // Auch in die Cloud speichern wenn eingeloggt
+        if (currentUser && firebaseInitialized && typeof autoSaveToCloud === 'function') {
+            autoSaveToCloud().catch(e => console.warn("Cloud-Save fehlgeschlagen:", e));
+        }
     }
     
     function loadGameFromLocal() {
@@ -2856,48 +2871,59 @@ async function giveGlobalBonus() {
     if (isNaN(goldBonus) || isNaN(xpBonus)) return;
 
     try {
-        // --- TEIL A: GLOBALER LEADERBOARD SYNC ---
-        const snapshot = await database.ref('leaderboard').once('value');
-        const allPlayers = snapshot.val();
+        // --- TEIL A: ALLE SPIELER in der Cloud updaten ---
+        const usersSnapshot = await database.ref('users').once('value');
+        const allUsers = usersSnapshot.val();
+        let updatedCount = 0;
 
-        if (allPlayers) {
-            const updates = {};
-            for (let playerName in allPlayers) {
-                updates[`leaderboard/${playerName}/gold`] = (allPlayers[playerName].gold || 0) + goldBonus;
-                updates[`leaderboard/${playerName}/level`] = (allPlayers[playerName].level || 1); // Level mitsenden
+        if (allUsers) {
+            for (let uid in allUsers) {
+                const userRef = database.ref('users/' + uid + '/savegame');
+                const userSnap = await userRef.once('value');
+                const userData = userSnap.val();
+                if (userData) {
+                    const newGold = (userData.gold || 0) + goldBonus;
+                    const newXP = (userData.playerXP || userData.xp || 0) + xpBonus;
+                    await userRef.update({
+                        gold: newGold,
+                        xp: newXP,
+                        playerXP: newXP,
+                        lastSave: Date.now()
+                    });
+                    updatedCount++;
+                }
             }
-            await database.ref().update(updates);
-            console.log("Leaderboard Bonus gesendet.");
         }
 
-        // --- TEIL B: DEIN EIGENER SPIELSTAND (DER WICHTIGSTE TEIL) ---
+        // --- TEIL B: EIGENEN SPIELSTAND sofort anwenden ---
         if (currentUser) {
-            // Wir nutzen 'window.', um sicherzugehen, dass wir die globalen Spielvariablen erwischen
             window.playerGold = (window.playerGold || 0) + goldBonus;
-            window.playerXP = (window.playerXP || 0) + xpBonus;
-
-            // Wir schreiben direkt in dein Savegame-Objekt in der Cloud
-            const mySaveRef = database.ref('users/' + currentUser.uid + '/savegame');
-            
-            // Wir holen kurz den aktuellen Stand, um nichts zu löschen
-            const currentSave = await mySaveRef.once('value');
-            let saveData = currentSave.val() || {};
-
-            // Werte aktualisieren
-            saveData.gold = window.playerGold;
-            saveData.xp = window.playerXP;
-            saveData.lastSave = Date.now();
-
-            // Zurückschreiben in die Cloud
-            await mySaveRef.set(saveData);
-
+            // addXP korrekt aufrufen damit Level-Berechnung greift
+            if (typeof addXP === 'function') {
+                addXP(xpBonus);
+            } else {
+                window.playerXP = (window.playerXP || 0) + xpBonus;
+            }
             // UI sofort aktualisieren
             if (typeof updateMoneyUI === 'function') updateMoneyUI();
             if (typeof updateLevelUI === 'function') updateLevelUI();
-            
-            showToast(`🎁 Bonus erhalten: +${goldBonus} Gold!`);
-            alert(`✅ Erfolg! Gold in der Cloud gespeichert: ${window.playerGold}`);
+            // Lokalen Stand auch aktualisieren
+            if (typeof saveGameToLocal === 'function') saveGameToLocal();
         }
+
+        // --- TEIL C: LEADERBOARD aktualisieren ---
+        const lbSnapshot = await database.ref('leaderboard').once('value');
+        const allPlayers = lbSnapshot.val();
+        if (allPlayers) {
+            const updates = {};
+            for (let name in allPlayers) {
+                updates[`leaderboard/${name}/gold`] = (allPlayers[name].gold || 0) + goldBonus;
+            }
+            await database.ref().update(updates);
+        }
+
+        showToast(`🎁 Bonus verteilt: +${goldBonus} Gold, +${xpBonus} XP!`);
+        alert(`✅ Erfolg! Bonus an ${updatedCount} Spieler verteilt.\nDein Gold: ${window.playerGold}`);
 
     } catch (err) {
         console.error("Bonus Fehler:", err);
@@ -2912,13 +2938,7 @@ async function giveGlobalBonus() {
         initResearchProgress();
         initPriceSystem();
         
-        const firebaseOk = initFirebase();
-        if (firebaseOk) {
-            loadGlobalPrices();
-            loadTradeOffers();
-            setInterval(() => { if (currentView === "multiplayer" && isMultiplayerUnlocked(playerLevel)) { updateLeaderboard(); loadTradeOffers(); } }, 30000);
-        }
-        
+        // 1. Lokale Daten zuerst (schneller Fallback fuer den Start)
         if (!loadGameFromLocal()) {
             for (let key in globalMarketPrices) globalMarketPrices[key] = basePrices[key];
             playerGold = 500; initPricesAndInventory(); maxStorage = 50; playerLevel = 1; playerXP = 0;
@@ -2926,8 +2946,17 @@ async function giveGlobalBonus() {
             initResearchProgress(); applyResearchBonuses();
             updateMoneyUI(); updateLevelUI(); updateStorageUI(); renderFields(); renderPricePanel(); renderMarket(); saveGameToLocal();
         }
+
+        // 2. Firebase starten — bei erfolgreichem Login laedt onAuthStateChanged die Cloud-Daten
+        // und ueberschreibt automatisch den lokalen Stand (Cloud hat immer Vorrang)
+        const firebaseOk = initFirebase();
+        if (firebaseOk) {
+            loadGlobalPrices();
+            loadTradeOffers();
+            setInterval(() => { if (currentView === "multiplayer" && isMultiplayerUnlocked(playerLevel)) { updateLeaderboard(); loadTradeOffers(); } }, 30000);
+        }
         
-        startTimer(); startLiveUpdates(); startNPCSpawner(); startRealDayCheck(); startAutoSave();
+        startTimer(); startLiveUpdates(); startNPCSpawner(); startRealDayCheck();
         renderNPCInUI();
         
         document.getElementById("harvestAllBtn").onclick = () => massHarvest();
@@ -3034,7 +3063,6 @@ if (typeof firebase !== 'undefined' && firebase.auth) firebase.auth().onAuthStat
         });
     }
 });
-} // Ende: firebase safety check
 
 
 
