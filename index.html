@@ -1740,10 +1740,16 @@
     // ==================== GLOBALER CHAT ====================
     let chatMessages = [];
     let chatEnabled = false;
+    let chatInitialized = false;
     
     async function initChat() {
         if (!firebaseInitialized || !database) return;
+        if (chatInitialized) { renderChatMessages(); return; } // Nur einmal initialisieren
+        chatInitialized = true;
+
         await loadChatMessages();
+
+        // Echtzeit-Listener für neue Nachrichten
         database.ref('chat').limitToLast(50).on('child_added', (snapshot) => {
             const msg = snapshot.val();
             if (msg && !chatMessages.some(m => m.id === snapshot.key)) {
@@ -1753,7 +1759,13 @@
                 renderChatMessages();
             }
         });
-        
+
+        // Nachrichten die gelöscht werden auch aus der Anzeige entfernen
+        database.ref('chat').on('child_removed', (snapshot) => {
+            chatMessages = chatMessages.filter(m => m.id !== snapshot.key);
+            renderChatMessages();
+        });
+
         document.getElementById("chatSendBtn")?.addEventListener("click", () => sendChatMessage());
         document.getElementById("chatInput")?.addEventListener("keypress", (e) => { if (e.key === "Enter") sendChatMessage(); });
         chatEnabled = true;
@@ -3168,7 +3180,7 @@ async function forceSaveNow() {
         updateViewButtons();
         setView("farm");
         
-        if (firebaseOk && isAdmin) { extendAdminSection(); initChat(); }
+        if (firebaseOk) { extendAdminSection(); initChat(); }
         
         const nextChange = 120000 + Math.random() * 180000;
         if (weatherTimer) clearTimeout(weatherTimer);
