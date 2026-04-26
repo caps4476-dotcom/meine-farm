@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, minimum-scale=1.0, maximum-scale=3.0">
     <title>Meine Farm Deluxe - Cloud Speicher</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
@@ -204,11 +204,12 @@
         }
 
         .admin-section {
-            background: #2a2a2a;
+            background: #1a1a2e;
             border-radius: 48px;
             padding: 15px 20px;
             margin-top: 15px;
             border: 2px solid #f5a623;
+            color: #ffffff;
         }
         .admin-title {
             font-size: 1.2rem;
@@ -228,10 +229,11 @@
         }
         .admin-btn.warning {
             background: #f5a623;
-            color: #2d2b1f;
+            color: #ffffff;
         }
         .admin-btn.danger {
             background: #c44;
+            color: white;
         }
         .admin-reset-btn {
             background: #8b0000;
@@ -1743,7 +1745,8 @@
     
     async function initChat() {
         if (!firebaseInitialized || !database) return;
-        if (chatInitialized) { renderChatMessages(); return; } // Nur einmal initialisieren
+        if (!currentUser) return;
+        if (chatInitialized) { renderChatMessages(); return; }
         chatInitialized = true;
 
         await loadChatMessages();
@@ -1759,14 +1762,15 @@
             }
         });
 
-        // Nachrichten die gelöscht werden auch aus der Anzeige entfernen
         database.ref('chat').on('child_removed', (snapshot) => {
             chatMessages = chatMessages.filter(m => m.id !== snapshot.key);
             renderChatMessages();
         });
 
-        document.getElementById("chatSendBtn")?.addEventListener("click", () => sendChatMessage());
-        document.getElementById("chatInput")?.addEventListener("keypress", (e) => { if (e.key === "Enter") sendChatMessage(); });
+        const sendBtn = document.getElementById("chatSendBtn");
+        const chatInput = document.getElementById("chatInput");
+        if (sendBtn) sendBtn.onclick = () => sendChatMessage();
+        if (chatInput) chatInput.onkeypress = (e) => { if (e.key === "Enter") sendChatMessage(); };
         chatEnabled = true;
     }
     
@@ -1928,10 +1932,9 @@
     function upgradeStorage() { if (playerGold >= 500) { playerGold -= 500; maxStorage += 50; updateMoneyUI(); updateStorageUI(); saveGameToLocal(); showToast(`🏚️ Lager auf ${maxStorage} erweitert!`); checkAchievements(); } else showToast(`Nicht genug Gold! 500 benötigt.`, true); }
     function updateMoneyUI() { if (moneySpan) moneySpan.innerText = Math.floor(playerGold); }
     function updateLevelUI() {
-    const xpValue = window.playerXP || playerXP || 0;
-    const lvlValue = window.playerLevel || playerLevel || 1;
+    const xpValue = playerXP || 0;
+    const lvlValue = playerLevel || 1;
 
-    // XP-Zahl anzeigen in allen moeglichen Elementen
     const xpElements = [
         document.getElementById("playerXP"),
         document.getElementById("playerXPDisplay"),
@@ -1945,13 +1948,11 @@
     xpElements.forEach(el => { if(el) el.innerText = xpValue; });
     lvlElements.forEach(el => { if(el) el.innerText = lvlValue; });
 
-    // XP-Balken mit der echten Level-Formel berechnen
     const needed = (lvlValue <= 10) ? 200 + (lvlValue - 1) * 50
                  : (lvlValue <= 20) ? 650 + (lvlValue - 10) * 80
                  : (lvlValue <= 30) ? 1450 + (lvlValue - 20) * 120
                  : 2650 + (lvlValue - 30) * 200;
 
-    // "0/300 XP" Anzeige aktualisieren
     const xpCurrentEl = document.getElementById("xpCurrent");
     const xpNextEl = document.getElementById("xpNext");
     if (xpCurrentEl) xpCurrentEl.innerText = xpValue;
@@ -1963,25 +1964,36 @@
         bar.style.width = progress + "%";
     }
 
-    // Level-Info Badge aktualisieren falls vorhanden
     const levelInfo = document.getElementById("levelInfo");
     if (levelInfo) levelInfo.innerHTML = `⭐ Level ${lvlValue} | ${xpValue} XP`;
+    // Haupt-Level-Badge aktualisieren
+    const levelValueEl = document.getElementById("levelValue");
+    if (levelValueEl) levelValueEl.innerText = lvlValue;
 }
 
-    function addXP(amount) { if (isPaused) return; playerXP += amount; updateLevelUI(); checkAndApplyLevelUp(); saveGameToLocal(); }
+    function addXP(amount) { 
+        if (isPaused) return; 
+        playerXP += amount; 
+        window.playerXP = playerXP;
+        checkAndApplyLevelUp(); // Erst Level prüfen...
+        updateLevelUI();        // ...dann Anzeige aktualisieren
+        saveGameToLocal(); 
+    }
     
     function checkAndApplyLevelUp() {
         let leveledUp = false;
         let needed = getXPNeededForNextLevel();
         while (playerXP >= needed) {
-            playerXP -= needed; // Überschuss-XP bleibt erhalten
+            playerXP -= needed;
             playerLevel++;
+            window.playerLevel = playerLevel; // Sync!
+            window.playerXP = playerXP;       // Sync!
             leveledUp = true;
             showToast(`🎉 LEVEL UP! Du hast Level ${playerLevel} erreicht! 🎉`);
             const newAnimals = []; for (let [id, animal] of Object.entries(ANIMALS)) if (animal.levelRequired === playerLevel) newAnimals.push(`${animal.emoji} ${animal.name}`);
             if (newAnimals.length > 0) showEvent(`⭐ Level ${playerLevel} erreicht!`, `Neue Tiere freigeschaltet: ${newAnimals.join(", ")}`);
             updateMassPlantButtons(); renderFields(); renderPricePanel(); renderMarket(); if (isBarnUnlocked(playerLevel)) renderBarn();
-            needed = getXPNeededForNextLevel(); // Neuen Wert für nächstes Level holen
+            needed = getXPNeededForNextLevel();
         }
         if (leveledUp) { updateLevelUI(); updateViewButtons(); if (isCraftingUnlocked(playerLevel)) renderCraft(); if (isResearchUnlocked(playerLevel)) renderResearch(); if (isLicensesUnlocked(playerLevel)) renderLicenses(); saveGameToLocal(); }
     }
@@ -2611,15 +2623,9 @@
     currentDay = data.day || 1;
     maxStorage = data.maxStorage || 50;
     
-    // LEVEL (Sicherheits-Check für beide Namen)
-    playerLevel = data.playerLevel || data.level || 1;
-    window.playerXP = parseInt(data.playerXP || data.xp) || 0;
-    
-    // XP (Sicherheits-Check für beide Namen)
-    window.playerXP = parseInt(data.playerXP) || 0;
-window.playerLevel = parseInt(data.playerLevel || data.level) || 1;
-
-
+    // LEVEL & XP korrekt setzen (nur lokale Variablen)
+    playerLevel = parseInt(data.playerLevel || data.level) || 1;
+    playerXP = parseInt(data.playerXP || data.xp) || 0;
 
     barnOwned = data.barnOwned || false;
     barnUpgrades = data.barnUpgrades || { autoCollector: false, speedBoost: false };
