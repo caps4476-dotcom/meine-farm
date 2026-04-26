@@ -968,6 +968,8 @@
     <span style="font-size: 14px; font-weight: bold; color: #ff9800;">🛠 ADMIN</span>
     <button onclick="adminGlobalReset()" style="background: #9c27b0; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Reset</button>
     <button onclick="giveGlobalBonus()" style="background: #e67e22; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">🎁 Bonus</button>
+    <button onclick="debugFirebase()" style="background: #27ae60; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">🔍 Debug</button>
+    <button onclick="forceSaveNow()" style="background: #2980b9; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">💾 Jetzt Speichern</button>
     <button onclick="this.parentElement.style.display='none'" style="background: #444; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">X</button>
 </div>
 
@@ -2943,7 +2945,57 @@ async function giveGlobalBonus() {
 }
 
 
-    // ==================== INIT ====================
+async function debugFirebase() {
+    let msg = "=== DIAGNOSE ===\n\n";
+    msg += "authReady: " + authReady + "\n";
+    msg += "firebaseInitialized: " + firebaseInitialized + "\n";
+    msg += "currentUser: " + (currentUser ? currentUser.email : "NICHT EINGELOGGT") + "\n";
+    msg += "playerGold: " + playerGold + "\n";
+    msg += "playerXP: " + playerXP + "\n";
+    msg += "playerLevel: " + playerLevel + "\n\n";
+
+    if (currentUser && database) {
+        try {
+            const snap = await database.ref("users/" + currentUser.uid + "/savegame").once("value");
+            const data = snap.val();
+            if (data) {
+                msg += "=== IN FIREBASE GESPEICHERT ===\n";
+                msg += "Gold: " + data.gold + "\n";
+                msg += "XP: " + (data.playerXP || data.xp) + "\n";
+                msg += "Level: " + (data.playerLevel || data.level) + "\n";
+                msg += "Zeitstempel: " + (data.timestamp ? new Date(data.timestamp).toLocaleString() : "fehlt") + "\n";
+            } else {
+                msg += "❌ KEIN SPIELSTAND IN FIREBASE!\n";
+                msg += "Das ist das Problem - nichts wurde gespeichert.\n";
+            }
+        } catch(e) {
+            msg += "❌ Firebase Fehler: " + e.message + "\n";
+        }
+    } else {
+        msg += "❌ Kein User oder keine DB-Verbindung!\n";
+    }
+    alert(msg);
+}
+
+async function forceSaveNow() {
+    if (!currentUser) { alert("❌ Nicht eingeloggt!"); return; }
+    if (!database) { alert("❌ Keine Firebase-Verbindung!"); return; }
+    try {
+        const saveData = {
+            gold: playerGold, inventory, day: currentDay, playerLevel, playerXP,
+            maxStorage, fields: fields.map(f => ({ owned: f.owned, cropId: f.cropId, plantedAt: f.plantedAt, isReady: f.isReady })),
+            barnOwned, barnUpgrades, animals: animals.map(a => ({ type: a.type, name: a.name, isReady: a.isReady, productionStartTime: a.productionStartTime })),
+            achievements, stats, completedResearch, researchProgress, ownedLicenses, currentWeather,
+            timestamp: Date.now(), version: CURRENT_GAME_VERSION
+        };
+        await database.ref("users/" + currentUser.uid + "/savegame").set(saveData);
+        alert("✅ Manuell gespeichert!\nGold: " + playerGold + "\nXP: " + playerXP + "\nLevel: " + playerLevel);
+    } catch(e) {
+        alert("❌ Fehler beim Speichern: " + e.message);
+    }
+}
+
+    // ==================== ADMIN RESET SYSTEM FÜR UDO ====================
     async function init() {
         for (let i = 0; i < MAX_FIELDS; i++) fields.push({ owned: i < 4, cropId: null, plantedAt: null, isReady: false, timerId: null });
         initResearchProgress();
