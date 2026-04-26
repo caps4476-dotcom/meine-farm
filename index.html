@@ -2589,11 +2589,12 @@ window.playerLevel = parseInt(data.playerLevel || data.level) || 1;
     
     // Nur lokal speichern (KEIN Cloud-Save hier - wir haben die Daten gerade von der Cloud!)
     const localData = { 
-        gold: playerGold, inventory, day: currentDay, maxStorage, 
-        fields: fields.map(f => ({ owned: f.owned, cropId: f.cropId, plantedAt: f.plantedAt, isReady: f.isReady })), 
-        barnOwned, barnUpgrades, 
-        animals: animals.map(a => ({ type: a.type, name: a.name, isReady: a.isReady, productionStartTime: a.productionStartTime })), 
-        achievements, stats, playerLevel, playerXP, completedResearch, researchProgress, ownedLicenses, currentWeather, 
+        gold: playerGold || 0, inventory: inventory || {}, day: currentDay || 1, maxStorage: maxStorage || 50, 
+        fields: fields.map(f => ({ owned: f.owned||false, cropId: f.cropId||null, plantedAt: f.plantedAt||null, isReady: f.isReady||false })), 
+        barnOwned: barnOwned||false, barnUpgrades: barnUpgrades||[], 
+        animals: (animals||[]).map(a => ({ type: a.type||null, name: a.name||null, isReady: a.isReady||false, productionStartTime: a.productionStartTime||null })), 
+        achievements: achievements||[], stats: stats||{}, playerLevel: playerLevel||1, playerXP: playerXP||0, 
+        completedResearch: completedResearch||[], researchProgress: researchProgress||{}, ownedLicenses: ownedLicenses||[], currentWeather: currentWeather||"sunny", 
         timestamp: Date.now() 
     };
     localStorage.setItem("farmPremium", JSON.stringify(localData));
@@ -2604,11 +2605,12 @@ window.playerLevel = parseInt(data.playerLevel || data.level) || 1;
     // Lokale Backups (Browser-Speicher)
     function saveGameToLocal() {
         const saveData = { 
-            gold: playerGold, inventory, day: currentDay, maxStorage, 
-            fields: fields.map(f => ({ owned: f.owned, cropId: f.cropId, plantedAt: f.plantedAt, isReady: f.isReady })), 
-            barnOwned, barnUpgrades, 
-            animals: animals.map(a => ({ type: a.type, name: a.name, isReady: a.isReady, productionStartTime: a.productionStartTime })), 
-            achievements, stats, playerLevel, playerXP, completedResearch, researchProgress, ownedLicenses, currentWeather, 
+            gold: playerGold||0, inventory: inventory||{}, day: currentDay||1, maxStorage: maxStorage||50, 
+            fields: fields.map(f => ({ owned: f.owned||false, cropId: f.cropId||null, plantedAt: f.plantedAt||null, isReady: f.isReady||false })), 
+            barnOwned: barnOwned||false, barnUpgrades: barnUpgrades||[], 
+            animals: (animals||[]).map(a => ({ type: a.type||null, name: a.name||null, isReady: a.isReady||false, productionStartTime: a.productionStartTime||null })), 
+            achievements: achievements||[], stats: stats||{}, playerLevel: playerLevel||1, playerXP: playerXP||0, 
+            completedResearch: completedResearch||[], researchProgress: researchProgress||{}, ownedLicenses: ownedLicenses||[], currentWeather: currentWeather||"sunny", 
             timestamp: Date.now() 
         };
         localStorage.setItem("farmPremium", JSON.stringify(saveData));
