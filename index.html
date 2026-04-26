@@ -88,7 +88,7 @@
         .login-btn:active {
             transform: translateY(2px);
         }
-  login-btn.secondary {
+        .login-btn.secondary {
             background: #3a6e8b;
             color: white;
             margin-top: 10px;
@@ -328,7 +328,6 @@
             flex-wrap: wrap;
             gap: 10px;
         }
-        .
         .money, .storage-info, .day-info, .next-price-timer, .event-badge, .level-info, .weather-info, .npc-indicator {
             background: #4a3e2e;
             padding: 6px 18px;
@@ -2887,6 +2886,8 @@ async function giveGlobalBonus() {
             // Werte aktualisieren
             saveData.gold = window.playerGold;
             saveData.xp = window.playerXP;
+            saveData.playerXP = window.playerXP;
+            saveData.playerLevel = window.playerLevel;
             saveData.lastSave = Date.now();
 
             // Zurückschreiben in die Cloud
@@ -2907,19 +2908,6 @@ async function giveGlobalBonus() {
 }
 
 
-async function adminGlobalReset() {
-    if (confirm("Wirklich ALLES löschen?")) {
-        try {
-            await database.ref('leaderboard').remove();
-            await database.ref('users').remove();
-            alert("Daten gelöscht!");
-            location.reload();
-        } catch (e) {
-            alert("Fehler: " + e.message);
-        }
-    }
-}
-    
     // ==================== INIT ====================
     async function init() {
         for (let i = 0; i < MAX_FIELDS; i++) fields.push({ owned: i < 4, cropId: null, plantedAt: null, isReady: false, timerId: null });
@@ -2941,7 +2929,7 @@ async function adminGlobalReset() {
             updateMoneyUI(); updateLevelUI(); updateStorageUI(); renderFields(); renderPricePanel(); renderMarket(); saveGameToLocal();
         }
         
-        startTimer(); startLiveUpdates(); startNPCSpawner(); startRealDayCheck(); startAutoSave();
+        startTimer(); startLiveUpdates(); startNPCSpawner(); startRealDayCheck();
         renderNPCInUI();
         
         document.getElementById("harvestAllBtn").onclick = () => massHarvest();
@@ -3021,7 +3009,7 @@ async function adminGlobalReset() {
     
     
 // --- PASSIVER ADMIN-SYNC (KEIN ZWANG) ---
-firebase.auth().onAuthStateChanged((user) => {
+if (typeof firebase !== 'undefined' && firebase.auth) firebase.auth().onAuthStateChanged((user) => {
     if (user) {
         const savegameRef = firebase.database().ref('users/' + user.uid + '/savegame');
 
