@@ -2436,34 +2436,44 @@
     // Kern-Funktion: Schiebt den aktuellen Stand zu Firebase
     async function autoSaveToCloud() {
         if (!currentUser) return;
-        if (!authReady) return; // Warten bis Firebase Login-Status bestaetigt hat
+        if (!authReady) return;
         try {
             const saveData = {
-                gold: playerGold,
-                inventory: inventory,
-                day: currentDay,
-                playerLevel: playerLevel,
-                playerXP: playerXP,
-                maxStorage: maxStorage,
-                fields: fields.map(f => ({ owned: f.owned, cropId: f.cropId, plantedAt: f.plantedAt, isReady: f.isReady })),
-                barnOwned: barnOwned,
-                barnUpgrades: barnUpgrades,
-                animals: animals.map(a => ({ type: a.type, name: a.name, isReady: a.isReady, productionStartTime: a.productionStartTime })),
-                achievements: achievements,
-                stats: stats,
-                completedResearch: completedResearch,
-                researchProgress: researchProgress,
-                ownedLicenses: ownedLicenses,
-                currentWeather: currentWeather,
+                gold: playerGold || 0,
+                inventory: inventory || {},
+                day: currentDay || 1,
+                playerLevel: playerLevel || 1,
+                playerXP: playerXP || 0,
+                maxStorage: maxStorage || 50,
+                fields: fields.map(f => ({
+                    owned: f.owned || false,
+                    cropId: f.cropId || null,
+                    plantedAt: f.plantedAt || null,
+                    isReady: f.isReady || false
+                })),
+                barnOwned: barnOwned || false,
+                barnUpgrades: barnUpgrades || [],
+                animals: (animals || []).map(a => ({
+                    type: a.type || null,
+                    name: a.name || null,
+                    isReady: a.isReady || false,
+                    productionStartTime: a.productionStartTime || null
+                })),
+                achievements: achievements || [],
+                stats: stats || {},
+                completedResearch: completedResearch || [],
+                researchProgress: researchProgress || {},
+                ownedLicenses: ownedLicenses || [],
+                currentWeather: currentWeather || "sunny",
                 timestamp: Date.now(),
                 version: CURRENT_GAME_VERSION
             };
             await database.ref('users/' + currentUser.uid + '/savegame').set(saveData);
             await database.ref('users/' + currentUser.uid + '/gameVersion').set(CURRENT_GAME_VERSION);
             lastCloudSave = Date.now();
-            console.log("✅ Cloud-Save erfolgreich");
+            console.log("✅ Cloud-Save erfolgreich - Gold: " + playerGold + " XP: " + playerXP);
         } catch(err) { 
-            console.warn("Auto-Save fehlgeschlagen:", err); 
+            console.warn("Auto-Save fehlgeschlagen:", err.message); 
         }
     }
 
@@ -2982,14 +2992,37 @@ async function forceSaveNow() {
     if (!database) { alert("❌ Keine Firebase-Verbindung!"); return; }
     try {
         const saveData = {
-            gold: playerGold, inventory, day: currentDay, playerLevel, playerXP,
-            maxStorage, fields: fields.map(f => ({ owned: f.owned, cropId: f.cropId, plantedAt: f.plantedAt, isReady: f.isReady })),
-            barnOwned, barnUpgrades, animals: animals.map(a => ({ type: a.type, name: a.name, isReady: a.isReady, productionStartTime: a.productionStartTime })),
-            achievements, stats, completedResearch, researchProgress, ownedLicenses, currentWeather,
-            timestamp: Date.now(), version: CURRENT_GAME_VERSION
+            gold: playerGold || 0,
+            inventory: inventory || {},
+            day: currentDay || 1,
+            playerLevel: playerLevel || 1,
+            playerXP: playerXP || 0,
+            maxStorage: maxStorage || 50,
+            fields: fields.map(f => ({
+                owned: f.owned || false,
+                cropId: f.cropId || null,
+                plantedAt: f.plantedAt || null,
+                isReady: f.isReady || false
+            })),
+            barnOwned: barnOwned || false,
+            barnUpgrades: barnUpgrades || [],
+            animals: (animals || []).map(a => ({
+                type: a.type || null,
+                name: a.name || null,
+                isReady: a.isReady || false,
+                productionStartTime: a.productionStartTime || null
+            })),
+            achievements: achievements || [],
+            stats: stats || {},
+            completedResearch: completedResearch || [],
+            researchProgress: researchProgress || {},
+            ownedLicenses: ownedLicenses || [],
+            currentWeather: currentWeather || "sunny",
+            timestamp: Date.now(),
+            version: CURRENT_GAME_VERSION
         };
         await database.ref("users/" + currentUser.uid + "/savegame").set(saveData);
-        alert("✅ Manuell gespeichert!\nGold: " + playerGold + "\nXP: " + playerXP + "\nLevel: " + playerLevel);
+        alert("✅ Gespeichert!\nGold: " + playerGold + "\nXP: " + playerXP + "\nLevel: " + playerLevel);
     } catch(e) {
         alert("❌ Fehler beim Speichern: " + e.message);
     }
