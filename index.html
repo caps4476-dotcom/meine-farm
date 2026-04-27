@@ -2238,6 +2238,27 @@
     function upgradeBarn(type) {
         if (type === "autoCollector" && !barnUpgrades.autoCollector && playerGold >= 2000) {
             playerGold -= 2000; barnUpgrades.autoCollector = true; updateMoneyUI(); saveGameToLocal(); showToast("🤖 Automatischer Sammler aktiviert! Fertige Produkte werden automatisch eingesammelt.", false);
+            // Sofort alle wartenden Tiere starten
+            let gestartet = 0;
+            for (let i = 0; i < animals.length; i++) {
+                const a = animals[i];
+                if (!a.productionStartTime && !a.isReady) {
+                    startAnimalProduction(a, i);
+                    gestartet++;
+                } else if (a.isReady) {
+                    // Bereits fertige Tiere sofort einsammeln und neu starten
+                    const data = ANIMALS[a.type];
+                    let amount = Math.random() < getDoubleChance() ? 2 : 1;
+                    if (addToInventory(data.productKey, amount)) {
+                        animals[i].isReady = false;
+                        addXP(4 * amount);
+                        startAnimalProduction(animals[i], i);
+                        gestartet++;
+                    }
+                }
+            }
+            if (gestartet > 0) showToast(`🤖 ${gestartet} Tier(e) wurden automatisch gestartet!`, false);
+            renderBarn(); saveGameToLocal();
             for (let i = 0; i < animals.length; i++) { if (animals[i].isReady) { const data = ANIMALS[animals[i].type]; let amount = Math.random() < getDoubleChance() ? 2 : 1; if (addToInventory(data.productKey, amount)) { animals[i].isReady = false; addXP(4 * amount); if (animals[i].timerId) clearTimeout(animals[i].timerId); startAnimalProduction(animals[i], i); showToast(`🤖 Automatisch +${amount} ${data.product} (${animals[i].name})`); } } }
             renderBarn();
         } else if (type === "speedBoost" && !barnUpgrades.speedBoost && playerGold >= 1000) {
