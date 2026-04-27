@@ -2231,32 +2231,42 @@
     // ==================== TIERE ====================
     function getAnimalProgress(animal) { if (!animal || animal.isReady) return animal?.isReady ? 100 : 0; if (!animal.productionStartTime) return 0; let prodTime = ANIMALS[animal.type].productionTime; if (barnUpgrades.speedBoost) prodTime = Math.floor(prodTime * 0.7); prodTime = Math.floor(prodTime * getAnimalProdModifier()); const elapsed = Date.now() - animal.productionStartTime; return Math.min(99, Math.floor((elapsed / prodTime) * 100)); }
     
+    // Registry verhindert doppelte Timer - key = Tier-Index
+    const animalTimerRegistry = {};
+
     function startAnimalProduction(animal, idx) { 
-        if (isPaused) return; 
-        // Alten Timer stoppen
+        if (isPaused) return;
+        if (!animal || !ANIMALS[animal.type]) return;
+
+        // Jeden bestehenden Timer für diesen Index stoppen
+        if (animalTimerRegistry[idx]) {
+            clearTimeout(animalTimerRegistry[idx]);
+            delete animalTimerRegistry[idx];
+        }
         if (animal.timerId) { clearTimeout(animal.timerId); animal.timerId = null; }
-        // Bereits laufenden Schutz
-        if (animal._timerRunning) return;
+        animal._timerRunning = false;
         
         const data = ANIMALS[animal.type];
-        if (!data) return;
-        
         let prodTime = data.productionTime;
         if (barnUpgrades.speedBoost) prodTime = Math.floor(prodTime * 0.7);
         prodTime = Math.floor(prodTime * getAnimalProdModifier());
         
-        // Verbleibende Zeit berechnen (falls von Cloud geladen)
+        // Verbleibende Zeit berechnen
         const elapsed = animal.productionStartTime ? (Date.now() - animal.productionStartTime) : 0;
-        const remaining = Math.max(1000, prodTime - elapsed);
-        
+        const remaining = Math.max(2000, prodTime - elapsed);
+
         animal._timerRunning = true;
-        animal.timerId = setTimeout(() => {
+        const timerId = setTimeout(() => {
+            // Prüfen ob dieser Timer noch aktuell ist
+            if (animalTimerRegistry[idx] !== timerId) return;
+            delete animalTimerRegistry[idx];
             animal._timerRunning = false;
             animal.timerId = null;
-            if (!animals[idx] || animals[idx].type !== animal.type) return; // Tier wurde entfernt
-            
+
+            // Sicherstellen dass das Tier noch existiert und gleich ist
+            if (!animals[idx] || animals[idx] !== animal) return;
+
             if (barnUpgrades.autoCollector) {
-                // Nur EINMAL sammeln
                 const amount = Math.random() < getDoubleChance() ? 2 : 1;
                 if (addToInventory(data.productKey, amount)) {
                     animals[idx].isReady = false;
@@ -2265,7 +2275,7 @@
                     showToast(`🤖 +${amount} ${data.product} (${animals[idx].name}) +${4*amount} XP`);
                     renderBarn();
                     saveGameToLocal();
-                    startAnimalProduction(animals[idx], idx); // Nächsten Zyklus starten
+                    startAnimalProduction(animals[idx], idx);
                 } else {
                     animals[idx].isReady = true;
                     showToast(`⚠️ Lager voll! ${data.product} konnte nicht eingelagert werden.`, true);
@@ -2279,6 +2289,9 @@
                 saveGameToLocal();
             }
         }, remaining);
+
+        animal.timerId = timerId;
+        animalTimerRegistry[idx] = timerId;
     }
     
     function buyBarn() { if (!isBarnUnlocked(playerLevel)) { showToast(`🔒 Stall wird auf Level 6 freigeschaltet!`, true); return; } if (barnOwned) { showToast("Stall bereits gekauft!", true); return; } if (playerGold >= 1000) { playerGold -= 1000; barnOwned = true; updateMoneyUI(); saveGameToLocal(); showToast("🐄 Stall gekauft!"); renderBarn(); checkAchievements(); } else showToast("Nicht genug Gold! 1000 benötigt.", true); }
@@ -2780,11 +2793,13 @@
         }
     }
     
-    // Tiere wiederherstellen
+    // Tiere wiederherstellen - erst alle Timer komplett leeren
+    for (let key in animalTimerRegistry) { clearTimeout(animalTimerRegistry[key]); delete animalTimerRegistry[key]; }
     for (let i = 0; i < animals.length; i++) {
         const a = animals[i];
+        if (a.timerId) { clearTimeout(a.timerId); a.timerId = null; }
+        a._timerRunning = false;
         if (!a.isReady && a.productionStartTime) {
-            if (a.timerId) clearTimeout(a.timerId);
             startAnimalProduction(a, i);
         }
     }
