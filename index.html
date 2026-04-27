@@ -1134,19 +1134,36 @@
     </div>
     
     <div id="accountView" class="account-grid hidden">
-        <div class="account-slot" style="grid-column:1/-1;">
+        <!-- Wird eingeloggt angezeigt -->
+        <div id="accountLoggedIn" class="account-slot" style="grid-column:1/-1; display:none;">
+            <div class="status" style="background:#3a5a3a;">👤 MEIN ACCOUNT</div>
+            <div style="text-align:center; padding:10px; color:#ffefcf;">
+                <div style="font-size:1.5rem; margin-bottom:5px;">👋</div>
+                <div style="font-weight:bold; font-size:1.1rem;" id="accountEmailDisplay"></div>
+                <div style="margin-top:5px; color:#aaa; font-size:0.9rem;" id="accountNameDisplay"></div>
+            </div>
+            <div style="margin-top:10px;">
+                <div class="status" style="background:#3a3a5a;">👤 Spielername</div>
+                <input type="text" id="playerNameInput" class="auth-input" placeholder="Dein Spielername">
+                <button id="savePlayerNameBtn" class="mass-btn" style="background:#4a8b6e;">💾 Name speichern</button>
+            </div>
+        </div>
+
+        <!-- Wird ausgeloggt angezeigt -->
+        <div id="accountLoggedOut" class="account-slot" style="grid-column:1/-1;">
             <div class="status" style="background:#3a5a3a;">🔐 ACCOUNT</div>
-            <div id="authStatus">Nicht eingeloggt</div>
+            <div id="authStatus" style="text-align:center; padding:5px; color:#aaa;">Nicht eingeloggt</div>
             <input type="email" id="loginEmail" class="auth-input" placeholder="E-Mail">
             <input type="password" id="loginPassword" class="auth-input" placeholder="Passwort">
             <button id="registerBtn" class="mass-btn" style="background:#3a6e8b;">📝 Registrieren</button>
             <button id="loginBtn" class="mass-btn" style="background:#4a6e8b;">🔓 Einloggen</button>
-            <button id="logoutBtn" class="mass-btn" style="background:#c44; display:none;">🚪 Ausloggen</button>
-            <div id="userEmailDisplay" style="margin-top: 10px;"></div>
         </div>
+
         <div class="account-slot" style="grid-column:1/-1;">
             <div class="status" style="background:#3a5a3a;">☁️ CLOUD-SPEICHER</div>
-        
+            <div style="text-align:center; padding:10px; color:#ffefcf; font-size:0.9rem;">
+                Dein Spielstand wird automatisch in der Cloud gespeichert und auf allen Geräten synchronisiert.
+            </div>
         </div>
     </div>
     
@@ -1198,22 +1215,28 @@
     async function logout() { try { await removeOnlineStatus(); await auth.signOut(); showToast("🔓 Ausgeloggt", false); setTimeout(() => updateLeaderboard(), 1000); } catch(err) { showToast("❌ Fehler beim Ausloggen", true); } }
     
     function updateAuthUI() {
-    const user = firebase.auth().currentUser;
-    const adminPanel = document.getElementById('admin-panel');
+        const user = currentUser;
+        const adminPanel = document.getElementById('admin-panel');
+        const loggedIn = document.getElementById('accountLoggedIn');
+        const loggedOut = document.getElementById('accountLoggedOut');
 
-    if (user) {
-        // Sofort prüfen ob E-Mail in der Admin-Liste ist
-        isAdmin = ADMIN_EMAILS.includes(user.email);
-        if (isAdmin && adminPanel) {
-            adminPanel.style.display = 'flex';
-        } else if (adminPanel) {
-            adminPanel.style.display = 'none';
+        if (user) {
+            isAdmin = ADMIN_EMAILS.includes(user.email);
+            if (adminPanel) adminPanel.style.display = isAdmin ? 'flex' : 'none';
+            if (loggedIn) loggedIn.style.display = 'block';
+            if (loggedOut) loggedOut.style.display = 'none';
+            // E-Mail und Name anzeigen
+            const emailEl = document.getElementById('accountEmailDisplay');
+            const nameEl = document.getElementById('accountNameDisplay');
+            if (emailEl) emailEl.innerText = user.email;
+            if (nameEl) nameEl.innerText = playerName ? `👤 ${playerName}` : '';
+        } else {
+            isAdmin = false;
+            if (adminPanel) adminPanel.style.display = 'none';
+            if (loggedIn) loggedIn.style.display = 'none';
+            if (loggedOut) loggedOut.style.display = 'block';
         }
-    } else {
-        isAdmin = false;
-        if (adminPanel) adminPanel.style.display = 'none';
     }
-}
 
 
     function updateTopLoginStatus() { const loginStatusIcon = document.getElementById("loginStatusIcon"), loginStatusText = document.getElementById("loginStatusText"), quickLoginBtn = document.getElementById("quickLoginBtn"), notLoggedinHint = document.getElementById("notLoggedinHint"); if (currentUser) { if (loginStatusIcon) loginStatusIcon.innerHTML = "🔒"; if (loginStatusText) loginStatusText.innerHTML = currentUser.email.split('@')[0]; if (quickLoginBtn) { quickLoginBtn.innerHTML = "🚪 Logout"; quickLoginBtn.onclick = () => logout(); } if (notLoggedinHint) notLoggedinHint.classList.add("hidden"); } else { if (loginStatusIcon) loginStatusIcon.innerHTML = "🔓"; if (loginStatusText) loginStatusText.innerHTML = "Nicht eingeloggt"; if (quickLoginBtn) { quickLoginBtn.innerHTML = "🔐 Login"; quickLoginBtn.onclick = () => { setView("account"); showToast("👤 Gehe zum Account-Tab, um dich zu registrieren oder einzuloggen!", false); }; } if (notLoggedinHint) { notLoggedinHint.classList.remove("hidden"); setTimeout(() => { if (notLoggedinHint && !currentUser) notLoggedinHint.classList.add("hidden"); }, 10000); } } }
@@ -3214,7 +3237,7 @@ async function forceSaveNow() {
         document.getElementById("viewHandbookBtn").onclick = () => setView("handbook");
         document.getElementById("registerBtn").onclick = () => register();
         document.getElementById("loginBtn").onclick = () => login();
-        document.getElementById("logoutBtn").onclick = () => logout();
+        
         
         document.getElementById("savePlayerNameBtn")?.addEventListener("click", async () => { const nameInput = document.getElementById("playerNameInput"); if (nameInput && nameInput.value.trim().length >= 2) { playerName = nameInput.value.trim(); localStorage.setItem("farmPlayerName", playerName); if (currentUser && database) { await database.ref('users/' + currentUser.uid + '/playerName').set(playerName); } showToast(`👤 Name gespeichert: ${playerName}`); updateLeaderboard(); updateOnlineStatus(); } else showToast("❌ Name muss mindestens 2 Zeichen haben!", true); });
         document.getElementById("refreshLeaderboardBtn")?.addEventListener("click", () => updateLeaderboard());
