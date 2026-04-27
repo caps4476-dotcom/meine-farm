@@ -2231,7 +2231,55 @@
     // ==================== TIERE ====================
     function getAnimalProgress(animal) { if (!animal || animal.isReady) return animal?.isReady ? 100 : 0; if (!animal.productionStartTime) return 0; let prodTime = ANIMALS[animal.type].productionTime; if (barnUpgrades.speedBoost) prodTime = Math.floor(prodTime * 0.7); prodTime = Math.floor(prodTime * getAnimalProdModifier()); const elapsed = Date.now() - animal.productionStartTime; return Math.min(99, Math.floor((elapsed / prodTime) * 100)); }
     
-    function startAnimalProduction(animal, idx) { if (isPaused) return; if (animal.timerId) clearTimeout(animal.timerId); let prodTime = ANIMALS[animal.type].productionTime; if (barnUpgrades.speedBoost) prodTime = Math.floor(prodTime * 0.7); prodTime = Math.floor(prodTime * getAnimalProdModifier()); animal.productionStartTime = Date.now(); animal.timerId = setTimeout(() => { if (animals[idx]) { animals[idx].isReady = true; renderBarn(); saveGameToLocal(); if (barnUpgrades.autoCollector) { const data = ANIMALS[animal.type]; let amount = Math.random() < getDoubleChance() ? 2 : 1; if (addToInventory(data.productKey, amount)) { animals[idx].isReady = false; addXP(4 * amount); startAnimalProduction(animals[idx], idx); showToast(`🤖 Automatisch +${amount} ${data.product} (${animals[idx].name}) +${4*amount} XP`); renderBarn(); saveGameToLocal(); } else showToast(`⚠️ Lager voll! Automatischer Sammler konnte nicht sammeln.`, true); } else showToast(`🐔 ${ANIMALS[animal.type].name} (${animal.name}) hat ein Produkt fertig!`); } }, prodTime); }
+    function startAnimalProduction(animal, idx) { 
+        if (isPaused) return; 
+        // Alten Timer stoppen
+        if (animal.timerId) { clearTimeout(animal.timerId); animal.timerId = null; }
+        // Bereits laufenden Schutz
+        if (animal._timerRunning) return;
+        
+        const data = ANIMALS[animal.type];
+        if (!data) return;
+        
+        let prodTime = data.productionTime;
+        if (barnUpgrades.speedBoost) prodTime = Math.floor(prodTime * 0.7);
+        prodTime = Math.floor(prodTime * getAnimalProdModifier());
+        
+        // Verbleibende Zeit berechnen (falls von Cloud geladen)
+        const elapsed = animal.productionStartTime ? (Date.now() - animal.productionStartTime) : 0;
+        const remaining = Math.max(1000, prodTime - elapsed);
+        
+        animal._timerRunning = true;
+        animal.timerId = setTimeout(() => {
+            animal._timerRunning = false;
+            animal.timerId = null;
+            if (!animals[idx] || animals[idx].type !== animal.type) return; // Tier wurde entfernt
+            
+            if (barnUpgrades.autoCollector) {
+                // Nur EINMAL sammeln
+                const amount = Math.random() < getDoubleChance() ? 2 : 1;
+                if (addToInventory(data.productKey, amount)) {
+                    animals[idx].isReady = false;
+                    animals[idx].productionStartTime = Date.now();
+                    addXP(4 * amount);
+                    showToast(`🤖 +${amount} ${data.product} (${animals[idx].name}) +${4*amount} XP`);
+                    renderBarn();
+                    saveGameToLocal();
+                    startAnimalProduction(animals[idx], idx); // Nächsten Zyklus starten
+                } else {
+                    animals[idx].isReady = true;
+                    showToast(`⚠️ Lager voll! ${data.product} konnte nicht eingelagert werden.`, true);
+                    renderBarn();
+                    saveGameToLocal();
+                }
+            } else {
+                animals[idx].isReady = true;
+                showToast(`🐔 ${data.name} (${animals[idx].name}) hat ein Produkt fertig!`);
+                renderBarn();
+                saveGameToLocal();
+            }
+        }, remaining);
+    }
     
     function buyBarn() { if (!isBarnUnlocked(playerLevel)) { showToast(`🔒 Stall wird auf Level 6 freigeschaltet!`, true); return; } if (barnOwned) { showToast("Stall bereits gekauft!", true); return; } if (playerGold >= 1000) { playerGold -= 1000; barnOwned = true; updateMoneyUI(); saveGameToLocal(); showToast("🐄 Stall gekauft!"); renderBarn(); checkAchievements(); } else showToast("Nicht genug Gold! 1000 benötigt.", true); }
     
