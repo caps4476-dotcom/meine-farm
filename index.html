@@ -1318,9 +1318,7 @@
                 "🍞 Brot-Symbol repariert.",
                 "🐔 Tier-Bug behoben: Neue Tiere produzieren jetzt zuverlässig.",
                 "🗓️ Tagesanzeiger und manueller \"Nächster Tag\"-Knopf entfernt (Preise wechseln nur noch automatisch alle 3 Min.).",
-                "🛒 Wochenmarkt zeigt jetzt <b>alle</b> Produkte aus dem Lager an – auch wenn das Freischalt-Level noch nicht erreicht ist (z.B. Dünger vom Pferd).",
-                "📊 Preisleiste oben im Wochenmarkt zeigt nun <b>alle</b> Tier- und Verarbeitungsprodukte (Wolle, Honig, Dünger, Lamawolle, Yakwolle, Seidentuch usw.).",
-                "🏚️ <b>Stall übersichtlicher</b>: Tiere werden jetzt nach Art gruppiert (z.B. „Huhn ×3"). Mit „Alle füttern" und „Alle sammeln" pro Tierart."
+                "🛒 Wochenmarkt zeigt jetzt <b>alle</b> Produkte aus dem Lager an – auch wenn das Freischalt-Level noch nicht erreicht ist (z.B. Dünger vom Pferd)."
             ]
         },
         {
@@ -2699,118 +2697,22 @@
         document.getElementById("speedBoostBtn")?.addEventListener("click", () => upgradeBarn("speedBoost"));
         
         const unlockedAnimals = []; for (let [id, animal] of Object.entries(ANIMALS)) if (playerLevel >= animal.levelRequired) unlockedAnimals.push({ id, ...animal });
-        
-        // Tiere nach Typ gruppieren — pro Tierart eine Kachel
-        const groups = {};
         for (let i = 0; i < animals.length; i++) {
-            const a = animals[i]; if (!a || !ANIMALS[a.type]) continue;
-            if (!groups[a.type]) groups[a.type] = { indices: [], readyCount: 0, minProgress: 100 };
-            groups[a.type].indices.push(i);
-            if (a.isReady) groups[a.type].readyCount++;
-            const prog = a.isReady ? 100 : getAnimalProgress(a);
-            if (prog < groups[a.type].minProgress) groups[a.type].minProgress = prog;
-        }
-        
-        for (let [type, group] of Object.entries(groups)) {
-            const data = ANIMALS[type];
-            const count = group.indices.length;
-            const ready = group.readyCount;
-            const totalFeedCost = data.feedCost * count;
-            const progress = ready === count ? 100 : group.minProgress;
+            const a = animals[i]; const data = ANIMALS[a.type]; const progress = a.isReady ? 100 : getAnimalProgress(a);
             const div = document.createElement("div"); div.className = "animal-slot"; div.style.position = "relative";
-            const statusText = ready === count
-                ? `✅ Alle ${count} bereit!`
-                : (ready > 0 ? `✅ ${ready}/${count} bereit · nächstes: ${progress}%` : `⏳ ${progress}% (${count}× ${data.product})`);
-            div.innerHTML = `
-                <div class="animal-icon">${data.emoji}</div>
-                <div class="animal-name">${data.name} <span style="background:#4a6e3a; padding:2px 8px; border-radius:12px; font-size:0.85rem;">×${count}</span></div>
-                <div class="status">${statusText}</div>
-                ${ready > 0 && !barnUpgrades.autoCollector ? `<button class="collect-group-btn" data-type="${type}">📦 Alle sammeln (${ready})</button>` : ''}
-                ${barnUpgrades.autoCollector ? `<div class="status" style="background:#3a6e3a;">🤖 Auto-Sammler aktiv</div>` : ''}
-                <div><button class="feed-group-btn" data-type="${type}">🌾 Alle füttern (${totalFeedCost}💰)</button></div>
-                <div class="progress-bar-container"><div class="progress-bar-fill" data-group-type="${type}" style="width: ${progress}%;"></div></div>
-            `;
+            div.innerHTML = `<div class="animal-icon">${data.emoji}</div><div class="animal-name">${a.name}</div><div class="status">${a.isReady ? "✅ Produkt bereit!" : `${progress}%`}</div><div><button class="rename-btn" data-idx="${i}">✏️ Umbenennen</button></div><div><button class="feed-btn" data-idx="${i}">🌾 Füttern (${data.feedCost}💰)</button></div>${a.isReady && !barnUpgrades.autoCollector ? `<button class="collect-btn" data-idx="${i}">📦 ${data.product} sammeln</button>` : ''}${barnUpgrades.autoCollector && !a.isReady ? `<div class="status" style="background:#3a6e3a;">🤖 Auto-Sammler aktiv</div>` : ''}<div class="progress-bar-container"><div class="progress-bar-fill" style="width: ${progress}%;"></div></div>`;
             barnContainer.appendChild(div);
         }
-        
         const buyDiv = document.createElement("div"); buyDiv.className = "animal-slot"; buyDiv.style.background = "#8b6942"; buyDiv.innerHTML = `<div class="animal-icon">➕</div><div class="animal-name">Neues Tier kaufen</div>`;
         for (let animal of unlockedAnimals) buyDiv.innerHTML += `<div><button class="buy-animal-btn" data-animal="${animal.id}" style="margin:3px;">${animal.emoji} ${animal.name} (${animal.buyCost}💰) ⭐ Level ${animal.levelRequired}</button></div>`;
         barnContainer.appendChild(buyDiv);
-        document.querySelectorAll(".collect-group-btn").forEach(btn => btn.addEventListener("click", () => collectGroup(btn.dataset.type)));
-        document.querySelectorAll(".feed-group-btn").forEach(btn => btn.addEventListener("click", () => feedGroup(btn.dataset.type)));
+        document.querySelectorAll(".rename-btn").forEach(btn => btn.addEventListener("click", () => renameAnimal(parseInt(btn.dataset.idx))));
+        document.querySelectorAll(".feed-btn").forEach(btn => btn.addEventListener("click", () => feedAnimal(parseInt(btn.dataset.idx))));
+        document.querySelectorAll(".collect-btn").forEach(btn => btn.addEventListener("click", () => collectProduct(parseInt(btn.dataset.idx))));
         document.querySelectorAll(".buy-animal-btn").forEach(btn => btn.addEventListener("click", () => buyAnimal(btn.dataset.animal)));
     }
     
-    // Sammelt alle bereiten Produkte einer Tierart auf einmal
-    function collectGroup(animalType) {
-        if (isPaused) { showToast("⏸️ Spiel ist pausiert!", true); return; }
-        const data = ANIMALS[animalType]; if (!data) return;
-        let collected = 0; let totalAmount = 0;
-        for (let i = 0; i < animals.length; i++) {
-            const a = animals[i];
-            if (!a || a.type !== animalType || !a.isReady) continue;
-            let amount = Math.random() < getDoubleChance() ? 2 : 1;
-            if (addToInventory(data.productKey, amount)) {
-                a.isReady = false;
-                if (a.timerId) clearTimeout(a.timerId);
-                startAnimalProduction(a, i);
-                collected++; totalAmount += amount;
-                addXP(4 * amount);
-                updateQuestProgress("animal", amount);
-            } else {
-                showToast(`❌ Lager voll! ${collected} von ${collected + 1} gesammelt.`, true);
-                break;
-            }
-        }
-        if (collected > 0) {
-            renderBarn(); renderMarket(); saveGameToLocal();
-            showToast(`✅ +${totalAmount} ${data.product} (${collected}× ${data.name})`);
-        }
-    }
-    
-    // Füttert alle Tiere einer Tierart auf einmal
-    function feedGroup(animalType) {
-        const data = ANIMALS[animalType]; if (!data) return;
-        const groupIndices = animals.map((a, i) => (a && a.type === animalType) ? i : -1).filter(i => i >= 0);
-        const totalCost = data.feedCost * groupIndices.length;
-        if (playerGold < totalCost) { showToast(`Nicht genug Gold! Benötigt: ${totalCost}💰`, true); return; }
-        playerGold -= totalCost;
-        for (let i of groupIndices) {
-            const a = animals[i];
-            if (a.timerId) clearTimeout(a.timerId);
-            a.isReady = false;
-            a.productionStartTime = Date.now();
-            startAnimalProduction(a, i);
-        }
-        updateMoneyUI(); renderBarn(); saveGameToLocal();
-        showToast(`🌾 ${groupIndices.length}× ${data.name} gefüttert!`);
-    }
-    
-    function updateAnimalProgressBars() {
-        // Pro Tierart: niedrigsten Fortschritt + Anzahl bereit anzeigen
-        const groups = {};
-        for (let a of animals) {
-            if (!a || !ANIMALS[a.type]) continue;
-            if (!groups[a.type]) groups[a.type] = { count: 0, ready: 0, minProgress: 100 };
-            groups[a.type].count++;
-            if (a.isReady) groups[a.type].ready++;
-            const prog = a.isReady ? 100 : getAnimalProgress(a);
-            if (prog < groups[a.type].minProgress) groups[a.type].minProgress = prog;
-        }
-        for (let [type, g] of Object.entries(groups)) {
-            const data = ANIMALS[type];
-            const fillBar = document.querySelector(`.progress-bar-fill[data-group-type="${type}"]`);
-            const progress = g.ready === g.count ? 100 : g.minProgress;
-            if (fillBar) fillBar.style.width = `${progress}%`;
-            const card = fillBar?.closest(".animal-slot");
-            const statusDiv = card?.querySelector(".status");
-            if (statusDiv && !statusDiv.innerText.includes("Auto-Sammler")) {
-                statusDiv.innerText = g.ready === g.count
-                    ? `✅ Alle ${g.count} bereit!`
-                    : (g.ready > 0 ? `✅ ${g.ready}/${g.count} bereit · nächstes: ${progress}%` : `⏳ ${progress}% (${g.count}× ${data.product})`);
-            }
-        }
-    }
+    function updateAnimalProgressBars() { const elements = document.querySelectorAll("#barnView .animal-slot:not(#barnUpgradesSlot)"); for (let i = 0; i < elements.length && i < animals.length; i++) { const a = animals[i]; const el = elements[i]; if (a && !a.isReady) { const progress = getAnimalProgress(a); const statusDiv = el.querySelector(".status"); if (statusDiv && !statusDiv.innerText.includes("Auto-Sammler")) statusDiv.innerText = `${progress}%`; const fillBar = el.querySelector(".progress-bar-fill"); if (fillBar) fillBar.style.width = `${progress}%`; } } }
     
   
     // ==================== VERARBEITUNG ====================
