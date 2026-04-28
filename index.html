@@ -1014,7 +1014,6 @@
             <div style="font-size:0.65rem;"><span id="xpCurrent">0</span>/<span id="xpNext">300</span> XP</div>
         </div>
         <div class="weather-info" id="weatherInfo">☀️ Sonnig</div>
-        <div class="day-info">📅 <span id="dayCount" class="day-count">1</span> <span style="font-size:0.6rem;">Tag(e) real</span></div>
         <div class="next-price-timer">🔄 Preise in <span id="timerSeconds">180</span>s</div>
         <div id="eventBadge" class="event-badge hidden"></div>
         <div id="npcContainer" class="npc-indicator">🚶 Kein Besucher</div>
@@ -1042,7 +1041,6 @@
 
     <div class="mass-actions">
         <button id="harvestAllBtn" class="mass-btn harvest-all-btn">🚜 Alle ernten</button>
-        <button id="nextDayBtn" class="mass-btn next-day-btn">⏩ Nächster Tag</button>
         <button id="upgradeStorageBtn" class="mass-btn upgrade-storage-btn">🏚️ Lager +50 (500💰)</button>
         <button id="cleanupLeaderboardBtn" class="mass-btn cleanup-btn">🧹 Bestenliste</button>
         <button id="resetGameBtn" class="mass-btn reset-btn">🔄 Neues Spiel</button>
@@ -1765,6 +1763,29 @@
     let chatMessages = [];
     let chatEnabled = false;
     let chatInitialized = false;
+    let unreadChatCount = 0;
+    
+    function updateChatBadge() {
+        const btn = document.getElementById("viewMultiplayerBtn");
+        if (!btn) return;
+        let badge = btn.querySelector(".chat-unread-badge");
+        if (unreadChatCount > 0) {
+            if (!badge) {
+                badge = document.createElement("span");
+                badge.className = "chat-unread-badge";
+                badge.style.cssText = "background:#e74c3c; color:white; border-radius:50%; padding:2px 7px; margin-left:6px; font-size:0.7rem; font-weight:bold; box-shadow:0 0 6px rgba(231,76,60,0.7);";
+                btn.appendChild(badge);
+            }
+            badge.innerText = unreadChatCount > 99 ? "99+" : unreadChatCount;
+        } else if (badge) {
+            badge.remove();
+        }
+    }
+    
+    function clearChatNotifications() {
+        unreadChatCount = 0;
+        updateChatBadge();
+    }
     
     async function initChat() {
         if (!firebaseInitialized || !database) return;
@@ -1775,6 +1796,9 @@
         await loadChatMessages();
 
         // Echtzeit-Listener für neue Nachrichten
+        // Beim allerersten Laden keine Benachrichtigungen für ältere Nachrichten zeigen
+        let initialChatLoadDone = false;
+        const chatInitTime = Date.now();
         database.ref('chat').limitToLast(50).on('child_added', (snapshot) => {
             const msg = snapshot.val();
             if (msg && !chatMessages.some(m => m.id === snapshot.key)) {
@@ -1782,8 +1806,20 @@
                 chatMessages.push(msg);
                 if (chatMessages.length > 50) chatMessages.shift();
                 renderChatMessages();
+                // Benachrichtigung nur für neue Nachrichten von anderen Spielern, wenn der Multiplayer-Tab nicht offen ist
+                const isOwnMessage = currentUser && msg.uid === currentUser.uid;
+                const isOldMessage = msg.timestamp && msg.timestamp < chatInitTime - 1000;
+                if (initialChatLoadDone && !isOwnMessage && !isOldMessage) {
+                    if (currentView !== "multiplayer") {
+                        unreadChatCount++;
+                        updateChatBadge();
+                        showToast(`💬 Neue Chat-Nachricht von ${msg.name}`, false);
+                    }
+                }
             }
         });
+        // Nach kurzer Verzögerung gilt der erste Schwall als „bereits gelesen"
+        setTimeout(() => { initialChatLoadDone = true; }, 1500);
 
         database.ref('chat').on('child_removed', (snapshot) => {
             chatMessages = chatMessages.filter(m => m.id !== snapshot.key);
@@ -1892,8 +1928,10 @@
     let stats = { totalHarvest: 0, totalOrders: 0, totalGoldEarned: 0, totalCrafts: 0, totalResearch: 0 };
     let activeEvent = null, eventTimer = null, isPaused = false, weatherTimer = null, liveUpdateInterval = null, orderInterval = null, activeOrder = null, orderPauseTimeout = null, orderPauseUntil = 0;
     let selectedQuantities = { flour: 1, cheese: 1, bread: 1, butter: 1, yogurt: 1, woolThread: 1, scarf: 1, honeyCake: 1, silkFabric: 1 };
-    const MAX_FIELDS = 12, FIELD_PRICES = [150, 250, 400, 600, 850, 1150, 1500, 2000];
+    const FIELDS_PER_ACKER = 12, MAX_FIELDS = 36, FIELD_PRICES = [150, 250, 400, 600, 850, 1150, 1500, 2000];
+    const ACKER2_COST = 25000, ACKER3_COST = 30000;
     let fields = [];
+    let acker2Owned = false, acker3Owned = false;
     let currentWeather = "sunny";
     const WEATHER_TYPES = { sunny: { name: "☀️ Sonnig", emoji: "☀️", growthModifier: 1.0, color: "weather-sunny" }, rainy: { name: "🌧️ Regen", emoji: "🌧️", growthModifier: 0.7, color: "weather-rainy" }, stormy: { name: "🌩️ Sturm", emoji: "🌩️", growthModifier: 1.3, color: "weather-stormy" }, thunder: { name: "⛈️ Gewitter", emoji: "⛈️", growthModifier: 1.5, color: "weather-thunder" } };
     let currentView = "farm";
@@ -2111,10 +2149,16 @@
             }
         }, remaining);
     }
+    // Hilfsfunktion: Zu welchem Acker gehört ein Feldindex (1, 2 oder 3)
+    function getAckerOfField(idx) { if (idx < FIELDS_PER_ACKER) return 1; if (idx < 2 * FIELDS_PER_ACKER) return 2; return 3; }
+    // Anzahl gekaufter Felder NUR auf Acker 1 (für die individuellen Kauf-Preise)
+    function getOwnedAcker1FieldsCount() { let c = 0; for (let i = 0; i < FIELDS_PER_ACKER; i++) if (fields[i] && fields[i].owned) c++; return c; }
     function getOwnedFieldsCount() { return fields.filter(f => f.owned).length; }
-    function getPriceForNextField() { const owned = getOwnedFieldsCount(); if (owned < 4) return 0; let idx = owned - 4; return idx < FIELD_PRICES.length ? FIELD_PRICES[idx] : 999999; }
+    function getPriceForNextField() { const owned = getOwnedAcker1FieldsCount(); if (owned < 4) return 0; let idx = owned - 4; return idx < FIELD_PRICES.length ? FIELD_PRICES[idx] : 999999; }
     
     function buyField(idx) {
+        // Nur Felder auf Acker 1 lassen sich einzeln kaufen
+        if (idx >= FIELDS_PER_ACKER) return;
         if (fields[idx].owned) return;
         const price = getPriceForNextField();
         if (playerGold < price) { showToast(`Nicht genug Gold! ${price} Gold nötig.`, true); return; }
@@ -2122,6 +2166,27 @@
         if (fields[idx].timerId) clearTimeout(fields[idx].timerId);
         fields[idx].cropId = null; fields[idx].isReady = false;
         updateMoneyUI(); renderFields(); saveGameToLocal(); showToast(`🌾 Feld ${idx+1} gekauft!`); checkAchievements();
+    }
+    
+    function buyAcker2() {
+        if (acker2Owned) { showToast("Acker 2 bereits gekauft!", true); return; }
+        if (playerGold < ACKER2_COST) { showToast(`Nicht genug Gold! Acker 2 kostet ${ACKER2_COST}💰`, true); return; }
+        playerGold -= ACKER2_COST; acker2Owned = true;
+        for (let i = FIELDS_PER_ACKER; i < 2 * FIELDS_PER_ACKER; i++) { fields[i].owned = true; fields[i].cropId = null; fields[i].isReady = false; }
+        updateMoneyUI(); renderFields(); saveGameToLocal();
+        showToast(`🌾 Acker 2 gekauft! 12 neue Felder freigeschaltet!`);
+        checkAchievements();
+    }
+    
+    function buyAcker3() {
+        if (!acker2Owned) { showToast("Du musst zuerst Acker 2 kaufen!", true); return; }
+        if (acker3Owned) { showToast("Acker 3 bereits gekauft!", true); return; }
+        if (playerGold < ACKER3_COST) { showToast(`Nicht genug Gold! Acker 3 kostet ${ACKER3_COST}💰`, true); return; }
+        playerGold -= ACKER3_COST; acker3Owned = true;
+        for (let i = 2 * FIELDS_PER_ACKER; i < 3 * FIELDS_PER_ACKER; i++) { fields[i].owned = true; fields[i].cropId = null; fields[i].isReady = false; }
+        updateMoneyUI(); renderFields(); saveGameToLocal();
+        showToast(`🌾 Acker 3 gekauft! 12 weitere Felder freigeschaltet!`);
+        checkAchievements();
     }
     
     function plantCrop(fieldIdx, cropId) {
@@ -2164,10 +2229,14 @@
         }
     }
   
-    function massHarvest() {
+    function massHarvest(ackerNum) {
         if (isPaused) { showToast("⏸️ Spiel ist pausiert! Drücke Start, um fortzufahren.", true); return; }
+        let startIdx = 0, endIdx = fields.length, label = "";
+        if (ackerNum === 1) { startIdx = 0; endIdx = FIELDS_PER_ACKER; label = " auf Acker 1"; }
+        else if (ackerNum === 2) { startIdx = FIELDS_PER_ACKER; endIdx = 2 * FIELDS_PER_ACKER; label = " auf Acker 2"; }
+        else if (ackerNum === 3) { startIdx = 2 * FIELDS_PER_ACKER; endIdx = 3 * FIELDS_PER_ACKER; label = " auf Acker 3"; }
         let harvested = 0;
-        for (let i = 0; i < fields.length; i++) {
+        for (let i = startIdx; i < endIdx; i++) {
             const f = fields[i];
             if (f.owned && f.cropId && f.isReady) {
                 if (getWeatherHarvestRisk()) {
@@ -2185,8 +2254,8 @@
                 }
             }
         }
-        if (harvested) { renderFields(); renderMarket(); saveGameToLocal(); showToast(`🚜 ${harvested} Felder geerntet!`); }
-        else showToast(`Keine erntereifen Felder.`, true);
+        if (harvested) { renderFields(); renderMarket(); saveGameToLocal(); showToast(`🚜 ${harvested} Felder${label} geerntet!`); }
+        else showToast(`Keine erntereifen Felder${label}.`, true);
     }
     
     function getFieldProgress(field) { if (!field.cropId || field.isReady) return field.isReady ? 100 : 0; const crop = CROPS[field.cropId]; const elapsed = Date.now() - field.plantedAt; const total = crop.growTime * getGrowthModifier(); return Math.min(99, Math.floor((elapsed / total) * 100)); }
@@ -2194,21 +2263,22 @@
     function renderFields() {
         if (!farmContainer) return;
         farmContainer.innerHTML = "";
-        for (let i = 0; i < fields.length; i++) {
+        const cropOrder = ["carrot","wheat","tomato","strawberry","pumpkin","pineapple","coffee","blueberry","raspberry","grape","peach","lemon","apple","banana","mango","cherry","pear","pomegranate","kiwi","dragonfruit","starfruit","saffron","vanilla"];
+        
+        const renderFieldTile = (i, fieldNumberInAcker) => {
             const f = fields[i];
             const div = document.createElement("div");
             div.className = "field" + (f.owned ? "" : " locked");
             div.style.position = "relative";
             if (!f.owned) {
                 const price = getPriceForNextField();
-                div.innerHTML = `<div class="crop-icon">🔒</div><div class="crop-name">Feld ${i+1}</div><div class="status">${price}💰</div><button class="buy-field-btn" data-idx="${i}">Kaufen</button>`;
+                div.innerHTML = `<div class="crop-icon">🔒</div><div class="crop-name">Feld ${fieldNumberInAcker}</div><div class="status">${price}💰</div><button class="buy-field-btn" data-idx="${i}">Kaufen</button>`;
             } else {
                 let icon = "🌱", status = "Leer", progress = 0;
                 if (f.cropId && !f.isReady) { const crop = CROPS[f.cropId]; progress = getFieldProgress(f); icon = crop.emoji; status = `${progress}%`; }
                 else if (f.cropId && f.isReady) { icon = CROPS[f.cropId].emoji; status = "✅ Ernte bereit!"; }
                 let plantButtonsHtml = "";
                 if (!f.cropId) {
-                    const cropOrder = ["carrot","wheat","tomato","strawberry","pumpkin","pineapple","coffee","blueberry","raspberry","grape","peach","lemon","apple","banana","mango","cherry","pear","pomegranate","kiwi","dragonfruit","starfruit","saffron","vanilla"];
                     for (let cropId of cropOrder) {
                         const crop = CROPS[cropId]; if (!crop) continue;
                         if (playerLevel < crop.levelRequired) continue;
@@ -2216,13 +2286,70 @@
                         plantButtonsHtml += `<button class="plant-btn" data-idx="${i}" data-crop="${cropId}">${crop.emoji}</button>`;
                     }
                 }
-                div.innerHTML = `<div class="crop-icon">${icon}</div><div class="crop-name">Feld ${i+1}</div><div class="status">${status}</div>${!f.cropId ? `<div class="plant-buttons-container">${plantButtonsHtml}</div>` : ''}${f.cropId && f.isReady ? `<button class="harvest-btn" data-idx="${i}">Ernten</button>` : ''}<div class="progress-bar-container"><div class="progress-bar-fill" style="width: ${progress}%;"></div></div>`;
+                div.innerHTML = `<div class="crop-icon">${icon}</div><div class="crop-name">Feld ${fieldNumberInAcker}</div><div class="status">${status}</div>${!f.cropId ? `<div class="plant-buttons-container">${plantButtonsHtml}</div>` : ''}${f.cropId && f.isReady ? `<button class="harvest-btn" data-idx="${i}">Ernten</button>` : ''}<div class="progress-bar-container"><div class="progress-bar-fill" style="width: ${progress}%;"></div></div>`;
             }
             farmContainer.appendChild(div);
+        };
+        
+        const addAckerHeader = (title, ackerNum, showHarvestBtn) => {
+            const header = document.createElement("div");
+            header.style.gridColumn = "1 / -1";
+            header.style.background = "#5a4a2e";
+            header.style.color = "#ffefcf";
+            header.style.padding = "8px 12px";
+            header.style.borderRadius = "10px";
+            header.style.margin = "8px 0 4px 0";
+            header.style.fontWeight = "bold";
+            header.style.display = "flex";
+            header.style.justifyContent = "space-between";
+            header.style.alignItems = "center";
+            header.style.fontSize = "0.9rem";
+            const harvestBtnHtml = showHarvestBtn ? `<button class="harvest-acker-btn" data-acker="${ackerNum}" style="background:#3a8c3a; color:white; border:none; padding:5px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.75rem;">🚜 Acker ${ackerNum} ernten</button>` : "";
+            header.innerHTML = `<span>🌾 ${title}</span>${harvestBtnHtml}`;
+            farmContainer.appendChild(header);
+        };
+        
+        const addBuyAckerTile = (ackerNum, cost, disabledReason) => {
+            const div = document.createElement("div");
+            div.style.gridColumn = "1 / -1";
+            div.className = "field locked";
+            div.style.padding = "20px";
+            div.style.textAlign = "center";
+            if (disabledReason) {
+                div.innerHTML = `<div class="crop-icon">🔒</div><div class="crop-name">Acker ${ackerNum}</div><div class="status">${disabledReason}</div>`;
+            } else {
+                div.innerHTML = `<div class="crop-icon">🌾</div><div class="crop-name">Acker ${ackerNum} kaufen</div><div class="status">${cost}💰 — schaltet 12 weitere Felder frei</div><button class="buy-acker-btn" data-acker="${ackerNum}" style="margin-top:8px;">🛒 Acker ${ackerNum} kaufen</button>`;
+            }
+            farmContainer.appendChild(div);
+        };
+        
+        // Acker 1
+        addAckerHeader("Acker 1", 1, true);
+        for (let i = 0; i < FIELDS_PER_ACKER; i++) renderFieldTile(i, i + 1);
+        
+        // Acker 2
+        if (acker2Owned) {
+            addAckerHeader("Acker 2", 2, true);
+            for (let i = FIELDS_PER_ACKER; i < 2 * FIELDS_PER_ACKER; i++) renderFieldTile(i, i - FIELDS_PER_ACKER + 1);
+        } else {
+            addBuyAckerTile(2, ACKER2_COST, null);
         }
+        
+        // Acker 3
+        if (acker3Owned) {
+            addAckerHeader("Acker 3", 3, true);
+            for (let i = 2 * FIELDS_PER_ACKER; i < 3 * FIELDS_PER_ACKER; i++) renderFieldTile(i, i - 2 * FIELDS_PER_ACKER + 1);
+        } else if (acker2Owned) {
+            addBuyAckerTile(3, ACKER3_COST, null);
+        } else {
+            addBuyAckerTile(3, ACKER3_COST, "Erst Acker 2 kaufen!");
+        }
+        
         document.querySelectorAll(".buy-field-btn").forEach(btn => btn.addEventListener("click", () => buyField(parseInt(btn.dataset.idx))));
         document.querySelectorAll(".plant-btn").forEach(btn => btn.addEventListener("click", () => plantCrop(parseInt(btn.dataset.idx), btn.dataset.crop)));
         document.querySelectorAll(".harvest-btn").forEach(btn => btn.addEventListener("click", () => harvestField(parseInt(btn.dataset.idx))));
+        document.querySelectorAll(".harvest-acker-btn").forEach(btn => btn.addEventListener("click", () => massHarvest(parseInt(btn.dataset.acker))));
+        document.querySelectorAll(".buy-acker-btn").forEach(btn => { const n = parseInt(btn.dataset.acker); btn.addEventListener("click", () => n === 2 ? buyAcker2() : buyAcker3()); });
     }
     
     function updateFieldProgressBars() { const elements = document.querySelectorAll("#farmView .field"); for (let i = 0; i < elements.length && i < fields.length; i++) { const f = fields[i]; const el = elements[i]; if (f.owned && f.cropId && !f.isReady) { const progress = getFieldProgress(f); const statusDiv = el.querySelector(".status"); if (statusDiv) statusDiv.innerText = `${progress}%`; const fillBar = el.querySelector(".progress-bar-fill"); if (fillBar) fillBar.style.width = `${progress}%`; } } }
@@ -2251,8 +2378,11 @@
         if (barnUpgrades.speedBoost) prodTime = Math.floor(prodTime * 0.7);
         prodTime = Math.floor(prodTime * getAnimalProdModifier());
         
+        // Falls noch keine Startzeit gesetzt ist, jetzt setzen (Schutz für neu gekaufte Tiere)
+        if (!animal.productionStartTime) animal.productionStartTime = Date.now();
+        
         // Verbleibende Zeit berechnen
-        const elapsed = animal.productionStartTime ? (Date.now() - animal.productionStartTime) : 0;
+        const elapsed = Date.now() - animal.productionStartTime;
         const remaining = Math.max(2000, prodTime - elapsed);
 
         animal._timerRunning = true;
@@ -2336,7 +2466,7 @@
         if (playerLevel < animal.levelRequired) { showToast(`🔒 ${animal.name} wird auf Level ${animal.levelRequired} freigeschaltet!`, true); return; }
         if (playerGold >= animal.buyCost) {
             playerGold -= animal.buyCost;
-            const newAnimal = { type: animalType, name: `${animal.name} ${animals.length + 1}`, isReady: false, timerId: null, productionStartTime: null };
+            const newAnimal = { type: animalType, name: `${animal.name} ${animals.length + 1}`, isReady: false, timerId: null, productionStartTime: Date.now() };
             animals.push(newAnimal);
             startAnimalProduction(newAnimal, animals.length - 1);
             updateMoneyUI(); renderBarn(); saveGameToLocal(); showToast(`${animal.emoji} ${newAnimal.name} gekauft!`); checkAchievements();
@@ -2344,7 +2474,7 @@
     }
     
     function renameAnimal(idx) { const newName = prompt("Neuer Name:", animals[idx].name); if (newName?.trim()) { animals[idx].name = newName.trim(); renderBarn(); saveGameToLocal(); showToast(`Umbenannt in ${newName}`); } }
-    function feedAnimal(idx) { const animal = animals[idx]; const data = ANIMALS[animal.type]; if (playerGold >= data.feedCost) { playerGold -= data.feedCost; if (animal.timerId) clearTimeout(animal.timerId); animal.isReady = false; startAnimalProduction(animal, idx); updateMoneyUI(); showToast(`🌾 ${animal.name} gefüttert!`); renderBarn(); saveGameToLocal(); } else showToast(`Nicht genug Gold! (${data.feedCost}💰)`, true); }
+    function feedAnimal(idx) { const animal = animals[idx]; const data = ANIMALS[animal.type]; if (playerGold >= data.feedCost) { playerGold -= data.feedCost; if (animal.timerId) clearTimeout(animal.timerId); animal.isReady = false; animal.productionStartTime = Date.now(); startAnimalProduction(animal, idx); updateMoneyUI(); showToast(`🌾 ${animal.name} gefüttert!`); renderBarn(); saveGameToLocal(); } else showToast(`Nicht genug Gold! (${data.feedCost}💰)`, true); }
     
     function collectProduct(idx) {
         if (isPaused) { showToast("⏸️ Spiel ist pausiert!", true); return; }
@@ -2471,7 +2601,7 @@
         marketContainer.innerHTML = "";
         const allProducts = [...Object.keys(CROPS), "egg", "milk", "truffle", "flour", "cheese", "bread", "wool", "goatCheese", "fertilizer", "alpacaWool", "honey", "duckEgg", "ostrichEgg", "camelMilk", "reindeerFur", "peacockFeather", "silk", "dragonScale", "butter", "yogurt", "woolThread", "scarf", "honeyCake", "silkFabric"];
         const names = { carrot:"Karotte", wheat:"Weizen", tomato:"Tomate", strawberry:"Erdbeere", pumpkin:"Kürbis", pineapple:"Ananas", coffee:"Kaffee", blueberry:"Blaubeere", raspberry:"Himbeere", grape:"Traube", peach:"Pfirsich", lemon:"Zitrone", apple:"Apfel", banana:"Banane", mango:"Mango", cherry:"Kirsche", pear:"Birne", pomegranate:"Granatapfel", kiwi:"Kiwi", dragonfruit:"Drachenfrucht", starfruit:"Sternfrucht", saffron:"Safran", vanilla:"Vanille", egg:"Ei", milk:"Milch", truffle:"Trüffel", flour:"Mehl", cheese:"Käse", bread:"Brot", wool:"Wolle", goatCheese:"Ziegenkäse", fertilizer:"Dünger", alpacaWool:"Alpakawolle", honey:"Honig", duckEgg:"Entenei", ostrichEgg:"Straußenei", camelMilk:"Kamelmilch", reindeerFur:"Rentierfell", peacockFeather:"Pfauenfeder", silk:"Seide", dragonScale:"Drachenschuppe", butter:"Butter", yogurt:"Joghurt", woolThread:"Wollfaden", scarf:"Schal", honeyCake:"Honigkuchen", silkFabric:"Seidentuch" };
-        const emojis = { carrot:"🥕", wheat:"🌾", tomato:"🍅", strawberry:"🍓", pumpkin:"🎃", pineapple:"🍍", coffee:"☕", blueberry:"🫐", raspberry:"🍓", grape:"🍇", peach:"🍑", lemon:"🍋", apple:"🍎", banana:"🍌", mango:"🥭", cherry:"🍒", pear:"🍐", pomegranate:"🍎", kiwi:"🥝", dragonfruit:"🐉", starfruit:"⭐", saffron:"🌸", vanilla:"🌿", egg:"🥚", milk:"🥛", truffle:"🍄", flour:"🌾", cheese:"🧀", bread:"??", wool:"🧶", goatCheese:"🧀", fertilizer:"💩", alpacaWool:"🧣", honey:"🍯", duckEgg:"🥚", ostrichEgg:"🥚", camelMilk:"🥛", reindeerFur:"🧣", peacockFeather:"📿", silk:"👘", dragonScale:"⚡", butter:"🧈", yogurt:"🥣", woolThread:"🧵", scarf:"🧣", honeyCake:"🍰", silkFabric:"👘" };
+        const emojis = { carrot:"🥕", wheat:"🌾", tomato:"🍅", strawberry:"🍓", pumpkin:"🎃", pineapple:"🍍", coffee:"☕", blueberry:"🫐", raspberry:"🍓", grape:"🍇", peach:"🍑", lemon:"🍋", apple:"🍎", banana:"🍌", mango:"🥭", cherry:"🍒", pear:"🍐", pomegranate:"🍎", kiwi:"🥝", dragonfruit:"🐉", starfruit:"⭐", saffron:"🌸", vanilla:"🌿", egg:"🥚", milk:"🥛", truffle:"🍄", flour:"🌾", cheese:"🧀", bread:"🍞", wool:"🧶", goatCheese:"🧀", fertilizer:"💩", alpacaWool:"🧣", honey:"🍯", duckEgg:"🥚", ostrichEgg:"🥚", camelMilk:"🥛", reindeerFur:"🧣", peacockFeather:"📿", silk:"👘", dragonScale:"⚡", butter:"🧈", yogurt:"🥣", woolThread:"🧵", scarf:"🧣", honeyCake:"🍰", silkFabric:"👘" };
         for (let prod of allProducts) {
             let isUnlocked = false;
             if (CROPS[prod]) { const crop = CROPS[prod]; if (playerLevel >= crop.levelRequired && (!crop.licenseRequired || ownedLicenses.includes(crop.licenseRequired))) isUnlocked = true; }
@@ -2546,7 +2676,7 @@
     function getDoubleChance() { return researchBonuses.doubleChance; }
     
     // ==================== TAG & ZEIT ====================
-    function nextDay() { if (isPaused) { showToast("⏸️ Spiel ist pausiert! Drücke Start, um fortzufahren.", true); return; } currentDay++; daySpan.innerText = currentDay; dailyPriceFluctuation(); timeLeft = 180; if (timerInterval) clearInterval(timerInterval); startTimer(); saveGameToLocal(); if (!activeOrder && Math.random() < 0.4) generateRandomOrder(); triggerRandomEvent(); }
+    function nextDay() { if (isPaused) { showToast("⏸️ Spiel ist pausiert! Drücke Start, um fortzufahren.", true); return; } currentDay++; if (daySpan) daySpan.innerText = currentDay; dailyPriceFluctuation(); timeLeft = 180; if (timerInterval) clearInterval(timerInterval); startTimer(); saveGameToLocal(); if (!activeOrder && Math.random() < 0.4) generateRandomOrder(); triggerRandomEvent(); }
     function startTimer() { if (isPaused) return; if (timerInterval) clearInterval(timerInterval); timerInterval = setInterval(() => { if (timeLeft <= 1) nextDay(); else { timeLeft--; timerSpan.innerText = timeLeft; } }, 1000); }
     
     async function dailyPriceFluctuation() { for (let key in globalMarketPrices) { let factor = 0.7 + Math.random() * 0.6; let newPrice = Math.floor(basePrices[key] * factor); newPrice = Math.max(basePrices[key] * 0.5, Math.min(basePrices[key] * 1.5, newPrice)); globalMarketPrices[key] = newPrice; } if (firebaseInitialized && database) await database.ref('globalPrices').set(globalMarketPrices); showToast(`📈 Tägliche Preisanpassung!`, false); }
@@ -2582,6 +2712,7 @@
         if (view === "licenses") renderLicenses();
         if (view === "achievements") renderAchievements();
         if (view === "handbook") renderHandbook();
+        if (view === "multiplayer") clearChatNotifications();
         if (view === "quests") { renderLoginBonus(); renderQuests(); }
         if (view === "multiplayer" && isMultiplayerUnlocked(playerLevel)) {
             if (firebaseInitialized) {
@@ -2595,9 +2726,9 @@
     }
     
     // ==================== EXPORT/IMPORT ====================
-    function exportGame() { const saveData = { gold: playerGold, inventory, day: currentDay, currentPrices: globalMarketPrices, maxStorage, fields: fields.map(f => ({ owned: f.owned, cropId: f.cropId, plantedAt: f.plantedAt, isReady: f.isReady })), barnOwned, barnUpgrades, animals: animals.map(a => ({ type: a.type, name: a.name, isReady: a.isReady, productionStartTime: a.productionStartTime })), achievements, stats, playerLevel, playerXP, completedResearch, researchProgress, ownedLicenses, currentWeather, timestamp: Date.now(), version: CURRENT_GAME_VERSION }; const dataStr = JSON.stringify(saveData); const blob = new Blob([dataStr], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `farm_save_v${CURRENT_GAME_VERSION}_${new Date().toISOString().slice(0,19)}.json`; a.click(); URL.revokeObjectURL(url); showToast("💾 Spielstand exportiert!"); }
+    function exportGame() { const saveData = { gold: playerGold, inventory, day: currentDay, currentPrices: globalMarketPrices, maxStorage, fields: fields.map(f => ({ owned: f.owned, cropId: f.cropId, plantedAt: f.plantedAt, isReady: f.isReady })), barnOwned, barnUpgrades, acker2Owned, acker3Owned, animals: animals.map(a => ({ type: a.type, name: a.name, isReady: a.isReady, productionStartTime: a.productionStartTime })), achievements, stats, playerLevel, playerXP, completedResearch, researchProgress, ownedLicenses, currentWeather, timestamp: Date.now(), version: CURRENT_GAME_VERSION }; const dataStr = JSON.stringify(saveData); const blob = new Blob([dataStr], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `farm_save_v${CURRENT_GAME_VERSION}_${new Date().toISOString().slice(0,19)}.json`; a.click(); URL.revokeObjectURL(url); showToast("💾 Spielstand exportiert!"); }
     
-    function importGame(file) { const reader = new FileReader(); reader.onload = (e) => { try { const data = JSON.parse(e.target.result); playerGold = data.gold; inventory = data.inventory; currentDay = data.day; maxStorage = data.maxStorage; playerLevel = data.playerLevel || 1; playerXP = data.playerXP || 0; completedResearch = data.completedResearch || []; ownedLicenses = data.ownedLicenses || []; if (data.researchProgress) researchProgress = data.researchProgress; else initResearchProgress(); if (data.currentWeather) currentWeather = data.currentWeather; applyResearchBonuses(); for (let i = 0; i < fields.length && i < data.fields.length; i++) { fields[i].owned = data.fields[i].owned; fields[i].cropId = data.fields[i].cropId; fields[i].plantedAt = data.fields[i].plantedAt; fields[i].isReady = data.fields[i].isReady; } barnOwned = data.barnOwned; barnUpgrades = data.barnUpgrades || { autoCollector: false, speedBoost: false }; animals = data.animals || []; for (let a of animals) { if (!a.isReady && a.productionStartTime) startAnimalProduction(a, animals.indexOf(a)); } achievements = data.achievements || achievements; stats = data.stats || stats; updateMoneyUI(); updateLevelUI(); updateStorageUI(); renderFields(); renderPricePanel(); renderMarket(); if (isBarnUnlocked(playerLevel) && barnOwned) renderBarn(); updateViewButtons(); updateMassPlantButtons(); const weather = WEATHER_TYPES[currentWeather] || WEATHER_TYPES.sunny; const weatherEl = document.getElementById("weatherInfo"); weatherEl.innerHTML = weather.emoji + " " + weather.name; weatherEl.className = "weather-info " + weather.color; showToast("📂 Spielstand importiert!"); saveGameToLocal(); updateLeaderboard(); } catch(err) { showToast("Fehler beim Import!", true); } }; reader.readAsText(file); }
+    function importGame(file) { const reader = new FileReader(); reader.onload = (e) => { try { const data = JSON.parse(e.target.result); playerGold = data.gold; inventory = data.inventory; currentDay = data.day; maxStorage = data.maxStorage; playerLevel = data.playerLevel || 1; playerXP = data.playerXP || 0; completedResearch = data.completedResearch || []; ownedLicenses = data.ownedLicenses || []; if (data.researchProgress) researchProgress = data.researchProgress; else initResearchProgress(); if (data.currentWeather) currentWeather = data.currentWeather; applyResearchBonuses(); for (let i = 0; i < fields.length && i < data.fields.length; i++) { fields[i].owned = data.fields[i].owned; fields[i].cropId = data.fields[i].cropId; fields[i].plantedAt = data.fields[i].plantedAt; fields[i].isReady = data.fields[i].isReady; } barnOwned = data.barnOwned; barnUpgrades = data.barnUpgrades || { autoCollector: false, speedBoost: false }; acker2Owned = data.acker2Owned || false; acker3Owned = data.acker3Owned || false; if (acker2Owned) { for (let i = FIELDS_PER_ACKER; i < 2 * FIELDS_PER_ACKER; i++) if (fields[i]) fields[i].owned = true; } if (acker3Owned) { for (let i = 2 * FIELDS_PER_ACKER; i < 3 * FIELDS_PER_ACKER; i++) if (fields[i]) fields[i].owned = true; } animals = data.animals || []; for (let a of animals) { if (!a.isReady) { if (!a.productionStartTime) a.productionStartTime = Date.now(); startAnimalProduction(a, animals.indexOf(a)); } } achievements = data.achievements || achievements; stats = data.stats || stats; updateMoneyUI(); updateLevelUI(); updateStorageUI(); renderFields(); renderPricePanel(); renderMarket(); if (isBarnUnlocked(playerLevel) && barnOwned) renderBarn(); updateViewButtons(); updateMassPlantButtons(); const weather = WEATHER_TYPES[currentWeather] || WEATHER_TYPES.sunny; const weatherEl = document.getElementById("weatherInfo"); weatherEl.innerHTML = weather.emoji + " " + weather.name; weatherEl.className = "weather-info " + weather.color; showToast("📂 Spielstand importiert!"); saveGameToLocal(); updateLeaderboard(); } catch(err) { showToast("Fehler beim Import!", true); } }; reader.readAsText(file); }
     
 // ==================== CLOUD-SPEICHER (GERÄTEÜBERGREIFEND) ====================
 
@@ -2665,6 +2796,8 @@
                 })),
                 barnOwned: barnOwned || false,
                 barnUpgrades: barnUpgrades || [],
+                acker2Owned: acker2Owned || false,
+                acker3Owned: acker3Owned || false,
                 animals: (animals || []).map(a => ({
                     type: a.type || null,
                     name: a.name || null,
@@ -2790,6 +2923,8 @@
 
     barnOwned = data.barnOwned || false;
     barnUpgrades = data.barnUpgrades || { autoCollector: false, speedBoost: false };
+    acker2Owned = data.acker2Owned || false;
+    acker3Owned = data.acker3Owned || false;
     animals = data.animals || [];
     achievements = data.achievements || achievements;
     stats = data.stats || stats;
@@ -2812,6 +2947,9 @@
             }
         }
     }
+    // Sicherstellen, dass Acker-2/3-Felder mit den Acker-Flags konsistent sind (z.B. nach altem Spielstand)
+    if (acker2Owned) { for (let i = FIELDS_PER_ACKER; i < 2 * FIELDS_PER_ACKER; i++) if (fields[i]) fields[i].owned = true; }
+    if (acker3Owned) { for (let i = 2 * FIELDS_PER_ACKER; i < 3 * FIELDS_PER_ACKER; i++) if (fields[i]) fields[i].owned = true; }
     
     // Tiere wiederherstellen - erst alle Timer komplett leeren
     for (let key in animalTimerRegistry) { clearTimeout(animalTimerRegistry[key]); delete animalTimerRegistry[key]; }
@@ -2819,7 +2957,8 @@
         const a = animals[i];
         if (a.timerId) { clearTimeout(a.timerId); a.timerId = null; }
         a._timerRunning = false;
-        if (!a.isReady && a.productionStartTime) {
+        if (!a.isReady) {
+            if (!a.productionStartTime) a.productionStartTime = Date.now();
             startAnimalProduction(a, i);
         }
     }
@@ -2848,6 +2987,7 @@
         gold: playerGold || 0, inventory: inventory || {}, day: currentDay || 1, maxStorage: maxStorage || 50, 
         fields: fields.map(f => ({ owned: f.owned||false, cropId: f.cropId||null, plantedAt: f.plantedAt||null, isReady: f.isReady||false })), 
         barnOwned: barnOwned||false, barnUpgrades: barnUpgrades||[], 
+        acker2Owned: acker2Owned||false, acker3Owned: acker3Owned||false,
         animals: (animals||[]).map(a => ({ type: a.type||null, name: a.name||null, isReady: a.isReady||false, productionStartTime: a.productionStartTime||null })), 
         achievements: achievements||[], stats: stats||{}, playerLevel: playerLevel||1, playerXP: playerXP||0, 
         completedResearch: completedResearch||[], researchProgress: researchProgress||{}, ownedLicenses: ownedLicenses||[], currentWeather: currentWeather||"sunny", 
@@ -2865,6 +3005,7 @@
             gold: playerGold||0, inventory: inventory||{}, day: currentDay||1, maxStorage: maxStorage||50, 
             fields: fields.map(f => ({ owned: f.owned||false, cropId: f.cropId||null, plantedAt: f.plantedAt||null, isReady: f.isReady||false })), 
             barnOwned: barnOwned||false, barnUpgrades: barnUpgrades||[], 
+            acker2Owned: acker2Owned||false, acker3Owned: acker3Owned||false,
             animals: (animals||[]).map(a => ({ type: a.type||null, name: a.name||null, isReady: a.isReady||false, productionStartTime: a.productionStartTime||null })), 
             achievements: achievements||[], stats: stats||{}, playerLevel: playerLevel||1, playerXP: playerXP||0, 
             completedResearch: completedResearch||[], researchProgress: researchProgress||{}, ownedLicenses: ownedLicenses||[], currentWeather: currentWeather||"sunny", 
@@ -3273,6 +3414,8 @@ async function forceSaveNow() {
             })),
             barnOwned: barnOwned || false,
             barnUpgrades: barnUpgrades || [],
+            acker2Owned: acker2Owned || false,
+            acker3Owned: acker3Owned || false,
             animals: (animals || []).map(a => ({
                 type: a.type || null,
                 name: a.name || null,
@@ -3298,6 +3441,7 @@ async function forceSaveNow() {
     // ==================== ADMIN RESET SYSTEM FÜR UDO ====================
     async function init() {
         for (let i = 0; i < MAX_FIELDS; i++) fields.push({ owned: i < 4, cropId: null, plantedAt: null, isReady: false, timerId: null });
+        // Acker 2 + 3 sind beim Spielstart noch nicht gekauft (Felder 12-35 bleiben gesperrt)
         initResearchProgress();
         initPriceSystem();
         
@@ -3324,7 +3468,6 @@ async function forceSaveNow() {
         renderNPCInUI();
         
         document.getElementById("harvestAllBtn").onclick = () => massHarvest();
-        document.getElementById("nextDayBtn").onclick = () => nextDay();
         document.getElementById("upgradeStorageBtn").onclick = () => upgradeStorage();
         document.getElementById("cleanupLeaderboardBtn").onclick = () => manualCleanup();
         
@@ -3381,9 +3524,10 @@ async function adminGlobalReset() {
                 await database.ref('users/' + uid + '/savegame').set({
                     gold: 500, playerXP: 0, playerLevel: 1, inventory: {},
                     day: 1, maxStorage: 50, barnOwned: false, barnUpgrades: {},
+                    acker2Owned: false, acker3Owned: false,
                     animals: [], completedResearch: [], researchProgress: {},
                     ownedLicenses: [], currentWeather: "sunny",
-                    fields: Array(20).fill(null).map((_, i) => ({ owned: i < 4, cropId: null, plantedAt: null, isReady: false })),
+                    fields: Array(MAX_FIELDS).fill(null).map((_, i) => ({ owned: i < 4, cropId: null, plantedAt: null, isReady: false })),
                     timestamp: Date.now()
                 });
             }
