@@ -2628,81 +2628,46 @@
             playerGold -= 2000; barnUpgrades.autoCollector = true; updateMoneyUI(); saveGameToLocal(); showToast("🤖 Automatischer Sammler aktiviert! Fertige Produkte werden automatisch eingesammelt.", false);
             // Sofort alle wartenden Tiere starten
             let gestartet = 0;
-            for (let i = 0; i < animals.length; i++) {
-                const a = animals[i];
-                if (!a.productionStartTime && !a.isReady) {
-                    startAnimalProduction(a, i);
-                    gestartet++;
-                } else if (a.isReady) {
-                    // Bereits fertige Tiere sofort einsammeln und neu starten
-                    const data = ANIMALS[a.type];
-                    let amount = Math.random() < getDoubleChance() ? 2 : 1;
-                    if (addToInventory(data.productKey, amount)) {
-                        animals[i].isReady = false;
-                        addXP(4 * amount);
-                        startAnimalProduction(animals[i], i);
-                        gestartet++;
-                    }
-                }
-            }
-            if (gestartet > 0) showToast(`🤖 ${gestartet} Tier(e) wurden automatisch gestartet!`, false);
-            renderBarn(); saveGameToLocal();
-            for (let i = 0; i < animals.length; i++) { if (animals[i].isReady) { const data = ANIMALS[animals[i].type]; let amount = Math.random() < getDoubleChance() ? 2 : 1; if (addToInventory(data.productKey, amount)) { animals[i].isReady = false; addXP(4 * amount); if (animals[i].timerId) clearTimeout(animals[i].timerId); startAnimalProduction(animals[i], i); showToast(`🤖 Automatisch +${amount} ${data.product} (${animals[i].name})`); } } }
-            renderBarn();
-        } else if (type === "speedBoost" && !barnUpgrades.speedBoost && playerGold >= 1000) {
-            playerGold -= 1000; barnUpgrades.speedBoost = true; updateMoneyUI(); saveGameToLocal(); showToast("⚡ Produktionsgeschwindigkeit +30% aktiviert!", false);
-            for (let i = 0; i < animals.length; i++) { if (animals[i] && !animals[i].isReady) { if (animals[i].timerId) clearTimeout(animals[i].timerId); startAnimalProduction(animals[i], i); } }
-            renderBarn();
-        } else showToast("Nicht genug Gold oder Upgrade bereits gekauft!", true);
-    }
-    
-    function buyAnimal(animalType) {
-        if (!isBarnUnlocked(playerLevel)) { showToast(`🔒 Stall wird auf Level 6 freigeschaltet!`, true); return; }
-        if (!barnOwned) { showToast("Kaufe zuerst den Stall (1000💰)!", true); return; }
-        const animal = ANIMALS[animalType];
-        if (playerLevel < animal.levelRequired) { showToast(`🔒 ${animal.name} wird auf Level ${animal.levelRequired} freigeschaltet!`, true); return; }
-        if (playerGold >= animal.buyCost) {
-            playerGold -= animal.buyCost;
-            const newAnimal = { type: animalType, name: `${animal.name} ${animals.length + 1}`, isReady: false, timerId: null, productionStartTime: Date.now() };
-            animals.push(newAnimal);
-            startAnimalProduction(newAnimal, animals.length - 1);
-            updateMoneyUI(); renderBarn(); saveGameToLocal(); showToast(`${animal.emoji} ${newAnimal.name} gekauft!`); checkAchievements();
-        } else showToast(`Nicht genug Gold! ${animal.name} kostet ${animal.buyCost}💰`, true);
-    }
-    
-    function renameAnimal(idx) { const newName = prompt("Neuer Name:", animals[idx].name); if (newName?.trim()) { animals[idx].name = newName.trim(); renderBarn(); saveGameToLocal(); showToast(`Umbenannt in ${newName}`); } }
-    function feedAnimal(idx) { const animal = animals[idx]; const data = ANIMALS[animal.type]; if (playerGold >= data.feedCost) { playerGold -= data.feedCost; if (animal.timerId) clearTimeout(animal.timerId); animal.isReady = false; animal.productionStartTime = Date.now(); startAnimalProduction(animal, idx); updateMoneyUI(); showToast(`🌾 ${animal.name} gefüttert!`); renderBarn(); saveGameToLocal(); } else showToast(`Nicht genug Gold! (${data.feedCost}💰)`, true); }
-    
-    function collectProduct(idx) {
-        if (isPaused) { showToast("⏸️ Spiel ist pausiert!", true); return; }
-        const animal = animals[idx]; if (!animal?.isReady) { showToast("Noch kein Produkt fertig!", true); return; }
-        const data = ANIMALS[animal.type];
-        let amount = Math.random() < getDoubleChance() ? 2 : 1;
-        if (addToInventory(data.productKey, amount)) {
-            animal.isReady = false; if (animal.timerId) clearTimeout(animal.timerId);
-            startAnimalProduction(animal, idx);
-            renderBarn(); renderMarket(); saveGameToLocal(); addXP(4 * amount);
-            showToast(`✅ +${amount} ${data.product} (${animal.name}) +${4*amount} XP`);
-            updateQuestProgress("animal", amount);
-        } else showToast(`❌ Lager voll! Kann ${data.product} nicht sammeln.`, true);
-    }
-    
-    function renderBarn() {
-        if (!barnContainer) return;
-        barnContainer.innerHTML = "";
-        if (!isBarnUnlocked(playerLevel)) { barnContainer.innerHTML = `<div class="animal-slot" style="grid-column:1/-1; background:#4a3a2a;"><div class="animal-icon">🔒</div><div class="animal-name">Noch nicht freigeschaltet</div><div class="status">Erreiche Level 6, um den Stall freizuschalten!</div></div>`; return; }
-        if (!barnOwned) { barnContainer.innerHTML = `<div class="animal-slot" style="grid-column:1/-1;"><div class="animal-icon">🏚️</div><div class="animal-name">Stall nicht gebaut</div><button class="buy-animal-btn" id="buyBarnBtn">🏚️ Stall kaufen (1000💰)</button></div>`; document.getElementById("buyBarnBtn")?.addEventListener("click", buyBarn); return; }
-        const upgradesDiv = document.createElement("div"); upgradesDiv.className = "animal-slot"; upgradesDiv.id = "barnUpgradesSlot"; upgradesDiv.style.background = "#8b6942"; upgradesDiv.innerHTML = `<div class="animal-icon">⚡</div><div class="animal-name">Upgrades</div><div>${barnUpgrades.autoCollector ? `<div class="status" style="background:#3a6e3a;">🤖 Automatischer Sammler: Aktiv ✔️</div>` : `<button class="upgrade-btn" id="autoCollectorBtn">🤖 Automatischer Sammler (2000💰)</button>`}</div><div><button class="upgrade-btn" id="speedBoostBtn">⚡ Speed-Boost (1000💰) ${barnUpgrades.speedBoost ? "✔️" : ""}</button></div>`; barnContainer.appendChild(upgradesDiv);
-        document.getElementById("autoCollectorBtn")?.addEventListener("click", () => upgradeBarn("autoCollector"));
-        document.getElementById("speedBoostBtn")?.addEventListener("click", () => upgradeBarn("speedBoost"));
-        
-        const unlockedAnimals = []; for (let [id, animal] of Object.entries(ANIMALS)) if (playerLevel >= animal.levelRequired) unlockedAnimals.push({ id, ...animal });
-        for (let i = 0; i < animals.length; i++) {
-            const a = animals[i]; const data = ANIMALS[a.type]; const progress = a.isReady ? 100 : getAnimalProgress(a);
-            const div = document.createElement("div"); div.className = "animal-slot"; div.style.position = "relative";
-            div.innerHTML = `<div class="animal-icon">${data.emoji}</div><div class="animal-name">${a.name}</div><div class="status">${a.isReady ? "✅ Produkt bereit!" : `${progress}%`}</div><div><button class="rename-btn" data-idx="${i}">✏️ Umbenennen</button></div><div><button class="feed-btn" data-idx="${i}">🌾 Füttern (${data.feedCost}💰)</button></div>${a.isReady && !barnUpgrades.autoCollector ? `<button class="collect-btn" data-idx="${i}">📦 ${data.product} sammeln</button>` : ''}${barnUpgrades.autoCollector && !a.isReady ? `<div class="status" style="background:#3a6e3a;">🤖 Auto-Sammler aktiv</div>` : ''}<div class="progress-bar-container"><div class="progress-bar-fill" style="width: ${progress}%;"></div></div>`;
+            
+        // ====== NEUE GRUPPIERUNG ======
+        const grouped = {};
+        animals.forEach((a, idx) => {
+            if (!grouped[a.type]) grouped[a.type] = [];
+            grouped[a.type].push({a, idx});
+        });
+
+        Object.keys(grouped).forEach(type => {
+            const list = grouped[type];
+            const data = ANIMALS[type];
+
+            let readyCount = list.filter(x => x.a.isReady).length;
+
+            const div = document.createElement("div");
+            div.className = "animal-slot";
+
+            div.innerHTML = `
+                <div class="animal-icon">${data.emoji}</div>
+                <div class="animal-name">${data.name} x${list.length}</div>
+                <div class="status">Fertig: ${readyCount}/${list.length}</div>
+                <button class="feed-btn">🍽️ Alle füttern (${data.feedCost}💰)</button>
+                <button class="collect-btn">📦 Alle einsammeln</button>
+            `;
+
+            // Alle füttern
+            div.querySelector(".feed-btn").onclick = () => {
+                list.forEach(x => feedAnimal(x.idx));
+            };
+
+            // Alle einsammeln
+            div.querySelector(".collect-btn").onclick = () => {
+                list.forEach(x => {
+                    if (x.a.isReady) collectProduct(x.idx);
+                });
+            };
+
             barnContainer.appendChild(div);
-        }
+        });
+
         const buyDiv = document.createElement("div"); buyDiv.className = "animal-slot"; buyDiv.style.background = "#8b6942"; buyDiv.innerHTML = `<div class="animal-icon">➕</div><div class="animal-name">Neues Tier kaufen</div>`;
         for (let animal of unlockedAnimals) buyDiv.innerHTML += `<div><button class="buy-animal-btn" data-animal="${animal.id}" style="margin:3px;">${animal.emoji} ${animal.name} (${animal.buyCost}💰) ⭐ Level ${animal.levelRequired}</button></div>`;
         barnContainer.appendChild(buyDiv);
