@@ -2782,10 +2782,47 @@
                 pricePanel.appendChild(card);
             }
         }
-        const animalProducts = [{ id: "egg", name: "Ei", emoji: "🥚", price: globalMarketPrices.egg, basePrice: 8, level: 6 },{ id: "milk", name: "Milch", emoji: "🥛", price: globalMarketPrices.milk, basePrice: 20, level: 6 },{ id: "truffle", name: "Trüffel", emoji: "🍄", price: globalMarketPrices.truffle, basePrice: 35, level: 6 }];
-        for (let p of animalProducts) if (playerLevel >= p.level) { const percent = (p.price / p.basePrice) * 100; let priceClass = percent >= 110 ? "price-good" : (percent <= 90 ? "price-bad" : ""); let trend = percent >= 110 ? "📈" : (percent <= 90 ? "📉" : "➖"); const card = document.createElement("div"); card.className = "price-card"; card.innerHTML = `<div style="font-size:1.5rem;">${p.emoji}</div><div><strong>${p.name}</strong> ${trend}</div><div class="price-value ${priceClass}">${p.price}💰</div>`; pricePanel.appendChild(card); }
-        const craftedProducts = [{ id: "flour", name: "Mehl", emoji: "🌾", price: globalMarketPrices.flour, basePrice: 30, level: 8 },{ id: "cheese", name: "Käse", emoji: "🧀", price: globalMarketPrices.cheese, basePrice: 45, level: 8 },{ id: "bread", name: "Brot", emoji: "🍞", price: globalMarketPrices.bread, basePrice: 40, level: 8 }];
-        for (let p of craftedProducts) if (playerLevel >= p.level) { const percent = (p.price / p.basePrice) * 100; let priceClass = percent >= 110 ? "price-good" : (percent <= 90 ? "price-bad" : ""); let trend = percent >= 110 ? "📈" : (percent <= 90 ? "📉" : "➖"); const card = document.createElement("div"); card.className = "price-card"; card.innerHTML = `<div style="font-size:1.5rem;">${p.emoji}</div><div><strong>${p.name}</strong> ${trend}</div><div class="price-value ${priceClass}">${p.price}💰</div>`; pricePanel.appendChild(card); }
+        // Alle Tier-/Verarbeitungs-Produkte mit Preisanzeige (komplette Liste)
+        const otherProducts = [
+            { id: "egg",            name: "Ei",            emoji: "🥚", basePrice: 8,   level: 6 },
+            { id: "milk",           name: "Milch",         emoji: "🥛", basePrice: 20,  level: 6 },
+            { id: "truffle",        name: "Trüffel",       emoji: "🍄", basePrice: 35,  level: 6 },
+            { id: "flour",          name: "Mehl",          emoji: "🌾", basePrice: 30,  level: 8 },
+            { id: "cheese",         name: "Käse",          emoji: "🧀", basePrice: 45,  level: 8 },
+            { id: "bread",          name: "Brot",          emoji: "🍞", basePrice: 40,  level: 8 },
+            { id: "butter",         name: "Butter",        emoji: "🧈", basePrice: 55,  level: 8 },
+            { id: "yogurt",         name: "Joghurt",       emoji: "🥣", basePrice: 50,  level: 8 },
+            { id: "wool",           name: "Wolle",         emoji: "🧶", basePrice: 45,  level: 10 },
+            { id: "woolThread",     name: "Wollfaden",     emoji: "🧵", basePrice: 70,  level: 10 },
+            { id: "scarf",          name: "Schal",         emoji: "🧣", basePrice: 120, level: 10 },
+            { id: "goatCheese",     name: "Ziegenkäse",    emoji: "🧀", basePrice: 60,  level: 12 },
+            { id: "fertilizer",     name: "Dünger",        emoji: "💩", basePrice: 30,  level: 14 },
+            { id: "alpacaWool",     name: "Alpakawolle",   emoji: "🧣", basePrice: 80,  level: 16 },
+            { id: "honey",          name: "Honig",         emoji: "🍯", basePrice: 100, level: 18 },
+            { id: "honeyCake",      name: "Honigkuchen",   emoji: "🍰", basePrice: 180, level: 18 },
+            { id: "duckEgg",        name: "Entenei",       emoji: "🥚", basePrice: 25,  level: 20 },
+            { id: "ostrichEgg",     name: "Straußenei",    emoji: "🥚", basePrice: 60,  level: 22 },
+            { id: "llamaWool",      name: "Lamawolle",     emoji: "🧣", basePrice: 120, level: 25 },
+            { id: "camelMilk",      name: "Kamelmilch",    emoji: "🥛", basePrice: 150, level: 28 },
+            { id: "yakWool",        name: "Yakwolle",      emoji: "🧣", basePrice: 180, level: 30 },
+            { id: "reindeerFur",    name: "Rentierfell",   emoji: "🧣", basePrice: 200, level: 33 },
+            { id: "peacockFeather", name: "Pfauenfeder",   emoji: "📿", basePrice: 250, level: 35 },
+            { id: "silk",           name: "Seide",         emoji: "👘", basePrice: 300, level: 38 },
+            { id: "silkFabric",     name: "Seidentuch",    emoji: "👘", basePrice: 450, level: 38 },
+            { id: "dragonScale",    name: "Drachenschuppe",emoji: "⚡", basePrice: 500, level: 40 }
+        ];
+        for (let p of otherProducts) {
+            const inStock = (inventory[p.id] || 0) > 0;
+            // Anzeigen wenn entweder Level erreicht ODER im Lager vorhanden
+            if (playerLevel < p.level && !inStock) continue;
+            const price = globalMarketPrices[p.id] || basePrices[p.id] || p.basePrice;
+            const percent = (price / p.basePrice) * 100;
+            const priceClass = percent >= 110 ? "price-good" : (percent <= 90 ? "price-bad" : "");
+            const trend = percent >= 110 ? "📈" : (percent <= 90 ? "📉" : "➖");
+            const card = document.createElement("div"); card.className = "price-card";
+            card.innerHTML = `<div style="font-size:1.5rem;">${p.emoji}</div><div><strong>${p.name}</strong> ${trend}</div><div class="price-value ${priceClass}">${price}💰</div>`;
+            pricePanel.appendChild(card);
+        }
         if (pricePanel.children.length === 0) pricePanel.innerHTML = "<div style='padding:15px;'>📊 Noch keine Produkte freigeschaltet. Erreiche höhere Level!</div>";
     }
     
