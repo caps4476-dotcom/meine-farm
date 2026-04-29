@@ -576,7 +576,7 @@
         }
         
         html {
-            touch-action: pinch-zoom;
+            touch-action: auto;
         }
         
         .account-slot {
@@ -1451,7 +1451,7 @@
     
     const EXTENDED_CROPS = {
         blueberry: { name: "Blaubeere", emoji: "🫐", basePrice: 45, growTime: 120000, seedCost: 25, levelRequired: 8, licenseRequired: "fruitLicense1" },
-        raspberry: { name: "Himbeere", emoji: "🍓", basePrice: 48, growTime: 125000, seedCost: 28, levelRequired: 8, licenseRequired: "fruitLicense1" },
+        raspberry: { name: "Himbeere", emoji: "🩷", basePrice: 48, growTime: 125000, seedCost: 28, levelRequired: 8, licenseRequired: "fruitLicense1" },
         grape: { name: "Traube", emoji: "🍇", basePrice: 55, growTime: 140000, seedCost: 32, levelRequired: 9, licenseRequired: "fruitLicense2" },
         peach: { name: "Pfirsich", emoji: "🍑", basePrice: 60, growTime: 150000, seedCost: 35, levelRequired: 9, licenseRequired: "fruitLicense2" },
         lemon: { name: "Zitrone", emoji: "🍋", basePrice: 42, growTime: 130000, seedCost: 30, levelRequired: 10, licenseRequired: "citrusLicense" },
@@ -1460,7 +1460,7 @@
         mango: { name: "Mango", emoji: "🥭", basePrice: 65, growTime: 155000, seedCost: 40, levelRequired: 11, licenseRequired: "tropicalLicense" },
         cherry: { name: "Kirsche", emoji: "🍒", basePrice: 52, growTime: 140000, seedCost: 32, levelRequired: 12, licenseRequired: "fruitLicense4" },
         pear: { name: "Birne", emoji: "🍐", basePrice: 45, growTime: 130000, seedCost: 28, levelRequired: 12, licenseRequired: "fruitLicense4" },
-        pomegranate: { name: "Granatapfel", emoji: "🍎", basePrice: 80, growTime: 170000, seedCost: 50, levelRequired: 13, licenseRequired: "exoticLicense" },
+        pomegranate: { name: "Granatapfel", emoji: "🪷", basePrice: 80, growTime: 170000, seedCost: 50, levelRequired: 13, licenseRequired: "exoticLicense" },
         kiwi: { name: "Kiwi", emoji: "🥝", basePrice: 58, growTime: 145000, seedCost: 35, levelRequired: 13, licenseRequired: "exoticLicense" },
         dragonfruit: { name: "Drachenfrucht", emoji: "🐉", basePrice: 100, growTime: 200000, seedCost: 60, levelRequired: 14, licenseRequired: "rareLicense" },
         starfruit: { name: "Sternfrucht", emoji: "⭐", basePrice: 95, growTime: 190000, seedCost: 55, levelRequired: 14, licenseRequired: "rareLicense" },
@@ -1472,9 +1472,9 @@
     
     // ==================== LIZENZEN ====================
     const LICENSES = {
-        fruitLicense1: { name: "🍓 Grund-Obst-Lizenz", emoji: "🍓", description: "Schaltet Blaubeeren & Himbeeren frei", cost: 2000, levelRequired: 8, crops: ["blueberry", "raspberry"] },
+        fruitLicense1: { name: "🫐 Grund-Obst-Lizenz", emoji: "🫐", description: "Schaltet Blaubeeren & Himbeeren frei", cost: 2000, levelRequired: 8, crops: ["blueberry", "raspberry"] },
         fruitLicense2: { name: "🍇 Erweiterte Obst-Lizenz", emoji: "🍇", description: "Schaltet Trauben & Pfirsiche frei", cost: 3500, levelRequired: 9, crops: ["grape", "peach"] },
-        citrusLicense: { name: "🍋 Zitrus-Lizenz", emoji: "🍋", description: "Schaltet Zitronen & Äpfel frei", cost: 5000, levelRequired: 10, crops: ["lemon", "apple"] },
+        citrusLicense: { name: "🍋 Zitrus-Lizenz", emoji: "🍋", description: "Schaltet Zitronen frei", cost: 5000, levelRequired: 10, crops: ["lemon", "apple"] },
         tropicalLicense: { name: "🍌 Tropen-Lizenz", emoji: "🍌", description: "Schaltet Bananen & Mangos frei", cost: 6500, levelRequired: 11, crops: ["banana", "mango"] },
         fruitLicense4: { name: "🍒 Premium-Obst-Lizenz", emoji: "🍒", description: "Schaltet Kirschen & Birnen frei", cost: 8000, levelRequired: 12, crops: ["cherry", "pear"] },
         exoticLicense: { name: "🌺 Exoten-Lizenz", emoji: "🌺", description: "Schaltet Granatäpfel & Kiwis frei", cost: 10000, levelRequired: 13, crops: ["pomegranate", "kiwi"] },
@@ -2696,23 +2696,94 @@
         document.getElementById("autoCollectorBtn")?.addEventListener("click", () => upgradeBarn("autoCollector"));
         document.getElementById("speedBoostBtn")?.addEventListener("click", () => upgradeBarn("speedBoost"));
         
-        const unlockedAnimals = []; for (let [id, animal] of Object.entries(ANIMALS)) if (playerLevel >= animal.levelRequired) unlockedAnimals.push({ id, ...animal });
+        // Tiere nach Typ gruppieren
+        const groups = {};
         for (let i = 0; i < animals.length; i++) {
-            const a = animals[i]; const data = ANIMALS[a.type]; const progress = a.isReady ? 100 : getAnimalProgress(a);
-            const div = document.createElement("div"); div.className = "animal-slot"; div.style.position = "relative";
-            div.innerHTML = `<div class="animal-icon">${data.emoji}</div><div class="animal-name">${a.name}</div><div class="status">${a.isReady ? "✅ Produkt bereit!" : `${progress}%`}</div><div><button class="rename-btn" data-idx="${i}">✏️ Umbenennen</button></div><div><button class="feed-btn" data-idx="${i}">🌾 Füttern (${data.feedCost}💰)</button></div>${a.isReady && !barnUpgrades.autoCollector ? `<button class="collect-btn" data-idx="${i}">📦 ${data.product} sammeln</button>` : ''}${barnUpgrades.autoCollector && !a.isReady ? `<div class="status" style="background:#3a6e3a;">🤖 Auto-Sammler aktiv</div>` : ''}<div class="progress-bar-container"><div class="progress-bar-fill" style="width: ${progress}%;"></div></div>`;
+            const a = animals[i];
+            if (!groups[a.type]) groups[a.type] = [];
+            groups[a.type].push({ animal: a, idx: i });
+        }
+        
+        const unlockedAnimals = []; for (let [id, animal] of Object.entries(ANIMALS)) if (playerLevel >= animal.levelRequired) unlockedAnimals.push({ id, ...animal });
+        
+        // Eine Karte pro Tierart
+        for (let [type, group] of Object.entries(groups)) {
+            const data = ANIMALS[type];
+            const count = group.length;
+            const readyCount = group.filter(g => g.animal.isReady).length;
+            const inProgress = group.filter(g => !g.animal.isReady);
+            const avgProgress = inProgress.length > 0
+                ? Math.round(inProgress.reduce((sum, g) => sum + getAnimalProgress(g.animal), 0) / inProgress.length)
+                : 0;
+            
+            const div = document.createElement("div");
+            div.className = "animal-slot";
+            div.style.position = "relative";
+            div.dataset.animalType = type;
+            
+            let statusHtml = "";
+            if (readyCount > 0) {
+                statusHtml += `<div class="status" style="background:#3a6e3a;">✅ ${readyCount} von ${count} bereit!</div>`;
+            }
+            if (inProgress.length > 0) {
+                statusHtml += `<div class="status">${readyCount > 0 ? `${inProgress.length} in Produktion` : `${avgProgress}%`}</div>`;
+            }
+            if (barnUpgrades.autoCollector && readyCount === 0) {
+                statusHtml += `<div class="status" style="background:#3a6e3a;">🤖 Auto-Sammler aktiv</div>`;
+            }
+            
+            const firstReadyIdx = group.find(g => g.animal.isReady)?.idx ?? group[0].idx;
+            const firstIdx = group[0].idx;
+            
+            div.innerHTML = `
+                <div style="position:relative; display:inline-block;">
+                    <div class="animal-icon">${data.emoji}</div>
+                    <span style="position:absolute; top:-6px; right:-10px; background:#f5a623; color:#2d2b1f; border-radius:50%; width:22px; height:22px; font-size:0.75rem; font-weight:bold; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 4px rgba(0,0,0,0.3);">${count}</span>
+                </div>
+                <div class="animal-name">${data.name}</div>
+                <div style="font-size:0.6rem; color:#b0a070; margin-bottom:2px;">${data.product} ${data.productEmoji}</div>
+                ${statusHtml}
+                <div>
+                    <button class="feed-btn" data-idx="${firstIdx}">🌾 Füttern (${data.feedCost}💰)</button>
+                </div>
+                ${readyCount > 0 && !barnUpgrades.autoCollector ? `<button class="collect-btn" data-idx="${firstReadyIdx}">📦 Sammeln (${readyCount}x)</button>` : ""}
+                <div class="progress-bar-container"><div class="progress-bar-fill" style="width:${readyCount > 0 ? 100 : avgProgress}%;"></div></div>`;
+            
             barnContainer.appendChild(div);
         }
+        
         const buyDiv = document.createElement("div"); buyDiv.className = "animal-slot"; buyDiv.style.background = "#8b6942"; buyDiv.innerHTML = `<div class="animal-icon">➕</div><div class="animal-name">Neues Tier kaufen</div>`;
         for (let animal of unlockedAnimals) buyDiv.innerHTML += `<div><button class="buy-animal-btn" data-animal="${animal.id}" style="margin:3px;">${animal.emoji} ${animal.name} (${animal.buyCost}💰) ⭐ Level ${animal.levelRequired}</button></div>`;
         barnContainer.appendChild(buyDiv);
-        document.querySelectorAll(".rename-btn").forEach(btn => btn.addEventListener("click", () => renameAnimal(parseInt(btn.dataset.idx))));
         document.querySelectorAll(".feed-btn").forEach(btn => btn.addEventListener("click", () => feedAnimal(parseInt(btn.dataset.idx))));
         document.querySelectorAll(".collect-btn").forEach(btn => btn.addEventListener("click", () => collectProduct(parseInt(btn.dataset.idx))));
         document.querySelectorAll(".buy-animal-btn").forEach(btn => btn.addEventListener("click", () => buyAnimal(btn.dataset.animal)));
     }
     
-    function updateAnimalProgressBars() { const elements = document.querySelectorAll("#barnView .animal-slot:not(#barnUpgradesSlot)"); for (let i = 0; i < elements.length && i < animals.length; i++) { const a = animals[i]; const el = elements[i]; if (a && !a.isReady) { const progress = getAnimalProgress(a); const statusDiv = el.querySelector(".status"); if (statusDiv && !statusDiv.innerText.includes("Auto-Sammler")) statusDiv.innerText = `${progress}%`; const fillBar = el.querySelector(".progress-bar-fill"); if (fillBar) fillBar.style.width = `${progress}%`; } } }
+        function updateAnimalProgressBars() {
+        // Gruppen-basierte Aktualisierung der Fortschrittsbalken
+        const slots = document.querySelectorAll("#barnView .animal-slot:not(#barnUpgradesSlot)");
+        slots.forEach(slot => {
+            const type = slot.dataset.animalType;
+            if (!type) return;
+            const group = animals.map((a, i) => ({ animal: a, idx: i })).filter(g => g.animal.type === type);
+            if (group.length === 0) return;
+            const readyCount = group.filter(g => g.animal.isReady).length;
+            const inProgress = group.filter(g => !g.animal.isReady);
+            const avgProgress = inProgress.length > 0
+                ? Math.round(inProgress.reduce((sum, g) => sum + getAnimalProgress(g.animal), 0) / inProgress.length)
+                : 0;
+            const fillBar = slot.querySelector(".progress-bar-fill");
+            if (fillBar) fillBar.style.width = (readyCount > 0 ? 100 : avgProgress) + "%";
+            // Status-Text aktualisieren (nur Fortschritts-Div, kein "bereit")
+            const statusDivs = slot.querySelectorAll(".status");
+            statusDivs.forEach(sd => {
+                if (!sd.innerText.includes("bereit") && !sd.innerText.includes("Auto-Sammler") && sd.innerText.includes("%")) {
+                    sd.innerText = avgProgress + "%";
+                }
+            });
+        });
+    }
     
   
     // ==================== VERARBEITUNG ====================
