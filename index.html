@@ -1301,27 +1301,11 @@
 
     
     // ==================== GAME VERSION ====================
-    const CURRENT_GAME_VERSION = "3.2";
+    const CURRENT_GAME_VERSION = "3.1";
     
     // ==================== RELEASE NOTES ("Was ist neu?") ====================
     // Neue Einträge oben hinzufügen. version: muss zu CURRENT_GAME_VERSION passen, damit beim ersten Start automatisch angezeigt wird.
     const RELEASE_NOTES = [
-        {
-            version: "3.2",
-            date: "Mai 2026",
-            title: "🛒 Markt-Update & Qualitätsverbesserungen",
-            changes: [
-                "🛒 <b>Wochenmarkt & Preisanzeige</b>: Zeigt jetzt nur noch Produkte an, die du im Lager hast – übersichtlicher und aufgeräumter.",
-                "🌾 <b>Acker-Auswahl beim Pflanzen</b>: Du kannst jetzt gezielt Acker 1, 2 oder 3 für die Massenpflanzung auswählen.",
-                "🍎 <b>Äpfel wieder verfügbar</b>: Die Zitrus-Lizenz schaltet jetzt korrekt Zitronen <i>und</i> Äpfel frei.",
-                "💰 <b>Verarbeitungspreise erhöht</b>: Verarbeitete Produkte bringen jetzt deutlich mehr als ihre Rohstoffe (z.B. Honigkuchen 380💰, Seidentuch 1600💰).",
-                "🧙 <b>NPC-Dialog überarbeitet</b>: Neue Auswahl-Fenster statt blockierender Eingabeboxen. NPCs reagieren jetzt zuverlässig.",
-                "🧙 <b>5 neue NPC-Typen</b>: Waldhexe, Reisender Ritter, Pirat, Forscher und Gastwirt besuchen deine Farm.",
-                "💬 <b>Chat-Badge repariert</b>: Der rote Punkt am Multiplayer-Knopf für neue Nachrichten funktioniert wieder zuverlässig.",
-                "🐄 <b>Stall: Tiere werden gruppiert</b>: Gleiche Tiere werden in einer Karte zusammengefasst – mit Anzahl-Badge.",
-                "🍓 <b>Emoji-Fixes</b>: Himbeere 🔴, Granatapfel 🪷 und Lizenzen haben jetzt korrekte Symbole."
-            ]
-        },
         {
             version: "3.1",
             date: "April 2026",
@@ -1329,9 +1313,12 @@
             changes: [
                 "🚜 <b>Acker 2</b> (25.000💰) und <b>Acker 3</b> (30.000💰, nach Acker 2) mit je 12 Feldern.",
                 "✅ Jeder Acker hat seinen eigenen <b>Alle ernten</b>-Knopf.",
-                "🧑‍🌾 <b>Erntehelfer</b> – schaltbar in der Forschung in 3 Stufen.",
-                "💬 Chat-Benachrichtigung am Multiplayer-Knopf bei neuen Nachrichten.",
-                "🍞 Brot-Symbol repariert. 🐔 Tier-Bug behoben."
+                "🧑‍🌾 <b>Erntehelfer</b> – schaltbar in der Forschung in 3 Stufen. Erntet automatisch und pflanzt zufällig nach. Mit An/Aus-Schalter im Hof.",
+                "💬 <b>Chat-Benachrichtigung</b>: roter Punkt am Multiplayer-Knopf, wenn neue Nachrichten kommen.",
+                "🍞 Brot-Symbol repariert.",
+                "🐔 Tier-Bug behoben: Neue Tiere produzieren jetzt zuverlässig.",
+                "🗓️ Tagesanzeiger und manueller \"Nächster Tag\"-Knopf entfernt (Preise wechseln nur noch automatisch alle 3 Min.).",
+                "🛒 Wochenmarkt zeigt jetzt <b>alle</b> Produkte aus dem Lager an – auch wenn das Freischalt-Level noch nicht erreicht ist (z.B. Dünger vom Pferd)."
             ]
         },
         {
@@ -1464,11 +1451,11 @@
     
     const EXTENDED_CROPS = {
         blueberry: { name: "Blaubeere", emoji: "🫐", basePrice: 45, growTime: 120000, seedCost: 25, levelRequired: 8, licenseRequired: "fruitLicense1" },
-        raspberry: { name: "Himbeere", emoji: "🔴", basePrice: 48, growTime: 125000, seedCost: 28, levelRequired: 8, licenseRequired: "fruitLicense1" },
+        raspberry: { name: "Himbeere", emoji: "🩷", basePrice: 48, growTime: 125000, seedCost: 28, levelRequired: 8, licenseRequired: "fruitLicense1" },
         grape: { name: "Traube", emoji: "🍇", basePrice: 55, growTime: 140000, seedCost: 32, levelRequired: 9, licenseRequired: "fruitLicense2" },
         peach: { name: "Pfirsich", emoji: "🍑", basePrice: 60, growTime: 150000, seedCost: 35, levelRequired: 9, licenseRequired: "fruitLicense2" },
         lemon: { name: "Zitrone", emoji: "🍋", basePrice: 42, growTime: 130000, seedCost: 30, levelRequired: 10, licenseRequired: "citrusLicense" },
-        apple: { name: "Apfel", emoji: "🍎", basePrice: 38, growTime: 120000, seedCost: 25, levelRequired: 10, licenseRequired: "citrusLicense" },
+        apple: { name: "Apfel", emoji: "🍎", basePrice: 38, growTime: 120000, seedCost: 25, levelRequired: 10, licenseRequired: "fruitLicense3" },
         banana: { name: "Banane", emoji: "🍌", basePrice: 50, growTime: 135000, seedCost: 30, levelRequired: 11, licenseRequired: "tropicalLicense" },
         mango: { name: "Mango", emoji: "🥭", basePrice: 65, growTime: 155000, seedCost: 40, levelRequired: 11, licenseRequired: "tropicalLicense" },
         cherry: { name: "Kirsche", emoji: "🍒", basePrice: 52, growTime: 140000, seedCost: 32, levelRequired: 12, licenseRequired: "fruitLicense4" },
@@ -1487,7 +1474,7 @@
     const LICENSES = {
         fruitLicense1: { name: "🫐 Grund-Obst-Lizenz", emoji: "🫐", description: "Schaltet Blaubeeren & Himbeeren frei", cost: 2000, levelRequired: 8, crops: ["blueberry", "raspberry"] },
         fruitLicense2: { name: "🍇 Erweiterte Obst-Lizenz", emoji: "🍇", description: "Schaltet Trauben & Pfirsiche frei", cost: 3500, levelRequired: 9, crops: ["grape", "peach"] },
-        citrusLicense: { name: "🍋 Zitrus-Lizenz", emoji: "🍋", description: "Schaltet Zitronen & Äpfel frei", cost: 5000, levelRequired: 10, crops: ["lemon", "apple"] },
+        citrusLicense: { name: "🍋 Zitrus-Lizenz", emoji: "🍋", description: "Schaltet Zitronen frei", cost: 5000, levelRequired: 10, crops: ["lemon", "apple"] },
         tropicalLicense: { name: "🍌 Tropen-Lizenz", emoji: "🍌", description: "Schaltet Bananen & Mangos frei", cost: 6500, levelRequired: 11, crops: ["banana", "mango"] },
         fruitLicense4: { name: "🍒 Premium-Obst-Lizenz", emoji: "🍒", description: "Schaltet Kirschen & Birnen frei", cost: 8000, levelRequired: 12, crops: ["cherry", "pear"] },
         exoticLicense: { name: "🌺 Exoten-Lizenz", emoji: "🌺", description: "Schaltet Granatäpfel & Kiwis frei", cost: 10000, levelRequired: 13, crops: ["pomegranate", "kiwi"] },
@@ -2913,17 +2900,16 @@
     function renderPricePanel() {
         if (!pricePanel) return;
         pricePanel.innerHTML = "";
-        // Nur Pflanzen anzeigen die im Lager sind (Menge > 0)
         for (let [cropId, crop] of Object.entries(CROPS)) {
-            const inStock = (inventory[cropId] || 0) > 0;
-            if (!inStock) continue;
-            const price = globalMarketPrices[cropId] || crop.basePrice;
-            const percent = (price / crop.basePrice) * 100;
-            let priceClass = percent >= 110 ? "price-good" : (percent <= 90 ? "price-bad" : "");
-            let trend = percent >= 110 ? "📈" : (percent <= 90 ? "📉" : "➖");
-            const card = document.createElement("div"); card.className = "price-card";
-            card.innerHTML = `<div style="font-size:1.5rem;">${crop.emoji}</div><div><strong>${crop.name}</strong> ${trend}</div><div class="price-value ${priceClass}">${price}💰</div><div style="font-size:0.65rem; color:#b0a070;">${inventory[cropId]}x im Lager</div>`;
-            pricePanel.appendChild(card);
+            if (playerLevel >= crop.levelRequired && (!crop.licenseRequired || ownedLicenses.includes(crop.licenseRequired))) {
+                const price = globalMarketPrices[cropId] || crop.basePrice;
+                const percent = (price / crop.basePrice) * 100;
+                let priceClass = percent >= 110 ? "price-good" : (percent <= 90 ? "price-bad" : "");
+                let trend = percent >= 110 ? "📈" : (percent <= 90 ? "📉" : "➖");
+                const card = document.createElement("div"); card.className = "price-card";
+                card.innerHTML = `<div style="font-size:1.5rem;">${crop.emoji}</div><div><strong>${crop.name}</strong> ${trend}</div><div class="price-value ${priceClass}">${price}💰</div>`;
+                pricePanel.appendChild(card);
+            }
         }
         // Alle Tier-/Verarbeitungs-Produkte mit Preisanzeige (komplette Liste)
         const otherProducts = [
@@ -2956,8 +2942,8 @@
         ];
         for (let p of otherProducts) {
             const inStock = (inventory[p.id] || 0) > 0;
-            // Nur anzeigen wenn im Lager vorhanden
-            if (!inStock) continue;
+            // Anzeigen wenn entweder Level erreicht ODER im Lager vorhanden
+            if (playerLevel < p.level && !inStock) continue;
             const price = globalMarketPrices[p.id] || basePrices[p.id] || p.basePrice;
             const percent = (price / p.basePrice) * 100;
             const priceClass = percent >= 110 ? "price-good" : (percent <= 90 ? "price-bad" : "");
@@ -2966,7 +2952,7 @@
             card.innerHTML = `<div style="font-size:1.5rem;">${p.emoji}</div><div><strong>${p.name}</strong> ${trend}</div><div class="price-value ${priceClass}">${price}💰</div>`;
             pricePanel.appendChild(card);
         }
-        if (pricePanel.children.length === 0) pricePanel.innerHTML = "<div style='padding:15px;'>🧺 Dein Lager ist leer. Ernte oder verarbeite etwas, um Preise zu sehen!</div>";
+        if (pricePanel.children.length === 0) pricePanel.innerHTML = "<div style='padding:15px;'>📊 Noch keine Produkte freigeschaltet. Erreiche höhere Level!</div>";
     }
     
     function sellProduct(productKey) { if (isPaused) { showToast("⏸️ Spiel ist pausiert! Drücke Start, um fortzufahren.", true); return; } if (inventory[productKey] > 0) { let price = globalMarketPrices[productKey]; removeFromInventory(productKey, 1); playerGold += price; stats.totalGoldEarned += price; updateMoneyUI(); renderMarket(); saveGameToLocal(); checkAchievements(); updateComplexPrice(productKey, 1); updateLeaderboard(); showToast(`💰 +${price} Gold (1 verkauft)!`); updateQuestProgress("sell", 1); } else showToast(`Nichts zu verkaufen!`, true); }
@@ -3638,77 +3624,19 @@
                 <div class="handbook-tip">🧙 <strong>NPC-BESUCHER:</strong> Zufällige Händler mit speziellen Angeboten und Boni!</div>
             </div>
             <div class="handbook-section">
-                <h3>📜 LIZENZEN (ab Level 10)</h3>
-                <table><thead><tr><th>Lizenz</th><th>Level</th><th>Kosten</th><th>Pflanzen</th></tr></thead><tbody>
-                    <tr><td>🫐 Grund-Obst-Lizenz</td><td>8</td><td>2.000💰</td><td>Blaubeere, Himbeere 🔴</td></tr>
-                    <tr><td>🍇 Erweiterte Obst-Lizenz</td><td>9</td><td>3.500💰</td><td>Traube, Pfirsich</td></tr>
-                    <tr><td>🍋 Zitrus-Lizenz</td><td>10</td><td>5.000💰</td><td>Zitrone, Apfel 🍎</td></tr>
-                    <tr><td>🍌 Tropen-Lizenz</td><td>11</td><td>6.500💰</td><td>Banane, Mango</td></tr>
-                    <tr><td>🍒 Premium-Obst-Lizenz</td><td>12</td><td>8.000💰</td><td>Kirsche, Birne</td></tr>
-                    <tr><td>🌺 Exoten-Lizenz</td><td>13</td><td>10.000💰</td><td>Granatapfel 🪷, Kiwi</td></tr>
-                    <tr><td>🐉 Raritäten-Lizenz</td><td>14</td><td>12.000💰</td><td>Drachenfrucht, Sternfrucht</td></tr>
-                    <tr><td>🌸 Premium-Lizenz</td><td>15</td><td>15.000💰</td><td>Safran, Vanille</td></tr>
-                </tbody></table>
-            </div>
-            <div class="handbook-section">
-                <h3>🧙 NPC-BESUCHER (alle 2 Minuten zufällig)</h3>
-                <table><thead><tr><th>NPC</th><th>Besonderheit</th><th>Preis-Multiplikator</th></tr></thead><tbody>
-                    <tr><td>🧙 Wandernder Händler</td><td>Spezielle Sonderangebote, kauft für 1,3x</td><td>0,8x (günstig kaufen)</td></tr>
-                    <tr><td>👔 Reicher Sammler</td><td>Will Premium-Produkte</td><td>1,5x (sehr guter Preis)</td></tr>
-                    <tr><td>👨‍🌾 Verzweifelter Bauer</td><td>Will Basis-Produkte</td><td>0,6x (eher schlecht)</td></tr>
-                    <tr><td>👨‍🍳 Sternekoch</td><td>Will verarbeitete Produkte</td><td>1,2x</td></tr>
-                    <tr><td>🧪 Alchemist</td><td>Will Raritäten + Sonderangebote</td><td>1,4x</td></tr>
-                    <tr><td>🧒 Dorfkind</td><td>Erntet KOSTENLOS alle reifen Felder</td><td>—</td></tr>
-                    <tr><td>📋 Handelsinspektor</td><td>Setzt Marktpreise zurück</td><td>—</td></tr>
-                    <tr><td>🧙‍♀️ Waldhexe</td><td>Will Raritäten + Sonderangebote</td><td>1,6x</td></tr>
-                    <tr><td>🦸 Reisender Ritter</td><td>Will Basis + verarbeitete Produkte</td><td>1,1x</td></tr>
-                    <tr><td>🏴‍☠️ Pirat</td><td>Will Premium + Sonderangebote</td><td>1,3x</td></tr>
-                    <tr><td>🧑‍🔬 Forscher</td><td>Will Raritäten + verarbeitete Produkte</td><td>1,35x</td></tr>
-                    <tr><td>🧔 Gastwirt</td><td>Will Basis + verarbeitete Produkte</td><td>0,95x</td></tr>
-                </tbody></table>
-            </div>
-            <div class="handbook-section">
-                <h3>🏚️ STALL-UPGRADES</h3>
-                <table><thead><tr><th>Upgrade</th><th>Kosten</th><th>Effekt</th></tr></thead><tbody>
-                    <tr><td>🏚️ Stall</td><td>1.000💰</td><td>Ermöglicht Tierhaltung (ab Level 6)</td></tr>
-                    <tr><td>🤖 Automatischer Sammler</td><td>2.000💰</td><td>Produkte werden automatisch eingesammelt</td></tr>
-                    <tr><td>⚡ Speed-Boost</td><td>1.000💰</td><td>Tiere produzieren 30% schneller</td></tr>
-                </tbody></table>
-            </div>
-            <div class="handbook-section">
-                <h3>🌾 ACKER-SYSTEM</h3>
-                <table><thead><tr><th>Acker</th><th>Felder</th><th>Kosten</th><th>Voraussetzung</th></tr></thead><tbody>
-                    <tr><td>🌾 Acker 1</td><td>4 kostenlos, bis zu 12</td><td>150–2.000💰 je Feld</td><td>Startacker</td></tr>
-                    <tr><td>🌾 Acker 2</td><td>12 Felder</td><td>25.000💰 gesamt</td><td>—</td></tr>
-                    <tr><td>🌾 Acker 3</td><td>12 Felder</td><td>30.000💰 gesamt</td><td>Acker 2 besitzen</td></tr>
-                </tbody></table>
-                <div class="handbook-tip">💡 Mit den Acker-Tabs über den Pflanz-Buttons kannst du gezielt nur einen Acker bepflanzen!</div>
-            </div>
-            <div class="handbook-section">
                 <h3>💡 ALLGEMEINE TIPPS</h3>
                 <div class="handbook-tip">🌱 Pflanze zuerst günstige Pflanzen (Karotten, Weizen) für schnelles XP</div>
                 <div class="handbook-tip">🐄 Kaufe früh Hühner - Eier sind gute passive Einnahmen</div>
-                <div class="handbook-tip">🔨 Nutze die Verarbeitung ab Level 8 – Preise sind jetzt deutlich höher als Rohstoffwert!</div>
-                <div class="handbook-tip">📜 Zitrus-Lizenz (Level 10) schaltet Zitronen UND Äpfel frei!</div>
+                <div class="handbook-tip">🔨 Nutze die Verarbeitung ab Level 8 für höhere Gewinnmargen</div>
+                <div class="handbook-tip">📜 Investiere in Lizenzen für wertvolle Pflanzen ab Level 10</div>
                 <div class="handbook-tip">🔬 Forsche früh für permanente Boni (besonders Schnellwachstum!)</div>
                 <div class="handbook-tip">📋 Erledige tägliche Quests für extra Gold und XP</div>
                 <div class="handbook-tip">🎁 Logge dich täglich ein für den Login-Bonus</div>
                 <div class="handbook-tip">🌍 Nutze den Multiplayer für Handel und globale Marktpreise</div>
-                <div class="handbook-tip">🧙 Achte auf NPC-Besucher – jetzt 12 verschiedene Typen mit eigenen Angeboten!</div>
-                <div class="handbook-tip">🛒 Wochenmarkt zeigt nur Produkte die du im Lager hast – so siehst du sofort was du verkaufen kannst</div>
+                <div class="handbook-tip">🧙 Achte auf NPC-Besucher - sie bieten seltene Deals!</div>
                 <div class="handbook-warning">⚠️ Bei Gewitter besteht Ernte-Risiko - ernte vorher!</div>
             </div>
-            <div class="handbook-section">
-                <h3>📋 CHANGELOG: WAS IST NEU IN VERSION 3.2?</h3>
-                <div class="handbook-tip">🛒 Wochenmarkt & Preisanzeige zeigt jetzt nur Lagerware</div>
-                <div class="handbook-tip">🌾 Acker-Auswahl beim Massenpflanzen (Tabs)</div>
-                <div class="handbook-tip">🍎 Äpfel wieder erhältlich über die Zitrus-Lizenz</div>
-                <div class="handbook-tip">💰 Verarbeitungspreise stark erhöht (Honigkuchen 380💰, Seidentuch 1600💰 etc.)</div>
-                <div class="handbook-tip">🧙 NPC-Dialog neu gestaltet – keine blockierenden Eingabeboxen mehr</div>
-                <div class="handbook-tip">🐉 5 neue NPC-Typen: Waldhexe, Ritter, Pirat, Forscher, Gastwirt</div>
-                <div class="handbook-tip">🐄 Stall: Gleiche Tiere werden zu einer Karte zusammengefasst</div>
-            </div>
-        \`;
+        `;
     }
     
     // ==================== ADMIN-FUNKTIONEN ====================
