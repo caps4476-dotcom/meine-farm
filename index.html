@@ -1422,18 +1422,18 @@
      
     // ==================== REZEPTE ====================
     const EXTENDED_RECIPES = {
-        butter: { name: "Butter", emoji: "🧈", input: { milk: 2 }, output: "butter", outputName: "Butter", outputEmoji: "🧈", basePrice: 35, craftTime: 25000, inputNames: { milk: "Milch" } },
-        yogurt: { name: "Joghurt", emoji: "🥣", input: { milk: 3 }, output: "yogurt", outputName: "Joghurt", outputEmoji: "🥣", basePrice: 40, craftTime: 30000, inputNames: { milk: "Milch" } },
-        woolThread: { name: "Wollfaden", emoji: "🧵", input: { wool: 2 }, output: "woolThread", outputName: "Wollfaden", outputEmoji: "🧵", basePrice: 60, craftTime: 35000, inputNames: { wool: "Wolle" } },
-        scarf: { name: "Schal", emoji: "🧣", input: { wool: 3 }, output: "scarf", outputName: "Schal", outputEmoji: "🧣", basePrice: 120, craftTime: 50000, inputNames: { wool: "Wolle" } },
-        honeyCake: { name: "Honigkuchen", emoji: "🍰", input: { honey: 2, flour: 1 }, output: "honeyCake", outputName: "Honigkuchen", outputEmoji: "🍰", basePrice: 150, craftTime: 60000, inputNames: { honey: "Honig", flour: "Mehl" } },
-        silkFabric: { name: "Seidentuch", emoji: "👘", input: { silk: 4 }, output: "silkFabric", outputName: "Seidentuch", outputEmoji: "👘", basePrice: 400, craftTime: 80000, inputNames: { silk: "Seide" } }
+        butter: { name: "Butter", emoji: "🧈", input: { milk: 2 }, output: "butter", outputName: "Butter", outputEmoji: "🧈", basePrice: 75, craftTime: 25000, inputNames: { milk: "Milch" } },
+        yogurt: { name: "Joghurt", emoji: "🥣", input: { milk: 3 }, output: "yogurt", outputName: "Joghurt", outputEmoji: "🥣", basePrice: 100, craftTime: 30000, inputNames: { milk: "Milch" } },
+        woolThread: { name: "Wollfaden", emoji: "🧵", input: { wool: 2 }, output: "woolThread", outputName: "Wollfaden", outputEmoji: "🧵", basePrice: 135, craftTime: 35000, inputNames: { wool: "Wolle" } },
+        scarf: { name: "Schal", emoji: "🧣", input: { wool: 3 }, output: "scarf", outputName: "Schal", outputEmoji: "🧣", basePrice: 270, craftTime: 50000, inputNames: { wool: "Wolle" } },
+        honeyCake: { name: "Honigkuchen", emoji: "🍰", input: { honey: 2, flour: 1 }, output: "honeyCake", outputName: "Honigkuchen", outputEmoji: "🍰", basePrice: 380, craftTime: 60000, inputNames: { honey: "Honig", flour: "Mehl" } },
+        silkFabric: { name: "Seidentuch", emoji: "👘", input: { silk: 4 }, output: "silkFabric", outputName: "Seidentuch", outputEmoji: "👘", basePrice: 1600, craftTime: 80000, inputNames: { silk: "Seide" } }
     };
     
     const BASE_RECIPES = {
-        flour: { name: "Mehl", emoji: "🌾", input: { wheat: 2 }, output: "flour", outputName: "Mehl", outputEmoji: "🌾", basePrice: 30, craftTime: 20000, inputNames: { wheat: "Weizen" } },
-        cheese: { name: "Käse", emoji: "🧀", input: { milk: 2 }, output: "cheese", outputName: "Käse", outputEmoji: "🧀", basePrice: 45, craftTime: 30000, inputNames: { milk: "Milch" } },
-        bread: { name: "Brot", emoji: "🍞", input: { flour: 1, egg: 1 }, output: "bread", outputName: "Brot", outputEmoji: "🍞", basePrice: 40, craftTime: 45000, inputNames: { flour: "Mehl", egg: "Ei" } }
+        flour: { name: "Mehl", emoji: "🌾", input: { wheat: 2 }, output: "flour", outputName: "Mehl", outputEmoji: "🌾", basePrice: 70, craftTime: 20000, inputNames: { wheat: "Weizen" } },
+        cheese: { name: "Käse", emoji: "🧀", input: { milk: 2 }, output: "cheese", outputName: "Käse", outputEmoji: "🧀", basePrice: 95, craftTime: 30000, inputNames: { milk: "Milch" } },
+        bread: { name: "Brot", emoji: "🍞", input: { flour: 1, egg: 1 }, output: "bread", outputName: "Brot", outputEmoji: "🍞", basePrice: 120, craftTime: 45000, inputNames: { flour: "Mehl", egg: "Ei" } }
     };
     
     const RECIPES = { ...BASE_RECIPES, ...EXTENDED_RECIPES };
@@ -1506,11 +1506,11 @@
         cherry: 52, pear: 45, pomegranate: 80, kiwi: 58,
         dragonfruit: 100, starfruit: 95, saffron: 200, vanilla: 180,
         egg: 8, milk: 20, truffle: 35,
-        flour: 30, cheese: 45, bread: 40,
+        flour: 70, cheese: 95, bread: 120,
         wool: 45, goatCheese: 60, fertilizer: 30, alpacaWool: 80, honey: 100,
         duckEgg: 25, ostrichEgg: 60, camelMilk: 150, reindeerFur: 200,
         peacockFeather: 250, silk: 300, dragonScale: 500,
-        butter: 35, yogurt: 40, woolThread: 60, scarf: 120, honeyCake: 150, silkFabric: 400
+        butter: 75, yogurt: 100, woolThread: 135, scarf: 270, honeyCake: 380, silkFabric: 1600
     };
     
     const basePrices = { ...globalMarketPrices };
@@ -1640,7 +1640,12 @@
         chef: { name: "Sternekoch", emoji: "👨‍🍳", greeting: "Ich brauche frische Zutaten für mein Restaurant!", wantsCrafted: true, priceMultiplier: 1.2 },
         alchemist: { name: "Alchemist", emoji: "🧪", greeting: "Ich suche seltene Zutaten für meine Tränke!", wantsRare: true, priceMultiplier: 1.4, offersSpecialItems: true },
         child: { name: "Dorfkind", emoji: "🧒", greeting: "Ich helfe dir beim Ernten!", helpsHarvest: true, freeHelp: true },
-        inspector: { name: "Handelsinspektor", emoji: "📋", greeting: "Ich prüfe die Marktpreise...", resetsPrices: true }
+        inspector: { name: "Handelsinspektor", emoji: "📋", greeting: "Ich prüfe die Marktpreise...", resetsPrices: true },
+        witch: { name: "Waldhexe", emoji: "🧙‍♀️", greeting: "Ich tausche Zauberkräuter gegen... interessante Dinge!", offersSpecialItems: true, wantsRare: true, priceMultiplier: 1.6 },
+        knight: { name: "Reisender Ritter", emoji: "🦸", greeting: "Ehre sei dem Bauern! Ich suche Proviant für meine Reise.", wantsBasics: true, wantsCrafted: true, priceMultiplier: 1.1 },
+        pirate: { name: "Pirat", emoji: "🏴‍☠️", greeting: "Yo-ho-ho! Ich tausche exotische Waren aus fernen Ländern!", offersSpecialItems: true, wantsPremium: true, priceMultiplier: 1.3 },
+        scientist: { name: "Forscher", emoji: "🧑‍🔬", greeting: "Faszinierend! Ich untersuche landwirtschaftliche Erzeugnisse.", wantsRare: true, wantsCrafted: true, priceMultiplier: 1.35 },
+        innkeeper: { name: "Gastwirt", emoji: "🧔", greeting: "Guten Tag! Meine Gäste sind hungrig - ich brauche Vorräte!", wantsBasics: true, wantsCrafted: true, priceMultiplier: 0.95 }
     };
     
     let activeNPC = null;
@@ -1725,20 +1730,41 @@
     
     function openNPCDialog() {
         if (!activeNPC) return;
-        let message = `${activeNPC.emoji} ${activeNPC.name}\n\n"${activeNPC.greeting || getRandomGreeting()}"\n\n`;
-        if (activeNPC.requestedProduct) message += `📦 Ich möchte ${activeNPC.requestedAmount}x ${getProductName(activeNPC.requestedProduct)} kaufen.\n💰 Ich biete ${activeNPC.offerGold} Gold.\n\n`;
-        if (activeNPC.specialOffer) message += `🎁 Sonderangebot: ${activeNPC.specialOffer.name}\n   ${activeNPC.specialOffer.effect}\n   💰 Preis: ${activeNPC.specialOffer.price} Gold\n\n`;
-        if (activeNPC.helpsHarvest) message += `🌾 Ich helfe dir bei der Ernte (kostenlos)!\n\n`;
-        if (activeNPC.resetsPrices) message += `📋 Ich kann die Marktpreise zurücksetzen.\n\n`;
-        message += `Was möchtest du tun?`;
-        
-        const action = prompt(message + "\n\nOptionen:\n1 - Angebot annehmen\n2 - Sonderangebot kaufen\n3 - Hilfe annehmen\n4 - Ablehnen");
-        if (action === "1" && activeNPC.requestedProduct) acceptNPCTrade();
-        else if (action === "2" && activeNPC.specialOffer) buyNPCSpecialOffer();
-        else if (action === "3" && activeNPC.helpsHarvest) acceptNPCHelp();
-        else if (action === "4") { showToast(`👋 ${activeNPC.name}: "Schade, vielleicht ein anderes Mal!"`, false); activeNPC = null; renderNPCInUI(); }
+        const existing = document.getElementById("npcModal");
+        if (existing) existing.remove();
+        const npc = activeNPC;
+        const modal = document.createElement("div");
+        modal.id = "npcModal";
+        modal.style.cssText = "position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.75); z-index:9998; display:flex; align-items:center; justify-content:center; padding:20px;";
+        let optionsHtml = "";
+        if (npc.requestedProduct) optionsHtml += `<button class="npc-modal-btn" data-action="trade" style="background:#3a8c3a;">🤝 Angebot annehmen (${npc.requestedAmount}x → ${npc.offerGold}💰)</button>`;
+        if (npc.specialOffer) optionsHtml += `<button class="npc-modal-btn" data-action="offer" style="background:#4a6e8b;">🎁 ${npc.specialOffer.name} kaufen (${npc.specialOffer.price}💰)</button>`;
+        if (npc.helpsHarvest) optionsHtml += `<button class="npc-modal-btn" data-action="help" style="background:#6f9e3f;">🌾 Ernte-Hilfe annehmen (kostenlos)</button>`;
+        if (npc.resetsPrices) optionsHtml += `<button class="npc-modal-btn" data-action="reset" style="background:#8b6e3a;">📋 Marktpreise zurücksetzen</button>`;
+        optionsHtml += `<button class="npc-modal-btn" data-action="decline" style="background:#c44;">👋 Ablehnen</button>`;
+        modal.innerHTML = `<div style="background:#2c2b26; color:#ffefcf; max-width:420px; width:100%; border:2px solid #f5a623; border-radius:20px; padding:24px; box-shadow:0 0 40px rgba(245,166,35,0.4); text-align:center;">
+            <div style="font-size:3rem; margin-bottom:8px;">${npc.emoji}</div>
+            <div style="font-size:1.2rem; font-weight:bold; margin-bottom:6px;">${npc.name}</div>
+            <div style="font-style:italic; color:#f5a623; margin-bottom:14px;">"${npc.greeting || getRandomGreeting()}"</div>
+            ${npc.requestedProduct ? `<div style="background:#3a4a2a; border-radius:10px; padding:8px; margin-bottom:10px; font-size:0.9rem;">📦 Möchte: ${npc.requestedAmount}x ${getProductName(npc.requestedProduct)}<br>💰 Bietet: ${npc.offerGold} Gold</div>` : ""}
+            ${npc.specialOffer ? `<div style="background:#3a3a4a; border-radius:10px; padding:8px; margin-bottom:10px; font-size:0.85rem;">🎁 ${npc.specialOffer.name}<br><span style="font-size:0.75rem; color:#aaa;">${npc.specialOffer.effect}</span></div>` : ""}
+            <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">${optionsHtml}</div>
+        </div>`;
+        document.body.appendChild(modal);
+        modal.querySelectorAll(".npc-modal-btn").forEach(btn => {
+            btn.style.cssText += "; border:none; padding:10px 16px; border-radius:30px; font-weight:bold; color:white; cursor:pointer; font-size:0.9rem; width:100%;";
+            btn.addEventListener("click", () => {
+                const action = btn.dataset.action;
+                modal.remove();
+                if (action === "trade") acceptNPCTrade();
+                else if (action === "offer") buyNPCSpecialOffer();
+                else if (action === "help") acceptNPCHelp();
+                else if (action === "reset") { dailyPriceFluctuation(); showToast("📋 Marktpreise wurden zurückgesetzt!", false); activeNPC = null; renderNPCInUI(); }
+                else if (action === "decline") { showToast(`👋 ${npc.name}: "Schade, vielleicht ein anderes Mal!"`, false); activeNPC = null; renderNPCInUI(); }
+            });
+        });
+        modal.addEventListener("click", (e) => { if (e.target === modal) modal.remove(); });
     }
-    
     function acceptNPCTrade() {
         if (!activeNPC || !activeNPC.requestedProduct) return;
         const currentAmount = inventory[activeNPC.requestedProduct] || 0;
@@ -1823,17 +1849,18 @@
     function updateChatBadge() {
         const btn = document.getElementById("viewMultiplayerBtn");
         if (!btn) return;
+        // Badge suchen oder neu erstellen
         let badge = btn.querySelector(".chat-unread-badge");
         if (unreadChatCount > 0) {
             if (!badge) {
                 badge = document.createElement("span");
                 badge.className = "chat-unread-badge";
-                badge.style.cssText = "background:#e74c3c; color:white; border-radius:50%; padding:2px 7px; margin-left:6px; font-size:0.7rem; font-weight:bold; box-shadow:0 0 6px rgba(231,76,60,0.7);";
+                badge.style.cssText = "background:#e74c3c; color:white; border-radius:50%; min-width:20px; height:20px; line-height:20px; text-align:center; padding:0 5px; margin-left:6px; font-size:0.7rem; font-weight:bold; box-shadow:0 0 8px rgba(231,76,60,0.9); display:inline-block; vertical-align:middle; animation:pulse 1s infinite;";
                 btn.appendChild(badge);
             }
             badge.innerText = unreadChatCount > 99 ? "99+" : unreadChatCount;
-        } else if (badge) {
-            badge.remove();
+        } else {
+            if (badge) badge.remove();
         }
     }
     
@@ -2131,12 +2158,40 @@
         if (isResearchUnlocked(playerLevel)) { researchBtn.classList.remove("locked"); researchBtn.innerHTML = "🔬 Forschung"; } else { researchBtn.classList.add("locked"); researchBtn.innerHTML = "🔬 Forschung (Level 9)"; }
         if (isLicensesUnlocked(playerLevel)) { licensesBtn.classList.remove("locked"); licensesBtn.innerHTML = "📜 Lizenzen"; } else { licensesBtn.classList.add("locked"); licensesBtn.innerHTML = "📜 Lizenzen (Level 10)"; }
         if (isMultiplayerUnlocked(playerLevel)) { multiplayerBtn.classList.remove("locked"); multiplayerBtn.innerHTML = "🌍 Multiplayer"; } else { multiplayerBtn.classList.add("locked"); multiplayerBtn.innerHTML = "🌍 Multiplayer (Level 5)"; }
+            updateChatBadge();
     }
+    
+    // Welcher Acker ist für "Alle pflanzen" ausgewählt (0 = alle, 1/2/3 = spezifischer Acker)
+    let selectedPlantAcker = 0;
     
     function updateMassPlantButtons() {
         const container = document.getElementById("massPlantRow"); if (!container) return;
         container.innerHTML = "";
+        
+        // Acker-Auswahl Tabs
+        const tabRow = document.createElement("div");
+        tabRow.style.cssText = "display:flex; gap:6px; flex-wrap:wrap; justify-content:center; width:100%; margin-bottom:6px;";
+        
+        const ackerOptions = [{ label: "🌾 Alle Äcker", val: 0 }, { label: "Acker 1", val: 1 }];
+        if (acker2Owned) ackerOptions.push({ label: "Acker 2", val: 2 });
+        if (acker3Owned) ackerOptions.push({ label: "Acker 3", val: 3 });
+        
+        ackerOptions.forEach(opt => {
+            const tab = document.createElement("button");
+            tab.className = "mass-plant-btn";
+            tab.style.background = selectedPlantAcker === opt.val ? "#f5a623" : "#3f6b3a";
+            tab.style.color = selectedPlantAcker === opt.val ? "#2d2b1f" : "white";
+            tab.innerHTML = opt.label;
+            tab.onclick = () => { selectedPlantAcker = opt.val; updateMassPlantButtons(); };
+            tabRow.appendChild(tab);
+        });
+        container.appendChild(tabRow);
+        
+        // Pflanzen-Buttons
         const cropOrder = ["carrot","wheat","tomato","strawberry","pumpkin","pineapple","coffee","blueberry","raspberry","grape","peach","lemon","apple","banana","mango","cherry","pear","pomegranate","kiwi","dragonfruit","starfruit","saffron","vanilla"];
+        const btnRow = document.createElement("div");
+        btnRow.style.cssText = "display:flex; gap:6px; flex-wrap:wrap; justify-content:center; width:100%;";
+        btnRow.id = "massPlantBtnRow";
         for (let cropId of cropOrder) {
             const crop = CROPS[cropId]; if (!crop) continue;
             if (playerLevel < crop.levelRequired) continue;
@@ -2144,46 +2199,49 @@
             const amount = inventory[cropId] || 0;
             const btn = document.createElement("button");
             btn.className = "mass-plant-btn";
-            btn.innerHTML = `${crop.emoji} Alle ${crop.name} (${amount})`;
-            btn.onclick = () => massPlant(cropId);
-            container.appendChild(btn);
+            btn.dataset.cropId = cropId;
+            const ackerLabel = selectedPlantAcker === 0 ? "" : ` A${selectedPlantAcker}`;
+            btn.innerHTML = `${crop.emoji} Alle${ackerLabel} ${crop.name} (${amount})`;
+            btn.onclick = () => massPlant(cropId, selectedPlantAcker);
+            btnRow.appendChild(btn);
         }
+        container.appendChild(btnRow);
     }
     
     function updateMassPlantButtonsLive() {
-        const container = document.getElementById("massPlantRow"); if (!container) return;
-        const buttons = container.querySelectorAll(".mass-plant-btn");
-        const cropOrder = ["carrot","wheat","tomato","strawberry","pumpkin","pineapple","coffee","blueberry","raspberry","grape","peach","lemon","apple","banana","mango","cherry","pear","pomegranate","kiwi","dragonfruit","starfruit","saffron","vanilla"];
-        for (let i = 0; i < buttons.length && i < cropOrder.length; i++) {
-            const cropId = cropOrder[i]; const crop = CROPS[cropId];
-            if (crop) { const amount = inventory[cropId] || 0; if (buttons[i].innerHTML !== `${crop.emoji} Alle ${crop.name} (${amount})`) buttons[i].innerHTML = `${crop.emoji} Alle ${crop.name} (${amount})`; }
-        }
+        const btnRow = document.getElementById("massPlantBtnRow"); if (!btnRow) return;
+        btnRow.querySelectorAll(".mass-plant-btn[data-crop-id]").forEach(btn => {
+            const cropId = btn.dataset.cropId; const crop = CROPS[cropId]; if (!crop) return;
+            const amount = inventory[cropId] || 0;
+            const ackerLabel = selectedPlantAcker === 0 ? "" : ` A${selectedPlantAcker}`;
+            btn.innerHTML = `${crop.emoji} Alle${ackerLabel} ${crop.name} (${amount})`;
+        });
     }
     
-    function massPlant(cropId) {
+    function massPlant(cropId, ackerNum = 0) {
         if (isPaused) { showToast("⏸️ Spiel ist pausiert! Drücke Start, um fortzufahren.", true); return; }
         const crop = CROPS[cropId];
         if (playerLevel < crop.levelRequired) { showToast(`🔒 ${crop.name} wird auf Level ${crop.levelRequired} freigeschaltet!`, true); return; }
         if (crop.licenseRequired && !ownedLicenses.includes(crop.licenseRequired)) { showToast(`🔒 ${crop.name} benötigt eine Lizenz!`, true); return; }
+        let startIdx = 0, endIdx = fields.length;
+        if (ackerNum === 1) { startIdx = 0; endIdx = FIELDS_PER_ACKER; }
+        else if (ackerNum === 2) { startIdx = FIELDS_PER_ACKER; endIdx = 2 * FIELDS_PER_ACKER; }
+        else if (ackerNum === 3) { startIdx = 2 * FIELDS_PER_ACKER; endIdx = 3 * FIELDS_PER_ACKER; }
         let planted = 0;
-        for (let i = 0; i < fields.length; i++) {
+        for (let i = startIdx; i < endIdx; i++) {
             const f = fields[i];
             if (f.owned && !f.cropId && playerGold >= crop.seedCost) {
                 playerGold -= crop.seedCost;
-                f.cropId = cropId;
-                f.plantedAt = Date.now();
-                f.isReady = false;
+                f.cropId = cropId; f.plantedAt = Date.now(); f.isReady = false;
                 if (f.timerId) clearTimeout(f.timerId);
-                startFieldTimer(i, cropId);
-                planted++;
-                updateQuestProgress("plant", 1);
-                addXP(2);
+                startFieldTimer(i, cropId); planted++;
+                updateQuestProgress("plant", 1); addXP(2);
             }
         }
-        if (planted) { updateMoneyUI(); renderFields(); saveGameToLocal(); showToast(`✅ ${planted} Felder mit ${crop.name} bepflanzt.`); }
-        else showToast(`❌ Keine freien Felder oder zu wenig Gold!`, true);
+        const ackerLabel = ackerNum > 0 ? ` auf Acker ${ackerNum}` : "";
+        if (planted) { updateMoneyUI(); renderFields(); saveGameToLocal(); showToast(`✅ ${planted} Felder${ackerLabel} mit ${crop.name} bepflanzt.`); }
+        else showToast(`❌ Keine freien Felder${ackerLabel} oder zu wenig Gold!`, true);
     }
-    
     function startFieldTimer(fieldIdx, cropId) {
         if (isPaused) return;
         const f = fields[fieldIdx];
