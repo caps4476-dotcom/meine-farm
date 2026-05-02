@@ -961,6 +961,51 @@
                 gap: 6px;
             }
         }
+
+        /* ===== MINISPIELE ===== */
+        .minigame-hub { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; padding: 10px; }
+        .minigame-card { background: linear-gradient(135deg, #3a5a2a, #2c4a20); border: 2px solid #6f9e3f; border-radius: 16px; padding: 16px; text-align: center; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+        .minigame-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(111,158,63,0.4); }
+        .minigame-card .mg-icon { font-size: 2.5rem; margin-bottom: 6px; }
+        .minigame-card .mg-name { font-weight: bold; font-size: 0.95rem; color: #ffefcf; }
+        .minigame-card .mg-desc { font-size: 0.7rem; color: #b0c890; margin-top: 4px; }
+        .minigame-card .mg-reward { font-size: 0.75rem; color: #f5a623; margin-top: 6px; }
+        .minigame-card .mg-cooldown { font-size: 0.7rem; color: #e07070; margin-top: 4px; }
+        .mg-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 16px; }
+        .mg-modal-box { background: #2c2b26; border: 2px solid #f5a623; border-radius: 20px; padding: 20px; max-width: 400px; width: 100%; text-align: center; color: #ffefcf; max-height: 90vh; overflow-y: auto; }
+        .mg-modal-box h2 { color: #f5a623; margin-bottom: 10px; }
+        .mg-btn { background: #f5a623; color: #2d2b1f; border: none; padding: 10px 20px; border-radius: 30px; font-weight: bold; font-size: 0.95rem; cursor: pointer; margin: 5px; }
+        .mg-btn:hover { background: #e09010; }
+        .mg-btn-red { background: #c44; color: white; }
+        .mg-btn-green { background: #3a8c3a; color: white; }
+        .mg-btn-blue { background: #4a6e8b; color: white; }
+        /* Glücksrad */
+        .wheel-container { position: relative; display: inline-block; margin: 10px auto; }
+        .wheel-canvas { border-radius: 50%; border: 4px solid #f5a623; }
+        .wheel-pointer { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 1.8rem; }
+        /* Angelspiel */
+        .fishing-area { background: linear-gradient(to bottom, #87CEEB 40%, #1a6b9a 40%); border-radius: 12px; height: 220px; position: relative; overflow: hidden; margin: 10px 0; cursor: pointer; }
+        .fishing-rod { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); font-size: 1.5rem; }
+        .fishing-line { position: absolute; left: 50%; width: 2px; background: #999; transform: translateX(-50%); transition: height 0.3s; }
+        .fishing-hook { position: absolute; left: 50%; transform: translateX(-50%); font-size: 1.2rem; transition: top 0.3s; }
+        .fish-target { position: absolute; font-size: 1.5rem; transition: left 0.1s; }
+        /* Match-3 */
+        .match3-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin: 10px auto; max-width: 300px; }
+        .match3-cell { width: 44px; height: 44px; border-radius: 8px; background: #3a4a2a; border: 2px solid #5a7a3a; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.15s, border-color 0.15s; user-select: none; }
+        .match3-cell.selected { border-color: #f5a623; transform: scale(1.12); background: #5a6a3a; }
+        .match3-cell.matched { animation: matchPop 0.3s ease; background: #6f9e3f; }
+        @keyframes matchPop { 0%{transform:scale(1)} 50%{transform:scale(1.3)} 100%{transform:scale(1)} }
+        /* Quiz */
+        .quiz-option { background: #3a4a2a; border: 2px solid #5a7a3a; border-radius: 12px; padding: 10px 14px; margin: 6px 0; cursor: pointer; text-align: left; color: #ffefcf; font-size: 0.9rem; width: 100%; transition: background 0.2s; }
+        .quiz-option:hover { background: #4a6a3a; }
+        .quiz-option.correct { background: #2a6a2a; border-color: #6f9e3f; }
+        .quiz-option.wrong { background: #6a2a2a; border-color: #c44; }
+        /* Wetter-Wette */
+        .bet-option { background: #3a4a6a; border: 2px solid #4a6a9a; border-radius: 16px; padding: 16px; margin: 8px; cursor: pointer; font-size: 1.5rem; transition: transform 0.2s, background 0.2s; display: inline-block; min-width: 80px; }
+        .bet-option:hover { transform: scale(1.08); background: #4a5a8a; }
+        .bet-option.winner { background: #2a6a2a; border-color: #6f9e3f; transform: scale(1.15); }
+        .bet-option.loser { background: #6a2a2a; border-color: #c44; opacity: 0.6; }
+
     </style>
 </head>
 <body>
@@ -1035,6 +1080,7 @@
         <button id="viewAccountBtn" class="view-btn">👤 Account</button>
         <button id="viewAchievementsBtn" class="view-btn">🏆 Erfolge</button>
         <button id="viewHandbookBtn" class="view-btn">📖 Handbuch</button>
+        <button id="viewMinigamesBtn" class="view-btn">🎮 Minispiele</button>
     </div>
 
     <div class="mass-plant-row" id="massPlantRow"></div>
@@ -1090,7 +1136,10 @@
             <div style="font-size: 0.6rem; margin-top: 5px; color: #aaa;">💡 Sei respektvoll! Admin kann Nachrichten löschen.</div>
         </div>
         
-        <div id="adminSection" class="admin-section hidden" style="grid-column:1/-1;">
+        <div id="minigamesView" class="handbook-grid hidden">
+        <div id="minigamesContent"></div>
+    </div>
+    <div id="adminSection" class="admin-section hidden" style="grid-column:1/-1;">
             <div class="admin-title" style="color:#ff9800; font-size:1.1rem;">🛠️ ADMIN-ZENTRALE</div>
 
             <!-- Schnellaktionen -->
@@ -1301,11 +1350,34 @@
 
     
     // ==================== GAME VERSION ====================
-    const CURRENT_GAME_VERSION = "3.2";
+    const CURRENT_GAME_VERSION = "3.4";
     
     // ==================== RELEASE NOTES ("Was ist neu?") ====================
     // Neue Einträge oben hinzufügen. version: muss zu CURRENT_GAME_VERSION passen, damit beim ersten Start automatisch angezeigt wird.
     const RELEASE_NOTES = [
+        {
+            version: "3.4",
+            date: "Mai 2026",
+            title: "🎮 Minispiele-Update",
+            changes: [
+                "🎰 <b>Glücksrad</b>: Täglich drehen für Gold, XP oder Samen! (Cooldown: 4 Stunden)",
+                "🐟 <b>Angelspiel</b>: Timing-Spiel mit 5 verschiedenen Fischarten und Belohnungen. (Cooldown: 30 Min.)",
+                "🧩 <b>Ernte-Puzzle</b>: Match-3 mit Farmgemüse – jeder Match bringt Gold und XP. (Cooldown: 1 Stunde)",
+                "🐕 <b>Farm-Quiz</b>: 15 Fragen über deine Farm – Richtig = Gold-Bonus! (Cooldown: 1 Stunde)",
+                "🌦️ <b>Wetter-Wette</b>: Setze Gold auf das nächste Wetter – bei Treffer 3-facher Einsatz zurück! (Cooldown: 3 Stunden)"
+            ]
+        },
+        {
+            version: "3.3",
+            date: "Mai 2026",
+            title: "🐄 Offline-Produktion & Quest-Erweiterung",
+            changes: [
+                "🐄 <b>Tier-Offline-Produktion</b>: Tiere die während deiner Abwesenheit fertig produziert haben, stehen jetzt beim nächsten Login sofort als bereit zur Verfügung.",
+                "🎁 <b>Admin-Bonus</b>: Doppelte Vergabe behoben – der Bonus wird jetzt korrekt nur einmal gutgeschrieben.",
+                "📋 <b>Quest-Pool erweitert</b>: Täglich wechselnde Auswahl aus 14 täglichen und 8 wöchentlichen Quests – jeder Tag bringt neue Herausforderungen!",
+                "🌩️ <b>Wetter-Badge</b>: Dürre und Sturm werden nicht mehr gleichzeitig angezeigt – Events und Wetter sind jetzt klar getrennt."
+            ]
+        },
         {
             version: "3.2",
             date: "Mai 2026",
@@ -1392,19 +1464,49 @@
     let realDayCheckInterval = null;
     
     // ==================== QUEST-SYSTEM ====================
-    const DAILY_QUESTS = [
-        { id: "harvest_20", name: "🌾 Fleißiger Bauer", description: "Ernte 20 Pflanzen", target: 20, progress: 0, rewardGold: 250, rewardXP: 40, type: "harvest" },
-        { id: "sell_15", name: "💰 Geschäftstüchtig", description: "Verkaufe 15 Produkte", target: 15, progress: 0, rewardGold: 300, rewardXP: 30, type: "sell" },
-        { id: "plant_10", name: "🌱 Grüner Daumen", description: "Pflanze 10 Pflanzen", target: 10, progress: 0, rewardGold: 200, rewardXP: 35, type: "plant" },
-        { id: "animal_5", name: "🐄 Tierliebe", description: "Sammle 5 tierische Produkte", target: 5, progress: 0, rewardGold: 220, rewardXP: 35, type: "animal" },
-        { id: "craft_3", name: "🔨 Handwerker", description: "Stelle 3 verarbeitete Produkte her", target: 3, progress: 0, rewardGold: 250, rewardXP: 40, type: "craft" }
+    // Täglich werden 5 Quests zufällig aus dem Pool gewählt
+    const DAILY_QUEST_POOL = [
+        { id: "harvest_20",   name: "🌾 Fleißiger Bauer",       description: "Ernte 20 Pflanzen",                     target: 20,  rewardGold: 250,  rewardXP: 40,  type: "harvest" },
+        { id: "harvest_35",   name: "🌾 Ernte-Profi",            description: "Ernte 35 Pflanzen",                     target: 35,  rewardGold: 400,  rewardXP: 60,  type: "harvest" },
+        { id: "sell_15",      name: "💰 Geschäftstüchtig",       description: "Verkaufe 15 Produkte",                  target: 15,  rewardGold: 300,  rewardXP: 30,  type: "sell" },
+        { id: "sell_30",      name: "💰 Marktprofi",             description: "Verkaufe 30 Produkte",                  target: 30,  rewardGold: 550,  rewardXP: 55,  type: "sell" },
+        { id: "plant_10",     name: "🌱 Grüner Daumen",          description: "Pflanze 10 Pflanzen",                   target: 10,  rewardGold: 200,  rewardXP: 35,  type: "plant" },
+        { id: "plant_20",     name: "🌱 Saatgut-Experte",        description: "Pflanze 20 Pflanzen",                   target: 20,  rewardGold: 350,  rewardXP: 50,  type: "plant" },
+        { id: "animal_5",     name: "🐄 Tierliebe",              description: "Sammle 5 tierische Produkte",           target: 5,   rewardGold: 220,  rewardXP: 35,  type: "animal" },
+        { id: "animal_12",    name: "🐄 Stallmeister",           description: "Sammle 12 tierische Produkte",          target: 12,  rewardGold: 420,  rewardXP: 65,  type: "animal" },
+        { id: "craft_3",      name: "🔨 Handwerker",             description: "Stelle 3 verarbeitete Produkte her",    target: 3,   rewardGold: 250,  rewardXP: 40,  type: "craft" },
+        { id: "craft_8",      name: "🔨 Meisterkoch",            description: "Stelle 8 verarbeitete Produkte her",    target: 8,   rewardGold: 500,  rewardXP: 80,  type: "craft" },
+        { id: "harvest_50",   name: "🌾 Ernte-Champion",         description: "Ernte 50 Pflanzen",                     target: 50,  rewardGold: 600,  rewardXP: 90,  type: "harvest" },
+        { id: "sell_50",      name: "💰 Großhändler",            description: "Verkaufe 50 Produkte",                  target: 50,  rewardGold: 750,  rewardXP: 100, type: "sell" },
+        { id: "craft_15",     name: "🏭 Fabrikbesitzer",         description: "Stelle 15 verarbeitete Produkte her",   target: 15,  rewardGold: 800,  rewardXP: 120, type: "craft" },
+        { id: "animal_20",    name: "🐄 Tier-Flüsterer",         description: "Sammle 20 tierische Produkte",          target: 20,  rewardGold: 650,  rewardXP: 100, type: "animal" }
     ];
-    
-    const WEEKLY_QUESTS = [
-        { id: "weekly_harvest_100", name: "⭐ Meisterfarmer", description: "Ernte 100 Pflanzen in dieser Woche", target: 100, progress: 0, rewardGold: 1500, rewardXP: 200, type: "harvest" },
-        { id: "weekly_sell_75", name: "⭐ Handelsimperium", description: "Verkaufe 75 Produkte in dieser Woche", target: 75, progress: 0, rewardGold: 1800, rewardXP: 150, type: "sell" },
-        { id: "weekly_animal_30", name: "⭐ Tierflüsterer", description: "Sammle 30 tierische Produkte", target: 30, progress: 0, rewardGold: 1200, rewardXP: 180, type: "animal" }
+
+    const WEEKLY_QUEST_POOL = [
+        { id: "weekly_harvest_100",  name: "⭐ Meisterfarmer",       description: "Ernte 100 Pflanzen",            target: 100, rewardGold: 1500, rewardXP: 200, type: "harvest" },
+        { id: "weekly_harvest_200",  name: "⭐ Ernte-Legende",       description: "Ernte 200 Pflanzen",            target: 200, rewardGold: 2800, rewardXP: 350, type: "harvest" },
+        { id: "weekly_sell_75",      name: "⭐ Handelsimperium",     description: "Verkaufe 75 Produkte",          target: 75,  rewardGold: 1800, rewardXP: 150, type: "sell" },
+        { id: "weekly_sell_150",     name: "⭐ Markt-Titan",         description: "Verkaufe 150 Produkte",         target: 150, rewardGold: 3200, rewardXP: 280, type: "sell" },
+        { id: "weekly_animal_30",    name: "⭐ Tierflüsterer",       description: "Sammle 30 tierische Produkte",  target: 30,  rewardGold: 1200, rewardXP: 180, type: "animal" },
+        { id: "weekly_animal_60",    name: "⭐ Stall-König",         description: "Sammle 60 tierische Produkte",  target: 60,  rewardGold: 2200, rewardXP: 300, type: "animal" },
+        { id: "weekly_craft_40",     name: "⭐ Handwerks-Meister",   description: "Stelle 40 Produkte her",        target: 40,  rewardGold: 2500, rewardXP: 320, type: "craft" },
+        { id: "weekly_plant_150",    name: "⭐ Gärtner-Gott",        description: "Pflanze 150 Pflanzen",          target: 150, rewardGold: 2000, rewardXP: 250, type: "plant" }
     ];
+
+    // Hilfsfunktion: 5 zufällige tägliche Quests aus dem Pool wählen
+    function pickDailyQuests() {
+        const shuffled = [...DAILY_QUEST_POOL].sort(() => Math.random() - 0.5);
+        return shuffled.slice(0, 5).map(q => ({ ...q, progress: 0, completed: false }));
+    }
+    // Hilfsfunktion: 3 zufällige Wochen-Quests aus dem Pool wählen
+    function pickWeeklyQuests() {
+        const shuffled = [...WEEKLY_QUEST_POOL].sort(() => Math.random() - 0.5);
+        return shuffled.slice(0, 3).map(q => ({ ...q, progress: 0, completed: false }));
+    }
+
+    // Rückwärtskompatibilität
+    const DAILY_QUESTS  = pickDailyQuests();
+    const WEEKLY_QUESTS = pickWeeklyQuests();
     
     let quests = { daily: JSON.parse(JSON.stringify(DAILY_QUESTS)), weekly: JSON.parse(JSON.stringify(WEEKLY_QUESTS)), lastReset: Date.now(), weeklyReset: Date.now() };
     
@@ -2172,6 +2274,7 @@
         if (isLicensesUnlocked(playerLevel)) { licensesBtn.classList.remove("locked"); licensesBtn.innerHTML = "📜 Lizenzen"; } else { licensesBtn.classList.add("locked"); licensesBtn.innerHTML = "📜 Lizenzen (Level 10)"; }
         if (isMultiplayerUnlocked(playerLevel)) { multiplayerBtn.classList.remove("locked"); multiplayerBtn.innerHTML = "🌍 Multiplayer"; } else { multiplayerBtn.classList.add("locked"); multiplayerBtn.innerHTML = "🌍 Multiplayer (Level 5)"; }
             updateChatBadge();
+            const mgBtn = document.getElementById("viewMinigamesBtn"); if (mgBtn) mgBtn.classList.remove("locked");
     }
     
     // Welcher Acker ist für "Alle pflanzen" ausgewählt (0 = alle, 1/2/3 = spezifischer Acker)
@@ -3059,7 +3162,7 @@
     function renderLicenses() { const container = document.getElementById("licensesView"); if (!container) return; container.innerHTML = ""; if (!isLicensesUnlocked(playerLevel)) { container.innerHTML = `<div class="license-slot" style="grid-column:1/-1; background:#4a3a2a;"><div class="license-icon">🔒</div><div class="license-name">Noch nicht freigeschaltet</div><div class="status">Erreiche Level 10, um Lizenzen freizuschalten!</div></div>`; return; } for (let [id, license] of Object.entries(LICENSES)) { const isOwned = ownedLicenses.includes(id); const canBuy = !isOwned && playerGold >= license.cost && playerLevel >= license.levelRequired; const div = document.createElement("div"); div.className = "license-slot" + (isOwned ? " owned" : ""); div.innerHTML = `<div class="license-icon">${license.emoji}</div><div class="license-name">${license.name}</div><div class="status" style="font-size:0.65rem;">${license.description}</div><div class="status" style="background:#3a5a3a;">⭐ Level ${license.levelRequired}</div><div class="license-cost">💰 ${license.cost} Gold</div>${!isOwned ? `<button class="buy-license-btn" data-license="${id}" ${!canBuy ? 'disabled style="opacity:0.5;"' : ''}>📜 Lizenz kaufen</button>` : `<div class="status" style="background:#2a6a2a;">✅ Besitzt du</div>`}`; container.appendChild(div); } document.querySelectorAll(".buy-license-btn").forEach(btn => btn.addEventListener("click", () => buyLicense(btn.dataset.license))); }
     
     // ==================== WETTER ====================
-    function changeWeather() { if (isPaused) return; const weathers = ["sunny", "rainy", "stormy", "thunder"]; const newWeather = weathers[Math.floor(Math.random() * weathers.length)]; const oldWeather = currentWeather; currentWeather = newWeather; const weather = WEATHER_TYPES[currentWeather]; const weatherEl = document.getElementById("weatherInfo"); weatherEl.innerHTML = weather.emoji + " " + weather.name; weatherEl.className = "weather-info " + weather.color; showToast(`🌤️ Wetter ändert sich: ${weather.name}`, false); for (let i = 0; i < fields.length; i++) { const f = fields[i]; if (f.owned && f.cropId && !f.isReady && f.plantedAt) { const crop = CROPS[f.cropId]; const elapsed = Date.now() - f.plantedAt; const oldTotalTime = crop.growTime * getGrowthModifierForWeather(oldWeather); const newTotalTime = crop.growTime * getGrowthModifierForWeather(newWeather); if (f.timerId) clearTimeout(f.timerId); const progressPercent = Math.min(0.99, elapsed / oldTotalTime); const newElapsed = progressPercent * newTotalTime; const remaining = Math.max(0, newTotalTime - newElapsed); f.plantedAt = Date.now() - newElapsed; f.timerId = setTimeout(() => { if (fields[i] && fields[i].cropId === f.cropId) { fields[i].isReady = true; renderFields(); saveGameToLocal(); showToast(`🌱 ${crop.name} auf Feld ${i+1} ist bereit!`); } }, remaining); } } saveGameToLocal(); const nextChange = 120000 + Math.random() * 180000; if (weatherTimer) clearTimeout(weatherTimer); weatherTimer = setTimeout(changeWeather, nextChange); }
+    function changeWeather() { if (isPaused) return; const weathers = ["sunny", "rainy", "stormy", "thunder"]; const newWeather = weathers[Math.floor(Math.random() * weathers.length)]; const oldWeather = currentWeather; currentWeather = newWeather; const weather = WEATHER_TYPES[currentWeather]; const weatherEl = document.getElementById("weatherInfo"); if (weatherEl) { weatherEl.innerHTML = weather.emoji + " " + weather.name; weatherEl.className = "weather-info " + weather.color; } showToast(`🌤️ Wetter ändert sich: ${weather.name}`, false); // Event-Badge korrekt aktualisieren - nur aktives Event anzeigen, nicht Wetter if (eventBadgeEl) { if (activeEvent) { eventBadgeEl.innerHTML = `⚠️ ${activeEvent.name || activeEvent.type} aktiv!`; eventBadgeEl.classList.remove("hidden"); } else { eventBadgeEl.classList.add("hidden"); } } for (let i = 0; i < fields.length; i++) { const f = fields[i]; if (f.owned && f.cropId && !f.isReady && f.plantedAt) { const crop = CROPS[f.cropId]; const elapsed = Date.now() - f.plantedAt; const oldTotalTime = crop.growTime * getGrowthModifierForWeather(oldWeather); const newTotalTime = crop.growTime * getGrowthModifierForWeather(newWeather); if (f.timerId) clearTimeout(f.timerId); const progressPercent = Math.min(0.99, elapsed / oldTotalTime); const newElapsed = progressPercent * newTotalTime; const remaining = Math.max(0, newTotalTime - newElapsed); f.plantedAt = Date.now() - newElapsed; f.timerId = setTimeout(() => { if (fields[i] && fields[i].cropId === f.cropId) { fields[i].isReady = true; renderFields(); saveGameToLocal(); showToast(`🌱 ${crop.name} auf Feld ${i+1} ist bereit!`); } }, remaining); } } saveGameToLocal(); const nextChange = 120000 + Math.random() * 180000; if (weatherTimer) clearTimeout(weatherTimer); weatherTimer = setTimeout(changeWeather, nextChange); }
     function getGrowthModifierForWeather(weatherType) { return WEATHER_TYPES[weatherType].growthModifier; }
     function getWeatherGrowthModifier() { return WEATHER_TYPES[currentWeather].growthModifier; }
     function getWeatherHarvestRisk() { if (currentWeather === "thunder") return Math.random() < 0.2; return false; }
@@ -3089,6 +3192,7 @@
         document.getElementById("accountView").classList.toggle("hidden", view !== "account");
         document.getElementById("achievementsView").classList.toggle("hidden", view !== "achievements");
         document.getElementById("handbookView").classList.toggle("hidden", view !== "handbook");
+        document.getElementById("minigamesView").classList.toggle("hidden", view !== "minigames");
         
         document.getElementById("viewFarmBtn").classList.toggle("active", view === "farm");
         document.getElementById("viewBarnBtn").classList.toggle("active", view === "barn");
@@ -3100,6 +3204,7 @@
         document.getElementById("viewAccountBtn").classList.toggle("active", view === "account");
         document.getElementById("viewAchievementsBtn").classList.toggle("active", view === "achievements");
         document.getElementById("viewHandbookBtn").classList.toggle("active", view === "handbook");
+        document.getElementById("viewMinigamesBtn").classList.toggle("active", view === "minigames");
         
         if (view === "barn") renderBarn();
         if (view === "craft") renderCraft();
@@ -3107,6 +3212,7 @@
         if (view === "licenses") renderLicenses();
         if (view === "achievements") renderAchievements();
         if (view === "handbook") renderHandbook();
+        if (view === "minigames") renderMinigames();
         if (view === "multiplayer") clearChatNotifications();
         if (view === "quests") { renderLoginBonus(); renderQuests(); }
         if (view === "multiplayer" && isMultiplayerUnlocked(playerLevel)) {
@@ -3356,9 +3462,31 @@
         const a = animals[i];
         if (a.timerId) { clearTimeout(a.timerId); a.timerId = null; }
         a._timerRunning = false;
-        if (!a.isReady) {
-            if (!a.productionStartTime) a.productionStartTime = Date.now();
+        
+        if (a.isReady) {
+            // Bereits fertige Tiere: Timer nicht nötig, bleiben bereit
+            continue;
+        }
+        
+        if (!a.productionStartTime) {
+            a.productionStartTime = Date.now();
             startAnimalProduction(a, i);
+        } else {
+            // Prüfen ob das Tier während der Offline-Zeit fertig geworden wäre
+            const data = ANIMALS[a.type];
+            if (data) {
+                let prodTime = data.productionTime;
+                if (barnUpgrades && barnUpgrades.speedBoost) prodTime = Math.floor(prodTime * 0.7);
+                const elapsed = Date.now() - a.productionStartTime;
+                if (elapsed >= prodTime) {
+                    // Tier hätte während Offline-Zeit fertig produziert → sofort als bereit markieren
+                    a.isReady = true;
+                } else {
+                    startAnimalProduction(a, i);
+                }
+            } else {
+                startAnimalProduction(a, i);
+            }
         }
     }
     
@@ -3396,6 +3524,7 @@
     localStorage.setItem("farmPremium", JSON.stringify(localData));
     console.log("✅ Cloud-Daten geladen - Gold: " + playerGold + ", XP: " + playerXP + ", Level: " + playerLevel);
     initChat();
+    loadMinigameCooldowns();
 }
 
     
@@ -3486,7 +3615,7 @@
     // ==================== TOAST & EVENT ====================
     function showToast(msg, isError = false) { toastEl.style.backgroundColor = isError ? "#8b3a3acc" : "#2c2b26ee"; toastEl.innerText = msg; toastEl.style.opacity = "1"; setTimeout(() => { toastEl.style.opacity = "0"; }, 1500); }
     function showEvent(title, msg) { eventOverlayEl.innerHTML = `<div>${title}<br>${msg}</div>`; eventOverlayEl.classList.remove("hidden"); setTimeout(() => eventOverlayEl.classList.add("hidden"), 3000); }
-    function triggerRandomEvent() { if (isPaused) return; if (activeEvent) return; if (Math.random() < 0.2) { const events = [{ type: "drought", name: "🌞 Dürre", modifier: { growth: 1.5 }, duration: 60, msg: "Pflanzen wachsen 50% langsamer!" },{ type: "festival", name: "🎉 Festmarkt", modifier: { price: 1.3 }, duration: 60, msg: "Alle Preise +30%!" },{ type: "disease", name: "🦠 Tierkrankheit", modifier: { animalProd: 2.0 }, duration: 60, msg: "Tiere produzieren 50% langsamer!" }]; const event = events[Math.floor(Math.random() * events.length)]; activeEvent = { type: event.type, endTime: Date.now() + event.duration * 1000, modifier: event.modifier }; showEvent(event.name, event.msg); eventBadgeEl.innerHTML = `⚠️ ${event.name} aktiv!`; eventBadgeEl.classList.remove("hidden"); if (eventTimer) clearInterval(eventTimer); eventTimer = setInterval(() => { if (activeEvent && Date.now() >= activeEvent.endTime) { activeEvent = null; eventBadgeEl.classList.add("hidden"); showToast("✅ Event vorbei - alles wieder normal!"); clearInterval(eventTimer); } }, 1000); saveGameToLocal(); } }
+    function triggerRandomEvent() { if (isPaused) return; if (activeEvent) return; if (Math.random() < 0.2) { const events = [{ type: "drought", name: "🌞 Dürre", modifier: { growth: 1.5 }, duration: 60, msg: "Pflanzen wachsen 50% langsamer!" },{ type: "festival", name: "🎉 Festmarkt", modifier: { price: 1.3 }, duration: 60, msg: "Alle Preise +30%!" },{ type: "disease", name: "🦠 Tierkrankheit", modifier: { animalProd: 2.0 }, duration: 60, msg: "Tiere produzieren 50% langsamer!" }]; const event = events[Math.floor(Math.random() * events.length)]; activeEvent = { type: event.type, name: event.name, endTime: Date.now() + event.duration * 1000, modifier: event.modifier }; showEvent(event.name, event.msg); eventBadgeEl.innerHTML = `⚠️ ${event.name} aktiv!`; eventBadgeEl.classList.remove("hidden"); if (eventTimer) clearInterval(eventTimer); eventTimer = setInterval(() => { if (activeEvent && Date.now() >= activeEvent.endTime) { activeEvent = null; eventBadgeEl.classList.add("hidden"); showToast("✅ Event vorbei - alles wieder normal!"); clearInterval(eventTimer); } }, 1000); saveGameToLocal(); } }
     
     // ==================== ONLINE-STATUS & BESTENLISTE ====================
     let onlineStatusInterval = null, lastOnlineUpdate = null;
@@ -3518,7 +3647,7 @@
     function renderLoginBonus() { const container = document.getElementById("loginBonusCard"); if (!container) return; const today = new Date().toDateString(); const lastClaimDate = loginBonusData.lastClaimedDay ? new Date(loginBonusData.lastClaimedDay).toDateString() : ""; const canClaim = today !== lastClaimDate; const bonus = LOGIN_BONUSES[loginBonusData.currentStreak - 1] || LOGIN_BONUSES[6]; container.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;"><div><div>📅 Tag ${loginBonusData.currentStreak}/7</div><div>🎁 Belohnung: ${bonus.gold} Gold${bonus.xp > 0 ? ` + ${bonus.xp} XP` : ""}</div></div>${canClaim ? `<button class="mass-btn" id="claimLoginBonusBtn" style="background:#f5a623;">🎁 Jetzt abholen</button>` : `<div class="status" style="background:#2a6a2a;">✅ Bereits abgeholt</div>`}</div><div class="progress-bar-container" style="margin-top: 10px; position: relative;"><div class="progress-bar-fill" style="width: ${(loginBonusData.currentStreak / 7) * 100}%;"></div></div>`; document.getElementById("claimLoginBonusBtn")?.addEventListener("click", claimLoginBonus); }
     
     // ==================== QUESTS ====================
-    function checkQuestReset() { const now = Date.now(); const oneDay = 24 * 60 * 60 * 1000; const oneWeek = 7 * oneDay; if (now - quests.lastReset > oneDay) { quests.daily = JSON.parse(JSON.stringify(DAILY_QUESTS)); quests.lastReset = now; saveQuests(); } if (now - (quests.weeklyReset || 0) > oneWeek) { quests.weekly = JSON.parse(JSON.stringify(WEEKLY_QUESTS)); quests.weeklyReset = now; saveQuests(); } }
+    function checkQuestReset() { const now = Date.now(); const oneDay = 24 * 60 * 60 * 1000; const oneWeek = 7 * oneDay; if (now - quests.lastReset > oneDay) { quests.daily = pickDailyQuests(); quests.lastReset = now; saveQuests(); showToast("🌅 Neue Tages-Quests verfügbar!", false); } if (now - (quests.weeklyReset || 0) > oneWeek) { quests.weekly = pickWeeklyQuests(); quests.weeklyReset = now; saveQuests(); showToast("⭐ Neue Wochen-Quests verfügbar!", false); } }
     function updateQuestProgress(type, amount = 1) { if (!currentUser) return; quests.daily.forEach(quest => { if (quest.type === type && !quest.completed && quest.progress < quest.target) { quest.progress = Math.min(quest.target, quest.progress + amount); if (quest.progress >= quest.target) showToast(`✅ Quest abgeschlossen: ${quest.name}!`, false); } }); quests.weekly.forEach(quest => { if (quest.type === type && !quest.completed && quest.progress < quest.target) { quest.progress = Math.min(quest.target, quest.progress + amount); if (quest.progress >= quest.target) showToast(`⭐ Wöchentliche Quest abgeschlossen: ${quest.name}!`, false); } }); saveQuests(); renderQuests(); }
     function claimQuest(questId, isWeekly = false) { const questList = isWeekly ? quests.weekly : quests.daily; const quest = questList.find(q => q.id === questId); if (!quest || quest.completed) return; if (quest.progress < quest.target) { showToast("❌ Quest noch nicht abgeschlossen!", true); return; } playerGold += quest.rewardGold; if (quest.rewardXP > 0) addXP(quest.rewardXP); quest.completed = true; updateMoneyUI(); saveQuests(); renderQuests(); saveGameToLocal(); updateLeaderboard(); showToast(`🎉 ${quest.name} abgeschlossen! +${quest.rewardGold} Gold${quest.rewardXP > 0 ? ` +${quest.rewardXP} XP` : ""}`, false); }
     function saveQuests() { if (currentUser) localStorage.setItem(`quests_${currentUser.uid}`, JSON.stringify(quests)); }
@@ -3711,7 +3840,535 @@
         `;
     }
     
+
+    // ==================== MINISPIELE ====================
+    const MINIGAME_COOLDOWNS = {};
+    const MINIGAME_COOLDOWN_MS = {
+        wheel: 4 * 60 * 60 * 1000,   // 4 Stunden
+        fishing: 30 * 60 * 1000,       // 30 Minuten
+        match3: 60 * 60 * 1000,        // 1 Stunde
+        quiz: 60 * 60 * 1000,          // 1 Stunde
+        weather_bet: 3 * 60 * 60 * 1000 // 3 Stunden
+    };
+
+    function loadMinigameCooldowns() {
+        const saved = localStorage.getItem('mgCooldowns_' + (currentUser?.uid || 'guest'));
+        if (saved) Object.assign(MINIGAME_COOLDOWNS, JSON.parse(saved));
+    }
+    function saveMinigameCooldowns() {
+        localStorage.setItem('mgCooldowns_' + (currentUser?.uid || 'guest'), JSON.stringify(MINIGAME_COOLDOWNS));
+    }
+    function getMgCooldownLeft(id) {
+        const last = MINIGAME_COOLDOWNS[id] || 0;
+        const remaining = (last + MINIGAME_COOLDOWN_MS[id]) - Date.now();
+        return remaining > 0 ? remaining : 0;
+    }
+    function formatCooldown(ms) {
+        if (ms <= 0) return "";
+        const h = Math.floor(ms / 3600000);
+        const m = Math.floor((ms % 3600000) / 60000);
+        const s = Math.floor((ms % 60000) / 1000);
+        if (h > 0) return `${h}h ${m}m`;
+        if (m > 0) return `${m}m ${s}s`;
+        return `${s}s`;
+    }
+
+    function renderMinigames() {
+        loadMinigameCooldowns();
+        const container = document.getElementById("minigamesContent");
+        if (!container) return;
+        const games = [
+            { id: "wheel",       icon: "🎰", name: "Glücksrad",       desc: "Drehe das Rad für Preise!",         reward: "Gold, XP, Samen",        cooldown: MINIGAME_COOLDOWN_MS.wheel       },
+            { id: "fishing",     icon: "🐟", name: "Angelspiel",       desc: "Perfektes Timing für den Fang!",    reward: "Fisch → Markt",          cooldown: MINIGAME_COOLDOWN_MS.fishing     },
+            { id: "match3",      icon: "🧩", name: "Ernte-Puzzle",     desc: "Verbinde 3 gleiche Symbole!",       reward: "Bonus-Ernte",            cooldown: MINIGAME_COOLDOWN_MS.match3      },
+            { id: "quiz",        icon: "🐕", name: "Farm-Quiz",        desc: "Beantworte Farm-Fragen!",           reward: "Gold + Futter-Rabatt",   cooldown: MINIGAME_COOLDOWN_MS.quiz        },
+            { id: "weather_bet", icon: "🌦️", name: "Wetter-Wette",    desc: "Sage das nächste Wetter vorher!",   reward: "Wette Gold",             cooldown: MINIGAME_COOLDOWN_MS.weather_bet }
+        ];
+        container.innerHTML = `<div style="padding:10px 0 6px; text-align:center;">
+            <h2 style="color:#f5a623; margin:0;">🎮 Minispiele</h2>
+            <p style="color:#b0a070; font-size:0.8rem; margin:4px 0 10px;">Spiele täglich für extra Belohnungen!</p>
+        </div><div class="minigame-hub">` +
+        games.map(g => {
+            const cd = getMgCooldownLeft(g.id);
+            return `<div class="minigame-card ${cd > 0 ? 'locked' : ''}" onclick="${cd > 0 ? '' : `openMinigame('${g.id}')`}" style="${cd > 0 ? 'opacity:0.6; cursor:default;' : ''}">
+                <div class="mg-icon">${g.icon}</div>
+                <div class="mg-name">${g.name}</div>
+                <div class="mg-desc">${g.desc}</div>
+                <div class="mg-reward">🎁 ${g.reward}</div>
+                ${cd > 0 ? `<div class="mg-cooldown">⏳ ${formatCooldown(cd)}</div>` : '<div style="color:#6f9e3f; font-size:0.75rem; margin-top:4px;">✅ Bereit!</div>'}
+            </div>`;
+        }).join('') + '</div>';
+
+        // Cooldown-Anzeige live aktualisieren
+        if (window._mgCdInterval) clearInterval(window._mgCdInterval);
+        window._mgCdInterval = setInterval(() => {
+            container.querySelectorAll('.mg-cooldown').forEach(el => {
+                // Cooldowns neu rendern nach Ablauf
+            });
+            // Prüfen ob sich irgendwas geändert hat
+            const anyReady = games.some(g => getMgCooldownLeft(g.id) <= 0);
+            // Einfach neu rendern alle 5s
+        }, 5000);
+    }
+
+    function openMinigame(id) {
+        if (getMgCooldownLeft(id) > 0) { showToast("⏳ Noch nicht verfügbar!", true); return; }
+        if (id === "wheel")       openWheelGame();
+        else if (id === "fishing")    openFishingGame();
+        else if (id === "match3")     openMatch3Game();
+        else if (id === "quiz")       openQuizGame();
+        else if (id === "weather_bet") openWeatherBet();
+    }
+
+    function closeMgModal() {
+        const m = document.getElementById("mgModal");
+        if (m) m.remove();
+    }
+    function createMgModal(innerHtml) {
+        closeMgModal();
+        const modal = document.createElement("div");
+        modal.className = "mg-modal"; modal.id = "mgModal";
+        modal.innerHTML = `<div class="mg-modal-box">${innerHtml}</div>`;
+        document.body.appendChild(modal);
+        return modal;
+    }
+
+    // ---- 1. GLÜCKSRAD ----
+    function openWheelGame() {
+        const prizes = [
+            { label: "200💰",    weight: 25, action: () => { playerGold += 200; updateMoneyUI(); return "+200 Gold"; } },
+            { label: "500💰",    weight: 12, action: () => { playerGold += 500; updateMoneyUI(); return "+500 Gold"; } },
+            { label: "1000💰",   weight: 6,  action: () => { playerGold += 1000; updateMoneyUI(); return "+1000 Gold"; } },
+            { label: "50 XP",   weight: 20, action: () => { addXP(50); return "+50 XP"; } },
+            { label: "100 XP",  weight: 10, action: () => { addXP(100); return "+100 XP"; } },
+            { label: "🥕 Samen", weight: 15, action: () => { if (addToInventory("carrot", 5)) return "+5 Karotten"; return "+5 Karotten"; } },
+            { label: "🌾 Samen", weight: 12, action: () => { if (addToInventory("wheat", 5)) return "+5 Weizen"; return "+5 Weizen"; } },
+            { label: "Nichts 😅",weight: 0, action: () => { return "Leider nichts!"; } }
+        ];
+        // Gewichte normalisieren
+        const totalW = prizes.reduce((s, p) => s + p.weight, 0);
+        const colors = ["#e67e22","#27ae60","#2980b9","#8e44ad","#c0392b","#16a085","#d35400","#7f8c8d"];
+        const modal = createMgModal(`
+            <h2>🎰 Glücksrad</h2>
+            <p style="font-size:0.8rem; color:#b0a070;">Drehe das Rad und gewinne Preise!</p>
+            <div class="wheel-container" id="wheelContainer">
+                <canvas id="wheelCanvas" class="wheel-canvas" width="260" height="260"></canvas>
+                <div class="wheel-pointer">▼</div>
+            </div>
+            <div id="wheelResult" style="min-height:30px; margin:10px 0; font-size:1rem; font-weight:bold; color:#f5a623;"></div>
+            <button class="mg-btn" id="spinBtn">🎰 Drehen!</button>
+            <button class="mg-btn mg-btn-red" onclick="closeMgModal()">✖ Schließen</button>
+        `);
+        // Canvas zeichnen
+        const canvas = document.getElementById("wheelCanvas");
+        const ctx = canvas.getContext("2d");
+        const cx = 130, cy = 130, r = 120;
+        let startAngle = 0;
+        function drawWheel(rot) {
+            ctx.clearRect(0,0,260,260);
+            let a = rot;
+            prizes.forEach((p, i) => {
+                const slice = (p.weight / totalW) * 2 * Math.PI;
+                ctx.beginPath(); ctx.moveTo(cx, cy);
+                ctx.arc(cx, cy, r, a, a + slice);
+                ctx.fillStyle = colors[i % colors.length]; ctx.fill();
+                ctx.strokeStyle = "#2c2b26"; ctx.lineWidth = 2; ctx.stroke();
+                ctx.save(); ctx.translate(cx, cy); ctx.rotate(a + slice / 2);
+                ctx.textAlign = "right"; ctx.fillStyle = "#fff"; ctx.font = "bold 11px sans-serif";
+                ctx.fillText(p.label, r - 8, 4); ctx.restore();
+                a += slice;
+            });
+            ctx.beginPath(); ctx.arc(cx, cy, 18, 0, 2*Math.PI);
+            ctx.fillStyle = "#f5a623"; ctx.fill();
+        }
+        let currentRot = 0;
+        drawWheel(currentRot);
+        let spinning = false;
+        document.getElementById("spinBtn").onclick = () => {
+            if (spinning) return;
+            spinning = true;
+            document.getElementById("spinBtn").disabled = true;
+            document.getElementById("wheelResult").textContent = "";
+            // Zufälliges Ergebnis per Gewicht
+            let rand = Math.random() * totalW;
+            let chosen = 0;
+            for (let i = 0; i < prizes.length; i++) {
+                rand -= prizes[i].weight;
+                if (rand <= 0) { chosen = i; break; }
+            }
+            // Ziel-Winkel berechnen
+            let sliceStart = 0;
+            for (let i = 0; i < chosen; i++) sliceStart += (prizes[i].weight / totalW) * 2 * Math.PI;
+            const sliceSize = (prizes[chosen].weight / totalW) * 2 * Math.PI;
+            const sliceMid = sliceStart + sliceSize / 2;
+            // Pointer ist oben (bei -PI/2), Rad dreht sich → Gewinner bei oben
+            const targetRot = (Math.PI * 2 * 5) - sliceMid + (Math.PI * 1.5);
+            const totalSpin = currentRot + targetRot;
+            const duration = 3500;
+            const start = performance.now();
+            const startR = currentRot;
+            function animate(now) {
+                const elapsed = now - start;
+                const t = Math.min(elapsed / duration, 1);
+                const ease = 1 - Math.pow(1 - t, 4);
+                const rot = startR + (totalSpin - startR) * ease;
+                currentRot = rot;
+                drawWheel(rot);
+                if (t < 1) { requestAnimationFrame(animate); }
+                else {
+                    spinning = false;
+                    MINIGAME_COOLDOWNS.wheel = Date.now();
+                    saveMinigameCooldowns();
+                    const result = prizes[chosen].action();
+                    saveGameToLocal();
+                    document.getElementById("wheelResult").textContent = "🎉 " + result + "!";
+                    document.getElementById("spinBtn").disabled = false;
+                    document.getElementById("spinBtn").textContent = "✅ Gedreht!";
+                    document.getElementById("spinBtn").onclick = null;
+                    showToast("🎰 Glücksrad: " + result);
+                    renderMinigames();
+                }
+            }
+            requestAnimationFrame(animate);
+        };
+    }
+
+    // ---- 2. ANGELSPIEL ----
+    function openFishingGame() {
+        const FISH = [
+            { name: "Kleiner Fisch",   emoji: "🐟", gold: 80,  xp: 10, chance: 0.40 },
+            { name: "Lachs",           emoji: "🐠", gold: 150, xp: 20, chance: 0.30 },
+            { name: "Thunfisch",       emoji: "🐡", gold: 280, xp: 35, chance: 0.18 },
+            { name: "Schwertfisch",    emoji: "🦈", gold: 500, xp: 60, chance: 0.09 },
+            { name: "Goldener Karpfen",emoji: "✨",  gold: 1000,xp: 120,chance: 0.03 }
+        ];
+        let lineLen = 60, hookY = 80, fishX = 30 + Math.random() * 180, fishDir = 1;
+        let gameActive = true, fishInterval = null, countDown = 15;
+        let timerInterval2 = null;
+
+        const modal = createMgModal(`
+            <h2>🐟 Angelspiel</h2>
+            <p style="font-size:0.8rem; color:#b0a070;">Klicke wenn der Haken über dem Fisch ist!</p>
+            <div style="font-size:1.1rem; margin:4px 0;">⏳ <span id="fishTimer">15</span>s</div>
+            <div class="fishing-area" id="fishingArea">
+                <div class="fishing-rod" id="fishRod">🎣</div>
+                <div class="fishing-line" id="fishLine" style="top:35px; height:${lineLen}px;"></div>
+                <div class="fishing-hook" id="fishHook" style="top:${hookY}px;">🪝</div>
+                <div class="fish-target" id="fishTarget" style="left:${fishX}px; top:130px;">🐟</div>
+            </div>
+            <button class="mg-btn" id="castBtn">🎣 Haken senken!</button>
+            <button class="mg-btn mg-btn-red" onclick="closeMgModal(); clearInterval(window._fishInterval); clearInterval(window._fishTimer);">✖ Aufgeben</button>
+            <div id="fishResult" style="min-height:28px; font-size:1rem; font-weight:bold; color:#f5a623; margin-top:8px;"></div>
+        `);
+
+        // Fisch bewegt sich
+        window._fishInterval = setInterval(() => {
+            if (!gameActive) return;
+            fishX += fishDir * 4;
+            if (fishX > 220 || fishX < 10) fishDir *= -1;
+            const ft = document.getElementById("fishTarget");
+            if (ft) ft.style.left = fishX + "px";
+        }, 80);
+
+        // Timer
+        window._fishTimer = setInterval(() => {
+            if (!gameActive) return;
+            countDown--;
+            const ts = document.getElementById("fishTimer");
+            if (ts) ts.textContent = countDown;
+            if (countDown <= 0) {
+                gameActive = false;
+                clearInterval(window._fishInterval);
+                clearInterval(window._fishTimer);
+                document.getElementById("fishResult").textContent = "😔 Zu langsam! Kein Fisch gefangen.";
+                MINIGAME_COOLDOWNS.fishing = Date.now();
+                saveMinigameCooldowns();
+                renderMinigames();
+            }
+        }, 1000);
+
+        document.getElementById("castBtn").onclick = () => {
+            if (!gameActive) return;
+            // Prüfen ob Haken über Fisch
+            const hookEl = document.getElementById("fishHook");
+            const fishEl = document.getElementById("fishTarget");
+            if (!hookEl || !fishEl) return;
+            const hookLeft = parseFloat(hookEl.style.left || "50%");
+            const fishLeft = parseFloat(fishEl.style.left);
+            const hookTop = parseFloat(hookEl.style.top || "80");
+            const diff = Math.abs((hookLeft || 120) - fishLeft);
+            const inWater = hookTop > 100;
+
+            // Haken bewegen (runter/hoch alternieren)
+            if (hookTop < 110) {
+                // Haken senken
+                lineLen = Math.min(160, lineLen + 30);
+                hookY = Math.min(170, hookY + 30);
+                document.getElementById("fishLine").style.height = lineLen + "px";
+                document.getElementById("fishHook").style.top = hookY + "px";
+                document.getElementById("castBtn").textContent = "🎣 Einholen!";
+            } else {
+                // Einhole-Versuch — treffe Fisch?
+                const hit = diff < 45;
+                gameActive = false;
+                clearInterval(window._fishInterval);
+                clearInterval(window._fishTimer);
+                MINIGAME_COOLDOWNS.fishing = Date.now();
+                saveMinigameCooldowns();
+                if (hit) {
+                    // Zufälligen Fisch wählen
+                    let r = Math.random(), fish = FISH[0];
+                    for (let f of FISH) { r -= f.chance; if (r <= 0) { fish = f; break; } }
+                    playerGold += fish.gold; addXP(fish.xp); updateMoneyUI(); saveGameToLocal();
+                    document.getElementById("fishResult").innerHTML = `🎉 ${fish.emoji} ${fish.name} gefangen! +${fish.gold}💰 +${fish.xp} XP`;
+                    showToast(`🐟 ${fish.name} gefangen! +${fish.gold}💰`);
+                } else {
+                    document.getElementById("fishResult").textContent = "😅 Knapp daneben! Fisch entkommen.";
+                }
+                renderMinigames();
+                document.getElementById("castBtn").textContent = "Spiel vorbei";
+                document.getElementById("castBtn").disabled = true;
+            }
+        };
+    }
+
+    // ---- 3. MATCH-3 PUZZLE ----
+    function openMatch3Game() {
+        const SYMBOLS = ["🥕","🌾","🍅","🍓","🎃","🍍","☕","🫐"];
+        const COLS = 6, ROWS = 5;
+        let grid = [], selected = null, moves = 10, score = 0;
+
+        function newGrid() {
+            grid = [];
+            for (let r = 0; r < ROWS; r++) {
+                grid[r] = [];
+                for (let c = 0; c < COLS; c++) grid[r][c] = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+            }
+            // Keine Matches am Anfang
+            for (let r = 0; r < ROWS; r++)
+                for (let c = 0; c < COLS; c++)
+                    while (findMatches().some(([mr,mc]) => mr===r && mc===c))
+                        grid[r][c] = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+        }
+
+        function findMatches() {
+            const matched = [];
+            for (let r = 0; r < ROWS; r++)
+                for (let c = 0; c < COLS - 2; c++)
+                    if (grid[r][c] && grid[r][c] === grid[r][c+1] && grid[r][c] === grid[r][c+2])
+                        matched.push([r,c],[r,c+1],[r,c+2]);
+            for (let r = 0; r < ROWS - 2; r++)
+                for (let c = 0; c < COLS; c++)
+                    if (grid[r][c] && grid[r][c] === grid[r+1][c] && grid[r][c] === grid[r+2][c])
+                        matched.push([r,c],[r+1,c],[r+2,c]);
+            return [...new Map(matched.map(m => [m.join(','),m])).values()];
+        }
+
+        function applyGravity() {
+            for (let c = 0; c < COLS; c++) {
+                let bottom = ROWS - 1;
+                for (let r = ROWS - 1; r >= 0; r--) {
+                    if (grid[r][c]) { grid[bottom][c] = grid[r][c]; if (bottom !== r) grid[r][c] = null; bottom--; }
+                }
+                while (bottom >= 0) { grid[bottom][c] = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]; bottom--; }
+            }
+        }
+
+        function processMatches() {
+            const matches = findMatches();
+            if (matches.length === 0) return;
+            matches.forEach(([r,c]) => { grid[r][c] = null; });
+            score += matches.length;
+            document.getElementById("m3Score").textContent = score;
+            applyGravity();
+            renderGrid();
+            setTimeout(processMatches, 400);
+        }
+
+        function renderGrid() {
+            const gc = document.getElementById("m3Grid");
+            if (!gc) return;
+            gc.innerHTML = "";
+            for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+                const cell = document.createElement("div");
+                cell.className = "match3-cell";
+                cell.textContent = grid[r][c] || "";
+                cell.dataset.r = r; cell.dataset.c = c;
+                if (selected && selected[0] === r && selected[1] === c) cell.classList.add("selected");
+                cell.onclick = () => {
+                    if (moves <= 0) return;
+                    if (!selected) { selected = [r, c]; renderGrid(); return; }
+                    const [sr, sc] = selected;
+                    // Nur Nachbarn tauschen
+                    if ((Math.abs(sr-r) + Math.abs(sc-c)) === 1) {
+                        const tmp = grid[r][c]; grid[r][c] = grid[sr][sc]; grid[sr][sc] = tmp;
+                        const matches = findMatches();
+                        if (matches.length > 0) {
+                            moves--; document.getElementById("m3Moves").textContent = moves;
+                            selected = null; renderGrid(); setTimeout(processMatches, 200);
+                        } else {
+                            // Zurücktauschen
+                            const tmp2 = grid[r][c]; grid[r][c] = grid[sr][sc]; grid[sr][sc] = tmp2;
+                            selected = null; renderGrid();
+                        }
+                        if (moves <= 0) setTimeout(endMatch3, 800);
+                    } else { selected = [r, c]; renderGrid(); }
+                };
+                gc.appendChild(cell);
+            }
+        }
+
+        function endMatch3() {
+            MINIGAME_COOLDOWNS.match3 = Date.now(); saveMinigameCooldowns();
+            const gold = score * 15; const xp = score * 3;
+            playerGold += gold; addXP(xp); updateMoneyUI(); saveGameToLocal();
+            const res = document.getElementById("m3Result");
+            if (res) res.innerHTML = `🎉 Spiel vorbei! ${score} Matches → +${gold}💰 +${xp} XP`;
+            showToast(`🧩 Puzzle beendet: +${gold}💰 +${xp} XP`);
+            renderMinigames();
+        }
+
+        newGrid();
+        createMgModal(`
+            <h2>🧩 Ernte-Puzzle</h2>
+            <p style="font-size:0.8rem; color:#b0a070;">Tausche Nachbarn für 3 gleiche in einer Reihe!</p>
+            <div style="display:flex; justify-content:space-between; margin:8px 0; font-size:0.9rem;">
+                <span>🎯 Score: <b id="m3Score">0</b></span>
+                <span>👆 Züge: <b id="m3Moves">10</b></span>
+            </div>
+            <div class="match3-grid" id="m3Grid"></div>
+            <div id="m3Result" style="min-height:28px; font-size:0.9rem; font-weight:bold; color:#f5a623; margin-top:8px;"></div>
+            <div style="font-size:0.75rem; color:#b0a070; margin-top:4px;">15💰 + 3 XP pro Match</div>
+            <button class="mg-btn mg-btn-red" style="margin-top:10px;" onclick="MINIGAME_COOLDOWNS.match3=Date.now(); saveMinigameCooldowns(); closeMgModal(); renderMinigames();">✖ Aufgeben</button>
+        `);
+        renderGrid();
+    }
+
+    // ---- 4. FARM-QUIZ ----
+    const QUIZ_QUESTIONS = [
+        { q: "Welche Pflanze wächst am schnellsten?", opts: ["Weizen","Karotte","Tomate","Kürbis"], correct: 1, reward: 150 },
+        { q: "Was produziert eine Kuh?", opts: ["Ei","Wolle","Milch","Trüffel"], correct: 2, reward: 120 },
+        { q: "Welches Tier produziert Honig?", opts: ["Schaf","Biene","Ente","Pfau"], correct: 1, reward: 130 },
+        { q: "Welche Lizenz schaltet Äpfel frei?", opts: ["Tropen-Lizenz","Exoten-Lizenz","Zitrus-Lizenz","Premium-Lizenz"], correct: 2, reward: 200 },
+        { q: "Was bedeutet 📈 beim Marktpreis?", opts: ["Preis gefallen","Preis stabil","Preis gestiegen","Ausverkauft"], correct: 2, reward: 100 },
+        { q: "Welches Wetter beschleunigt das Pflanzenwachstum?", opts: ["Sturm","Sonnig","Regen","Gewitter"], correct: 2, reward: 150 },
+        { q: "Was braucht man für Honigkuchen?", opts: ["Honig + Mehl","Honig + Ei","Milch + Mehl","Honig + Butter"], correct: 0, reward: 180 },
+        { q: "Ab welchem Level kann man den Stall kaufen?", opts: ["Level 4","Level 6","Level 8","Level 10"], correct: 1, reward: 120 },
+        { q: "Was macht der Auto-Sammler im Stall?", opts: ["Füttert Tiere","Kauft Tiere","Sammelt Produkte","Repariert den Stall"], correct: 2, reward: 140 },
+        { q: "Welches Tier produziert Trüffel?", opts: ["Huhn","Kuh","Schwein","Schaf"], correct: 2, reward: 160 },
+        { q: "Was ist die teuerste Basis-Pflanze?", opts: ["Ananas","Kaffee","Kürbis","Tomate"], correct: 1, reward: 170 },
+        { q: "Wofür gibt es 10 XP?", opts: ["Ernten","Pflanzen","Verkaufen","Verarbeiten"], correct: 3, reward: 130 },
+        { q: "Was produziert ein Pferd?", opts: ["Wolle","Milch","Trüffel","Dünger"], correct: 3, reward: 150 },
+        { q: "Welche Pflanze kostet am meisten Samen?", opts: ["Safran","Vanille","Drachenfrucht","Sternfrucht"], correct: 0, reward: 200 },
+        { q: "Was bewirkt Forschung 'Schnellwachstum'?", opts: ["+20% Ertrag","15% schneller wachsen","Tiere schneller","Preise +10%"], correct: 1, reward: 180 }
+    ];
+
+    function openQuizGame() {
+        const q = QUIZ_QUESTIONS[Math.floor(Math.random() * QUIZ_QUESTIONS.length)];
+        let answered = false;
+        createMgModal(`
+            <h2>🐕 Farm-Quiz</h2>
+            <p style="font-size:0.95rem; color:#ffefcf; margin:12px 0 16px; line-height:1.4;">${q.q}</p>
+            <div id="quizOpts">${q.opts.map((o,i) => `<button class="quiz-option" data-idx="${i}">${o}</button>`).join('')}</div>
+            <div id="quizResult" style="min-height:28px; font-size:1rem; font-weight:bold; color:#f5a623; margin-top:10px;"></div>
+            <button class="mg-btn mg-btn-red" style="margin-top:8px;" onclick="closeMgModal();">✖ Schließen</button>
+        `);
+        document.querySelectorAll(".quiz-option").forEach(btn => {
+            btn.onclick = () => {
+                if (answered) return;
+                answered = true;
+                const idx = parseInt(btn.dataset.idx);
+                const correct = idx === q.correct;
+                btn.classList.add(correct ? "correct" : "wrong");
+                document.querySelectorAll(".quiz-option").forEach((b,i) => {
+                    if (i === q.correct) b.classList.add("correct");
+                    b.disabled = true;
+                });
+                MINIGAME_COOLDOWNS.quiz = Date.now(); saveMinigameCooldowns();
+                if (correct) {
+                    playerGold += q.reward; addXP(30); updateMoneyUI(); saveGameToLocal();
+                    document.getElementById("quizResult").innerHTML = `🎉 Richtig! +${q.reward}💰 +30 XP`;
+                    showToast(`🐕 Richtig! +${q.reward}💰`);
+                } else {
+                    document.getElementById("quizResult").textContent = `❌ Falsch! Richtig wäre: ${q.opts[q.correct]}`;
+                }
+                renderMinigames();
+            };
+        });
+    }
+
+    // ---- 5. WETTER-WETTE ----
+    function openWeatherBet() {
+        const weatherOpts = [
+            { key: "sunny",   emoji: "☀️",  name: "Sonnig"  },
+            { key: "rainy",   emoji: "🌧️", name: "Regen"   },
+            { key: "stormy",  emoji: "🌩️", name: "Sturm"   },
+            { key: "thunder", emoji: "⛈️", name: "Gewitter"}
+        ];
+        const betAmounts = [100, 250, 500, 1000];
+        let chosenWeather = null, chosenBet = 100, resolved = false;
+
+        createMgModal(`
+            <h2>🌦️ Wetter-Wette</h2>
+            <p style="font-size:0.8rem; color:#b0a070;">Setze auf das nächste Wetter! Richtig = 3x Einsatz zurück.</p>
+            <p style="font-size:0.85rem; color:#ffefcf;">Aktuell: <b>${WEATHER_TYPES[currentWeather]?.name || currentWeather}</b></p>
+            <div style="margin:10px 0;">
+                ${weatherOpts.map(w => `<div class="bet-option" data-w="${w.key}" onclick="document.querySelectorAll('.bet-option').forEach(b=>b.classList.remove('selected')); this.classList.add('selected'); window._betWeather='${w.key}';">${w.emoji}<br><span style="font-size:0.7rem;">${w.name}</span></div>`).join('')}
+            </div>
+            <div style="margin:10px 0; font-size:0.9rem; color:#ffefcf;">Einsatz wählen:</div>
+            <div style="margin:6px 0;">
+                ${betAmounts.map(a => `<button class="mg-btn mg-btn-blue" onclick="window._betAmount=${a}; document.querySelectorAll('.bet-amt-btn').forEach(b=>b.style.background='#4a6e8b'); this.style.background='#f5a623'; this.style.color='#2d2b1f';" style="margin:3px;">${a}💰</button>`).join('')}
+            </div>
+            <button class="mg-btn mg-btn-green" onclick="resolveWeatherBet();" style="margin-top:10px;">✅ Wette abschließen!</button>
+            <button class="mg-btn mg-btn-red" onclick="closeMgModal();">✖ Abbrechen</button>
+            <div id="betResult" style="min-height:28px; font-size:1rem; font-weight:bold; color:#f5a623; margin-top:10px;"></div>
+        `);
+        window._betWeather = null;
+        window._betAmount = 100;
+    }
+
+    window.resolveWeatherBet = function() {
+        const chosen = window._betWeather;
+        const bet = window._betAmount || 100;
+        if (!chosen) { showToast("⚠️ Bitte zuerst ein Wetter auswählen!", true); return; }
+        if (playerGold < bet) { showToast("❌ Nicht genug Gold!", true); return; }
+
+        playerGold -= bet; updateMoneyUI();
+        MINIGAME_COOLDOWNS.weather_bet = Date.now(); saveMinigameCooldowns();
+
+        // Nächstes Wetter simulieren
+        const weathers = ["sunny","rainy","stormy","thunder"];
+        const nextWeather = weathers[Math.floor(Math.random() * weathers.length)];
+        const win = chosen === nextWeather;
+        const weatherName = WEATHER_TYPES[nextWeather]?.name || nextWeather;
+
+        if (win) {
+            const prize = bet * 3;
+            playerGold += prize; addXP(50); updateMoneyUI(); saveGameToLocal();
+            document.getElementById("betResult").innerHTML = `🎉 Richtig! Das Wetter wird ${weatherName}! +${prize}💰 +50 XP`;
+            showToast(`🌦️ Wetter-Wette gewonnen! +${prize}💰`);
+        } else {
+            saveGameToLocal();
+            document.getElementById("betResult").innerHTML = `😔 Leider falsch! Das Wetter wird ${weatherName}. -${bet}💰`;
+            showToast(`🌦️ Wette verloren! -${bet}💰`);
+        }
+        // Wetter auch wirklich wechseln
+        currentWeather = nextWeather;
+        const weatherEl = document.getElementById("weatherInfo");
+        if (weatherEl) { const w = WEATHER_TYPES[currentWeather]; weatherEl.innerHTML = w.emoji + " " + w.name; weatherEl.className = "weather-info " + w.color; }
+
+        // Buttons deaktivieren
+        document.querySelectorAll(".bet-option").forEach(b => {
+            b.classList.toggle("winner", b.dataset.w === nextWeather);
+            b.classList.toggle("loser", b.dataset.w !== nextWeather);
+            b.onclick = null;
+        });
+        document.querySelector(".mg-btn-green").disabled = true;
+        renderMinigames();
+    };
+
     // ==================== ADMIN-FUNKTIONEN ====================
+
     function checkAdminStatus() {
     // Wir prüfen beides: Deine ID ODER ob deine Email in der Liste steht
     const isExplicitAdmin = (currentUser && currentUser.uid === 'Hb9Btkhn3UOBJLjapmwXfsDi05z2');
@@ -3836,6 +4493,12 @@ async function giveGlobalBonus() {
             if (typeof updateLevelUI === 'function') updateLevelUI();
             // Lokalen Stand auch aktualisieren
             if (typeof saveGameToLocal === 'function') saveGameToLocal();
+            
+            // WICHTIG: Timestamp vorab setzen damit der globalBonus-Listener
+            // den Bonus nicht ein zweites Mal an den Admin verteilt!
+            // (Der Listener läuft bei allen Spielern inkl. Admin selbst)
+            const preemptiveTs = Date.now() + 5000; // etwas in der Zukunft
+            localStorage.setItem('lastBonusSeen_' + currentUser.uid, preemptiveTs);
         }
 
         // --- TEIL C: LEADERBOARD aktualisieren ---
@@ -4001,6 +4664,7 @@ async function forceSaveNow() {
         document.getElementById("viewAccountBtn").onclick = () => setView("account");
         document.getElementById("viewAchievementsBtn").onclick = () => setView("achievements");
         document.getElementById("viewHandbookBtn").onclick = () => setView("handbook");
+        document.getElementById("viewMinigamesBtn").onclick = () => setView("minigames");
         document.getElementById("registerBtn").onclick = () => register();
         document.getElementById("loginBtn").onclick = () => login();
         
