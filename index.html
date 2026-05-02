@@ -1350,11 +1350,22 @@
 
     
     // ==================== GAME VERSION ====================
-    const CURRENT_GAME_VERSION = "3.6";
+    const CURRENT_GAME_VERSION = "3.7";
     
     // ==================== RELEASE NOTES ("Was ist neu?") ====================
     // Neue Einträge oben hinzufügen. version: muss zu CURRENT_GAME_VERSION passen, damit beim ersten Start automatisch angezeigt wird.
     const RELEASE_NOTES = [
+        {
+            version: "3.7",
+            date: "Mai 2026",
+            title: "🐄 Stall & Minispiele Fixes",
+            changes: [
+                "🎮 <b>Minispiele</b>: Alle 5 Spiele öffnen jetzt zuverlässig (Glücksrad, Angeln, Puzzle, Quiz, Wetter-Wette).",
+                "🐄 <b>Sammeln</b>: Der Sammeln-Knopf holt jetzt alle bereiten Tiere des gleichen Typs auf einmal ab.",
+                "🌩️ <b>Ereignis-Badge</b>: Zeigt korrekt nur aktive Ereignisse an – kein falsches Dürre-Symbol mehr bei Gewitter.",
+                "👥 <b>Admin</b>: Spielerliste zeigt nur Spieler an, die heute aktiv waren."
+            ]
+        },
         {
             version: "3.6",
             date: "Mai 2026",
@@ -2881,16 +2892,25 @@
     
     function collectProduct(idx) {
         if (isPaused) { showToast("⏸️ Spiel ist pausiert!", true); return; }
-        const animal = animals[idx]; if (!animal?.isReady) { showToast("Noch kein Produkt fertig!", true); return; }
+        const animal = animals[idx]; if (!animal) return;
         const data = ANIMALS[animal.type];
-        let amount = Math.random() < getDoubleChance() ? 2 : 1;
-        if (addToInventory(data.productKey, amount)) {
-            animal.isReady = false; if (animal.timerId) clearTimeout(animal.timerId);
-            startAnimalProduction(animal, idx);
-            renderBarn(); renderMarket(); saveGameToLocal(); addXP(4 * amount);
-            showToast(`✅ +${amount} ${data.product} (${animal.name}) +${4*amount} XP`);
+        // Alle bereiten Tiere desselben Typs sammeln
+        const readyOfType = animals.map((a,i) => ({a,i})).filter(x => x.a.type === animal.type && x.a.isReady);
+        if (readyOfType.length === 0) { showToast("Noch kein Produkt fertig!", true); return; }
+        let totalAmount = 0;
+        for (const {a, i} of readyOfType) {
+            let amount = Math.random() < getDoubleChance() ? 2 : 1;
+            if (!addToInventory(data.productKey, amount)) break; // Lager voll
+            totalAmount += amount;
+            a.isReady = false;
+            if (a.timerId) clearTimeout(a.timerId);
+            startAnimalProduction(a, i);
             updateQuestProgress("animal", amount);
-        } else showToast(`❌ Lager voll! Kann ${data.product} nicht sammeln.`, true);
+        }
+        if (totalAmount > 0) {
+            renderBarn(); renderMarket(); saveGameToLocal(); addXP(4 * totalAmount);
+            showToast(`✅ +${totalAmount} ${data.product} gesammelt! +${4*totalAmount} XP`);
+        } else showToast(`❌ Lager voll!`, true);
     }
     
     function renderBarn() {
@@ -3638,7 +3658,7 @@
     // ==================== TOAST & EVENT ====================
     function showToast(msg, isError = false) { toastEl.style.backgroundColor = isError ? "#8b3a3acc" : "#2c2b26ee"; toastEl.innerText = msg; toastEl.style.opacity = "1"; setTimeout(() => { toastEl.style.opacity = "0"; }, 1500); }
     function showEvent(title, msg) { eventOverlayEl.innerHTML = `<div>${title}<br>${msg}</div>`; eventOverlayEl.classList.remove("hidden"); setTimeout(() => eventOverlayEl.classList.add("hidden"), 3000); }
-    function triggerRandomEvent() { if (isPaused) return; if (activeEvent) return; if (Math.random() < 0.2) { const events = [{ type: "drought", name: "🌞 Dürre", modifier: { growth: 1.5 }, duration: 60, msg: "Pflanzen wachsen 50% langsamer!" },{ type: "festival", name: "🎉 Festmarkt", modifier: { price: 1.3 }, duration: 60, msg: "Alle Preise +30%!" },{ type: "disease", name: "🦠 Tierkrankheit", modifier: { animalProd: 2.0 }, duration: 60, msg: "Tiere produzieren 50% langsamer!" }]; const event = events[Math.floor(Math.random() * events.length)]; activeEvent = { type: event.type, name: event.name, endTime: Date.now() + event.duration * 1000, modifier: event.modifier }; showEvent(event.name, event.msg); eventBadgeEl.innerHTML = `⚠️ ${event.name} aktiv!`; eventBadgeEl.classList.remove("hidden"); if (eventTimer) clearInterval(eventTimer); eventTimer = setInterval(() => { if (activeEvent && Date.now() >= activeEvent.endTime) { activeEvent = null; eventBadgeEl.classList.add("hidden"); showToast("✅ Event vorbei - alles wieder normal!"); clearInterval(eventTimer); } }, 1000); saveGameToLocal(); } }
+    function triggerRandomEvent() { if (isPaused) return; if (activeEvent) return; if (Math.random() < 0.2) { const allEvents = [{ type: "drought", name: "🌞 Dürre", modifier: { growth: 1.5 }, duration: 60, msg: "Pflanzen wachsen 50% langsamer!" },{ type: "festival", name: "🎉 Festmarkt", modifier: { price: 1.3 }, duration: 60, msg: "Alle Preise +30%!" },{ type: "disease", name: "🦠 Tierkrankheit", modifier: { animalProd: 2.0 }, duration: 60, msg: "Tiere produzieren 50% langsamer!" }]; const wetWeather = ["stormy","thunder","rainy"]; const events = (wetWeather.includes(currentWeather)) ? allEvents.filter(function(e){return e.type !== "drought";}) : allEvents; if (events.length === 0) return; const event = events[Math.floor(Math.random() * events.length)]; activeEvent = { type: event.type, name: event.name, endTime: Date.now() + event.duration * 1000, modifier: event.modifier }; showEvent(event.name, event.msg); if (eventBadgeEl) { eventBadgeEl.innerHTML = "Ereignis: " + event.name; eventBadgeEl.classList.remove("hidden"); } eventBadgeEl.classList.remove("hidden"); if (eventTimer) clearInterval(eventTimer); eventTimer = setInterval(() => { if (activeEvent && Date.now() >= activeEvent.endTime) { activeEvent = null; eventBadgeEl.classList.add("hidden"); showToast("✅ Event vorbei - alles wieder normal!"); clearInterval(eventTimer); } }, 1000); saveGameToLocal(); } }
     
     // ==================== ONLINE-STATUS & BESTENLISTE ====================
     let onlineStatusInterval = null, lastOnlineUpdate = null;
@@ -4032,48 +4052,53 @@
            + '</div>'
            + '<button class="mg-btn" id="fCast">🎣 Haken senken!</button>'
            + '<button class="mg-btn mg-btn-red" onclick="clearInterval(window._fI);clearInterval(window._fT);window.closeMg();">✖ Aufgeben</button>'
-           + '<div id="fResult" style="min-height:26px;font-weight:bold;color:#f5a623;margin-top:8px;"></div>');
-        document.getElementById('fFish').style.left = fishX + 'px';
-        window._fI = setInterval(function() {
-            if (!alive) return;
-            fishX += fishDir*4; if (fishX>210||fishX<10) fishDir*=-1;
-            var ff=document.getElementById('fFish'); if (ff) ff.style.left=fishX+'px';
-        }, 80);
-        window._fT = setInterval(function() {
-            if (!alive) return;
-            cd--; var t=document.getElementById('fTimer'); if(t) t.textContent=cd;
-            if (cd<=0) {
-                alive=false; clearInterval(window._fI); clearInterval(window._fT);
-                document.getElementById('fResult').textContent='😔 Zu langsam!';
-                MG_CD.fishing=Date.now(); saveMgCooldowns(); renderMinigames();
-            }
-        }, 1000);
-        document.getElementById('fCast').onclick = function() {
-            if (!alive) return;
-            var hookEl=document.getElementById('fHook');
-            if (!hookEl) return;
-            if (hookY < 110) {
-                lineH=Math.min(155,lineH+35); hookY=Math.min(165,hookY+35);
-                document.getElementById('fLine').style.height=lineH+'px';
-                hookEl.style.top=hookY+'px';
-                this.textContent='🎣 Einholen!';
-            } else {
-                var diff=Math.abs(parseFloat(hookEl.style.left||'0')-fishX||120-fishX);
-                var hit=diff<50; alive=false;
-                clearInterval(window._fI); clearInterval(window._fT);
-                MG_CD.fishing=Date.now(); saveMgCooldowns();
-                if (hit) {
-                    var rand=Math.random(), fish=FISH[0];
-                    for(var k=0;k<FISH.length;k++){rand-=FISH[k].p;if(rand<=0){fish=FISH[k];break;}}
-                    playerGold+=fish.gold; addXP(fish.xp); updateMoneyUI(); saveGameToLocal();
-                    document.getElementById('fResult').innerHTML='🎉 '+fish.emoji+' '+fish.name+' gefangen! +'+fish.gold+'💰 +'+fish.xp+' XP';
-                    showToast('🐟 '+fish.name+' gefangen! +'+fish.gold+'💰');
-                } else {
-                    document.getElementById('fResult').textContent='😅 Knapp daneben!';
+           + '<div id="fResult" style="min-height:26px;font-weight:bold;color:#f5a623;margin-top:8px;"></div>',
+        function() {
+            var ff = document.getElementById('fFish');
+            if (ff) ff.style.left = fishX + 'px';
+            window._fI = setInterval(function() {
+                if (!alive) return;
+                fishX += fishDir*4; if (fishX>210||fishX<10) fishDir*=-1;
+                var el=document.getElementById('fFish'); if (el) el.style.left=fishX+'px';
+            }, 80);
+            window._fT = setInterval(function() {
+                if (!alive) return;
+                cd--; var t=document.getElementById('fTimer'); if(t) t.textContent=cd;
+                if (cd<=0) {
+                    alive=false; clearInterval(window._fI); clearInterval(window._fT);
+                    var r=document.getElementById('fResult'); if(r) r.textContent='😔 Zu langsam!';
+                    MG_CD.fishing=Date.now(); window.saveMgCooldowns(); window.renderMinigames();
                 }
-                renderMinigames(); this.disabled=true;
-            }
-        };
+            }, 1000);
+            var castBtn = document.getElementById('fCast');
+            if (castBtn) castBtn.onclick = function() {
+                if (!alive) return;
+                var hookEl=document.getElementById('fHook'); if (!hookEl) return;
+                if (hookY < 110) {
+                    lineH=Math.min(155,lineH+35); hookY=Math.min(165,hookY+35);
+                    var fl=document.getElementById('fLine'); if(fl) fl.style.height=lineH+'px';
+                    hookEl.style.top=hookY+'px';
+                    this.textContent='🎣 Einholen!';
+                } else {
+                    var hookLeft = parseFloat(hookEl.style.left||'125');
+                    var diff=Math.abs(hookLeft - fishX);
+                    var hit=diff<50; alive=false;
+                    clearInterval(window._fI); clearInterval(window._fT);
+                    MG_CD.fishing=Date.now(); window.saveMgCooldowns();
+                    var res=document.getElementById('fResult');
+                    if (hit) {
+                        var rand=Math.random(), fish=FISH[0];
+                        for(var k=0;k<FISH.length;k++){rand-=FISH[k].p;if(rand<=0){fish=FISH[k];break;}}
+                        playerGold+=fish.gold; addXP(fish.xp); updateMoneyUI(); saveGameToLocal();
+                        if(res) res.innerHTML='🎉 '+fish.emoji+' '+fish.name+' gefangen! +'+fish.gold+'💰 +'+fish.xp+' XP';
+                        showToast('🐟 '+fish.name+' gefangen! +'+fish.gold+'💰');
+                    } else {
+                        if(res) res.textContent='😅 Knapp daneben!';
+                    }
+                    window.renderMinigames(); this.disabled=true;
+                }
+            };
+        });
     }
 
     // ── 3. MATCH-3 ───────────────────────────────────────────────────────────
@@ -4167,24 +4192,26 @@
            + '<p style="font-size:.95rem;color:#ffefcf;margin:10px 0 14px;line-height:1.4;">'+q.q+'</p>'
            + '<div id="qOpts">'+opts+'</div>'
            + '<div id="qRes" style="min-height:26px;font-size:1rem;font-weight:bold;color:#f5a623;margin-top:10px;"></div>'
-           + '<button class="mg-btn mg-btn-red" style="margin-top:6px;" onclick="window.closeMg();">✖ Schließen</button>');
-        document.querySelectorAll('.quiz-opt').forEach(function(btn){
-            btn.onclick = function(){
-                if (answered) return; answered=true;
-                var idx = parseInt(this.dataset.i);
-                document.querySelectorAll('.quiz-opt').forEach(function(b,i){ b.disabled=true; if(i===q.ok)b.classList.add('correct'); });
-                MG_CD.quiz=Date.now(); saveMgCooldowns();
-                if (idx===q.ok) {
-                    this.classList.add('correct');
-                    playerGold+=q.gold; addXP(30); updateMoneyUI(); saveGameToLocal();
-                    document.getElementById('qRes').innerHTML='🎉 Richtig! +'+q.gold+'💰 +30 XP';
-                    showToast('🐕 Richtig! +'+q.gold+'💰');
-                } else {
-                    this.classList.add('wrong');
-                    document.getElementById('qRes').textContent='❌ Falsch! Richtig: '+q.opts[q.ok];
-                }
-                renderMinigames();
-            };
+           + '<button class="mg-btn mg-btn-red" style="margin-top:6px;" onclick="window.closeMg();">✖ Schließen</button>',
+        function() {
+            document.querySelectorAll('.quiz-opt').forEach(function(btn){
+                btn.onclick = function(){
+                    if (answered) return; answered=true;
+                    var idx = parseInt(this.dataset.i);
+                    document.querySelectorAll('.quiz-opt').forEach(function(b,i){ b.disabled=true; if(i===q.ok)b.classList.add('correct'); });
+                    MG_CD.quiz=Date.now(); window.saveMgCooldowns();
+                    if (idx===q.ok) {
+                        this.classList.add('correct');
+                        playerGold+=q.gold; addXP(30); updateMoneyUI(); saveGameToLocal();
+                        var r=document.getElementById('qRes'); if(r) r.innerHTML='🎉 Richtig! +'+q.gold+'💰 +30 XP';
+                        showToast('🐕 Richtig! +'+q.gold+'💰');
+                    } else {
+                        this.classList.add('wrong');
+                        var r=document.getElementById('qRes'); if(r) r.textContent='❌ Falsch! Richtig: '+q.opts[q.ok];
+                    }
+                    window.renderMinigames();
+                };
+            });
         });
     }
 
@@ -4340,7 +4367,7 @@ async function loadAdminPlayerPicker() {
     const lb   = lbSnap.val()   || {};
 
     // Aktive Spieler = zuletzt vor weniger als 30 Tagen gespeichert
-    const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+    const THIRTY_DAYS = 1 * 24 * 60 * 60 * 1000; // nur heute aktive Spieler anzeigen
     const now = Date.now();
 
     // Spielernamen aus leaderboard als Fallback-Map aufbauen
@@ -4388,7 +4415,7 @@ async function loadAdminPlayerPicker() {
     }
 
     if (shown === 0) container.innerHTML = '<div style="color:#b0a070;text-align:center;padding:8px;">Keine aktiven Spieler gefunden.</div>';
-    else { const info = document.createElement('div'); info.style.cssText='font-size:.72rem;color:#b0a070;text-align:center;margin-top:4px;'; info.textContent = shown + ' aktive Spieler (letzte 30 Tage)'; container.appendChild(info); }
+    else { const info = document.createElement('div'); info.style.cssText='font-size:.72rem;color:#b0a070;text-align:center;margin-top:4px;'; info.textContent = shown + ' aktive Spieler (heute)'; container.appendChild(info); }
 }
 
 async function giveGlobalBonus() {
