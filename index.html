@@ -1094,12 +1094,6 @@
         <span id="helperInfo" style="color:#ffefcf; font-size:0.85rem;"></span>
     </div>
 
-    <div id="ackerFilterBar" class="acker-filter-bar">
-        <button class="acker-filter-btn active" onclick="setAckerFilter(0)">🌾 Alle Äcker</button>
-        <button class="acker-filter-btn" onclick="setAckerFilter(1)" id="ackerTab1">Acker 1</button>
-        <button class="acker-filter-btn" id="ackerTab2" style="display:none;" onclick="setAckerFilter(2)">Acker 2</button>
-        <button class="acker-filter-btn" id="ackerTab3" style="display:none;" onclick="setAckerFilter(3)">Acker 3</button>
-    </div>
     <div id="farmView" class="farm-grid"></div>
     <div id="barnView" class="barn-grid hidden"></div>
     <div id="craftView" class="craft-grid hidden"></div>
@@ -1356,11 +1350,22 @@
 
     
     // ==================== GAME VERSION ====================
-    const CURRENT_GAME_VERSION = "3.5";
+    const CURRENT_GAME_VERSION = "3.6";
     
     // ==================== RELEASE NOTES ("Was ist neu?") ====================
     // Neue Einträge oben hinzufügen. version: muss zu CURRENT_GAME_VERSION passen, damit beim ersten Start automatisch angezeigt wird.
     const RELEASE_NOTES = [
+        {
+            version: "3.6",
+            date: "Mai 2026",
+            title: "🐄 Stall & Acker Fixes",
+            changes: [
+                "🐄 <b>Füttern</b>: Der Füttern-Knopf füttert jetzt alle Tiere des gleichen Typs auf einmal.",
+                "🌾 <b>Acker-Auswahl</b>: Nur noch eine Reihe von Tabs – oben über den Pflanz-Buttons. Die doppelte Anzeige wurde entfernt.",
+                "🎮 <b>Minispiele</b>: Alle 5 Spiele (Glücksrad, Angeln, Puzzle, Quiz, Wetter-Wette) öffnen jetzt zuverlässig.",
+                "👥 <b>Admin Spielerliste</b>: Zeigt jetzt echte Spielernamen, Level, Gold und Aktivität. Nur aktive Spieler (letzte 30 Tage) werden angezeigt."
+            ]
+        },
         {
             version: "3.5",
             date: "Mai 2026",
@@ -2291,7 +2296,7 @@
             tab.style.background = selectedPlantAcker === opt.val ? "#f5a623" : "#3f6b3a";
             tab.style.color = selectedPlantAcker === opt.val ? "#2d2b1f" : "white";
             tab.innerHTML = opt.label;
-            tab.onclick = () => { selectedPlantAcker = opt.val; updateMassPlantButtons(); };
+            tab.onclick = () => { selectedPlantAcker = opt.val; ackerFilter = opt.val; updateMassPlantButtons(); renderFields(); };
             tabRow.appendChild(tab);
         });
         container.appendChild(tabRow);
@@ -2626,6 +2631,7 @@
     
     function setAckerFilter(n) {
         ackerFilter = n;
+        selectedPlantAcker = n; // Plant-Buttons synchron halten
         renderFields();
     }
     function renderFields() {
@@ -2692,12 +2698,7 @@
         };
         
         // Acker-Filter-Tabs aktualisieren
-        const t2=document.getElementById('ackerTab2'); const t3=document.getElementById('ackerTab3');
-        if(t2) t2.style.display = acker2Owned ? '' : 'none';
-        if(t3) t3.style.display = acker3Owned ? '' : 'none';
-        document.querySelectorAll('.acker-filter-btn').forEach(b => b.classList.remove('active'));
-        const activeTab = ackerFilter===0 ? document.querySelector('.acker-filter-btn') : document.getElementById('ackerTab'+ackerFilter);
-        if(activeTab) activeTab.classList.add('active');
+        // Acker-Filter-Tabs werden in updateMassPlantButtons verwaltet
 
         // Acker 1
         if (ackerFilter === 0 || ackerFilter === 1) {
@@ -2855,7 +2856,28 @@
     }
     
     function renameAnimal(idx) { const newName = prompt("Neuer Name:", animals[idx].name); if (newName?.trim()) { animals[idx].name = newName.trim(); renderBarn(); saveGameToLocal(); showToast(`Umbenannt in ${newName}`); } }
-    function feedAnimal(idx) { const animal = animals[idx]; const data = ANIMALS[animal.type]; if (playerGold >= data.feedCost) { playerGold -= data.feedCost; if (animal.timerId) clearTimeout(animal.timerId); animal.isReady = false; animal.productionStartTime = Date.now(); startAnimalProduction(animal, idx); updateMoneyUI(); showToast(`🌾 ${animal.name} gefüttert!`); renderBarn(); saveGameToLocal(); } else showToast(`Nicht genug Gold! (${data.feedCost}💰)`, true); }
+    function feedAnimal(idx) {
+        // Tiertyp ermitteln und ALLE Tiere dieses Typs füttern
+        const animal = animals[idx];
+        if (!animal) return;
+        const data = ANIMALS[animal.type];
+        const sameType = animals.map((a,i) => ({a,i})).filter(x => x.a.type === animal.type);
+        const totalCost = data.feedCost * sameType.length;
+        if (playerGold < data.feedCost) { showToast(`Nicht genug Gold! (${data.feedCost}💰 pro Tier)`, true); return; }
+        let fed = 0;
+        for (const {a, i} of sameType) {
+            if (playerGold < data.feedCost) break; // Gold aufgebraucht
+            playerGold -= data.feedCost;
+            if (a.timerId) clearTimeout(a.timerId);
+            a.isReady = false;
+            a.productionStartTime = Date.now();
+            startAnimalProduction(a, i);
+            fed++;
+        }
+        updateMoneyUI();
+        showToast(`🌾 ${fed} × ${data.name} gefüttert! (-${data.feedCost * fed}💰)`);
+        renderBarn(); saveGameToLocal();
+    }
     
     function collectProduct(idx) {
         if (isPaused) { showToast("⏸️ Spiel ist pausiert!", true); return; }
@@ -3905,13 +3927,15 @@
     }
 
     window.closeMg = function closeMg() { var m = document.getElementById('mgModal'); if (m) m.remove(); }
-    function mkMg(inner) {
-        closeMg();
+    window.mkMg = function mkMg(inner, callback) {
+        window.closeMg();
         var d = document.createElement('div');
         d.className = 'mg-modal'; d.id = 'mgModal';
         d.innerHTML = '<div class="mg-box">' + inner + '</div>';
         document.body.appendChild(d);
-        d.addEventListener('click', function(e) { if (e.target === d) closeMg(); });
+        d.addEventListener('click', function(e) { if (e.target === d) window.closeMg(); });
+        // Callback nach DOM-Update ausführen (wichtig für Canvas!)
+        if (callback) setTimeout(callback, 30);
         return d;
     }
 
@@ -3933,7 +3957,7 @@
            + '<div class="wheel-ptr">▼</div></div>'
            + '<div id="wResult" style="min-height:28px;font-weight:bold;color:#f5a623;margin:8px 0;"></div>'
            + '<button class="mg-btn" id="wSpin">🎰 Drehen!</button>'
-           + '<button class="mg-btn mg-btn-red" onclick="closeMg()">✖ Schließen</button>');
+           + '<button class="mg-btn mg-btn-red" onclick="window.closeMg()">✖ Schließen</button>', function() {
         var canvas = document.getElementById('wCanvas');
         var ctx = canvas.getContext('2d');
         var cx=125, cy=125, r=118, rot=0, spinning=false;
@@ -3984,6 +4008,7 @@
             }
             requestAnimationFrame(anim);
         };
+        }); // end mkMg callback
     }
 
     // ── 2. ANGELSPIEL ────────────────────────────────────────────────────────
@@ -4006,7 +4031,7 @@
            +   '<div id="fFish" style="position:absolute;font-size:1.4rem;top:128px;">🐟</div>'
            + '</div>'
            + '<button class="mg-btn" id="fCast">🎣 Haken senken!</button>'
-           + '<button class="mg-btn mg-btn-red" onclick="clearInterval(window._fI);clearInterval(window._fT);closeMg();">✖ Aufgeben</button>'
+           + '<button class="mg-btn mg-btn-red" onclick="clearInterval(window._fI);clearInterval(window._fT);window.closeMg();">✖ Aufgeben</button>'
            + '<div id="fResult" style="min-height:26px;font-weight:bold;color:#f5a623;margin-top:8px;"></div>');
         document.getElementById('fFish').style.left = fishX + 'px';
         window._fI = setInterval(function() {
@@ -4111,7 +4136,7 @@
            + '<div class="m3-grid" id="m3Grid"></div>'
            + '<div id="m3Res" style="min-height:26px;font-size:.9rem;font-weight:bold;color:#f5a623;margin-top:6px;"></div>'
            + '<div style="font-size:.75rem;color:#b0a070;">15💰 + 3 XP pro Match</div>'
-           + '<button class="mg-btn mg-btn-red" style="margin-top:8px;" onclick="MG_CD.match3=Date.now();saveMgCooldowns();closeMg();renderMinigames();">✖ Aufgeben</button>');
+           + '<button class="mg-btn mg-btn-red" style="margin-top:8px;" onclick="MG_CD.match3=Date.now();window.saveMgCooldowns();window.closeMg();window.renderMinigames();">✖ Aufgeben</button>');
         renderGrid();
     }
 
@@ -4142,7 +4167,7 @@
            + '<p style="font-size:.95rem;color:#ffefcf;margin:10px 0 14px;line-height:1.4;">'+q.q+'</p>'
            + '<div id="qOpts">'+opts+'</div>'
            + '<div id="qRes" style="min-height:26px;font-size:1rem;font-weight:bold;color:#f5a623;margin-top:10px;"></div>'
-           + '<button class="mg-btn mg-btn-red" style="margin-top:6px;" onclick="closeMg();">✖ Schließen</button>');
+           + '<button class="mg-btn mg-btn-red" style="margin-top:6px;" onclick="window.closeMg();">✖ Schließen</button>');
         document.querySelectorAll('.quiz-opt').forEach(function(btn){
             btn.onclick = function(){
                 if (answered) return; answered=true;
@@ -4181,7 +4206,7 @@
            + '<div style="margin:8px 0;font-size:.9rem;color:#ffefcf;">Einsatz:</div>'
            + '<div>' + aBtns + '</div>'
            + '<button class="mg-btn mg-btn-green" onclick="mgResolveBet();" style="margin-top:10px;">✅ Wette abschließen!</button>'
-           + '<button class="mg-btn mg-btn-red" onclick="closeMg();">✖ Abbrechen</button>'
+           + '<button class="mg-btn mg-btn-red" onclick="window.closeMg();">✖ Abbrechen</button>'
            + '<div id="betRes" style="min-height:26px;font-size:1rem;font-weight:bold;color:#f5a623;margin-top:10px;"></div>');
         window._mgBetW = null; window._mgBetAmt = 100;
     }
@@ -4302,32 +4327,68 @@
 // Spielerliste im Admin-Panel laden
 async function loadAdminPlayerPicker() {
     if (!isAdmin) return;
-    const snap = await database.ref('users').once('value');
-    const all = snap.val();
-    if (!all) return;
     const container = document.getElementById('adminPlayerPicker');
     if (!container) return;
+    container.innerHTML = '<div style="color:#f5a623;text-align:center;padding:8px;">⏳ Lade Spieler...</div>';
+
+    // playerName direkt aus users/{uid}/playerName lesen (zuverlässiger als savegame)
+    const [usersSnap, lbSnap] = await Promise.all([
+        database.ref('users').once('value'),
+        database.ref('leaderboard').once('value')
+    ]);
+    const all  = usersSnap.val() || {};
+    const lb   = lbSnap.val()   || {};
+
+    // Aktive Spieler = zuletzt vor weniger als 30 Tagen gespeichert
+    const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+
+    // Spielernamen aus leaderboard als Fallback-Map aufbauen
+    const lbNames = {};
+    Object.entries(lb).forEach(([n, v]) => { if (v.uid) lbNames[v.uid] = n; });
+
     container.innerHTML = '';
-    Object.entries(all).forEach(([uid, data]) => {
-        const sg = data.savegame || {};
-        const name = sg.playerName || data.displayName || uid.slice(0,8);
+    let shown = 0;
+
+    const entries = Object.entries(all).sort((a, b) => {
+        const tA = (a[1].savegame || {}).lastSave || 0;
+        const tB = (b[1].savegame || {}).lastSave || 0;
+        return tB - tA; // neueste zuerst
+    });
+
+    for (const [uid, data] of entries) {
+        const sg       = data.savegame || {};
+        const lastSave = sg.lastSave || 0;
+        if (lastSave > 0 && (now - lastSave) > THIRTY_DAYS) continue; // inaktiv überspringen
+
+        // Name: zuerst users/{uid}/playerName, dann savegame.playerName, dann leaderboard, dann UID
+        const nameField = data.playerName || sg.playerName || lbNames[uid] || null;
+        const name = nameField || ('Spieler-' + uid.slice(0,6));
         const gold = sg.gold || 0;
         const lvl  = sg.playerLevel || 1;
-        const btn = document.createElement('div');
-        btn.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:#3a4a2a;border-radius:12px;padding:8px 12px;margin:5px 0;cursor:pointer;border:2px solid transparent;';
-        btn.dataset.uid = uid;
-        btn.dataset.name = name;
-        btn.innerHTML = '<span>👤 <b>' + name + '</b> &nbsp; Lv.' + lvl + ' &nbsp; ' + gold + '💰</span>'
-                      + '<input type="checkbox" style="width:20px;height:20px;cursor:pointer;" data-uid="' + uid + '">';
-        btn.onclick = function(e) {
+        const daysAgo = lastSave ? Math.floor((now - lastSave) / 86400000) : '?';
+
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:#3a4a2a;border-radius:12px;padding:8px 12px;margin:5px 0;cursor:pointer;border:2px solid transparent;gap:8px;';
+        row.dataset.uid = uid;
+        row.innerHTML = '<span style="flex:1;min-width:0;">'
+                      + '👤 <b>' + name + '</b><br>'
+                      + '<span style="font-size:.72rem;color:#b0c890;">Lv.' + lvl + ' &nbsp;|&nbsp; ' + gold + '💰 &nbsp;|&nbsp; vor ' + daysAgo + ' Tagen</span>'
+                      + '</span>'
+                      + '<input type="checkbox" style="width:20px;height:20px;cursor:pointer;flex-shrink:0;" data-uid="' + uid + '">';
+        row.onclick = function(e) {
             if (e.target.tagName === 'INPUT') return;
             const cb = this.querySelector('input');
             cb.checked = !cb.checked;
             this.style.borderColor = cb.checked ? '#f5a623' : 'transparent';
             this.style.background   = cb.checked ? '#5a6a2a' : '#3a4a2a';
         };
-        container.appendChild(btn);
-    });
+        container.appendChild(row);
+        shown++;
+    }
+
+    if (shown === 0) container.innerHTML = '<div style="color:#b0a070;text-align:center;padding:8px;">Keine aktiven Spieler gefunden.</div>';
+    else { const info = document.createElement('div'); info.style.cssText='font-size:.72rem;color:#b0a070;text-align:center;margin-top:4px;'; info.textContent = shown + ' aktive Spieler (letzte 30 Tage)'; container.appendChild(info); }
 }
 
 async function giveGlobalBonus() {
