@@ -995,6 +995,13 @@
         .bet-opt.winner { background:#2a6a2a; border-color:#6f9e3f; transform:scale(1.12); }
         .bet-opt.loser  { background:#6a2a2a; border-color:#c44; opacity:.6; }
 
+
+        /* ===== ACKER-FILTER ===== */
+        .acker-filter-bar { display:flex; gap:8px; flex-wrap:wrap; padding:8px 10px 2px; justify-content:center; }
+        .acker-filter-btn { background:#3f6b3a; color:#ffefcf; border:2px solid #5a9a50; border-radius:20px; padding:6px 16px; font-size:.85rem; font-weight:bold; cursor:pointer; transition:background .2s,border-color .2s; }
+        .acker-filter-btn.active { background:#f5a623; color:#2d2b1f; border-color:#f5a623; }
+        .acker-filter-btn:hover { background:#4a8a44; }
+
     </style>
 </head>
 <body>
@@ -1087,6 +1094,12 @@
         <span id="helperInfo" style="color:#ffefcf; font-size:0.85rem;"></span>
     </div>
 
+    <div id="ackerFilterBar" class="acker-filter-bar">
+        <button class="acker-filter-btn active" onclick="setAckerFilter(0)">🌾 Alle Äcker</button>
+        <button class="acker-filter-btn" onclick="setAckerFilter(1)" id="ackerTab1">Acker 1</button>
+        <button class="acker-filter-btn" id="ackerTab2" style="display:none;" onclick="setAckerFilter(2)">Acker 2</button>
+        <button class="acker-filter-btn" id="ackerTab3" style="display:none;" onclick="setAckerFilter(3)">Acker 3</button>
+    </div>
     <div id="farmView" class="farm-grid"></div>
     <div id="barnView" class="barn-grid hidden"></div>
     <div id="craftView" class="craft-grid hidden"></div>
@@ -1133,7 +1146,13 @@
             <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;">
                 <button onclick="debugFirebase()" style="background:#27ae60; color:white; border:none; padding:8px 14px; border-radius:8px; cursor:pointer;">🔍 Debug</button>
                 <button onclick="forceSaveNow()" style="background:#2980b9; color:white; border:none; padding:8px 14px; border-radius:8px; cursor:pointer;">💾 Jetzt Speichern</button>
-                <button onclick="giveGlobalBonus()" style="background:#e67e22; color:white; border:none; padding:8px 14px; border-radius:8px; cursor:pointer;">🎁 Bonus vergeben</button>
+                <div style="background:#3a2a1a;border-radius:12px;padding:10px;margin:6px 0;">
+                    <div style="font-weight:bold;color:#f5a623;margin-bottom:6px;">🎁 Bonus vergeben</div>
+                    <button onclick="loadAdminPlayerPicker()" style="background:#4a6e8b;color:white;border:none;padding:6px 12px;border-radius:8px;cursor:pointer;margin-bottom:8px;">🔄 Spielerliste laden</button>
+                    <div id="adminPlayerPicker" style="max-height:200px;overflow-y:auto;margin:6px 0;"></div>
+                    <div style="font-size:.72rem;color:#b0a070;margin-bottom:6px;">☑️ Spieler anklicken = nur dieser bekommt Bonus. Kein Haken = alle.</div>
+                    <button onclick="giveGlobalBonus()" style="background:#e67e22;color:white;border:none;padding:8px 14px;border-radius:8px;cursor:pointer;">🎁 Bonus vergeben</button>
+                </div>
                 <button onclick="adminGlobalReset()" style="background:#cc0000; color:white; border:none; padding:8px 14px; border-radius:8px; cursor:pointer;">🔥 Globaler Reset</button>
             </div>
 
@@ -1337,11 +1356,23 @@
 
     
     // ==================== GAME VERSION ====================
-    const CURRENT_GAME_VERSION = "3.4";
+    const CURRENT_GAME_VERSION = "3.5";
     
     // ==================== RELEASE NOTES ("Was ist neu?") ====================
     // Neue Einträge oben hinzufügen. version: muss zu CURRENT_GAME_VERSION passen, damit beim ersten Start automatisch angezeigt wird.
     const RELEASE_NOTES = [
+        {
+            version: "3.5",
+            date: "Mai 2026",
+            title: "⚖️ Balance-Update & Acker-Filter",
+            changes: [
+                "⚖️ <b>XP-Kurve angepasst</b>: Level-Aufstiege dauern deutlich länger – mehr Progression!",
+                "💰 <b>Preise ausbalanciert</b>: Rohstoffe, Tier-Erzeugnisse und verarbeitete Produkte auf realistisches Niveau gebracht.",
+                "🌾 <b>Acker-Filter</b>: Über der Farm gibt es jetzt Tabs – klicke auf Acker 1, 2 oder 3 um nur diesen anzuzeigen.",
+                "🎮 <b>Minispiele-Fix</b>: Glücksrad, Angelspiel, Puzzle, Quiz und Wetter-Wette funktionieren jetzt zuverlässig.",
+                "🎁 <b>Admin: Gezielter Bonus</b>: Im Admin-Panel können jetzt einzelne Spieler ausgewählt werden um ihnen gezielt Gold/XP zu geben."
+            ]
+        },
         {
             version: "3.4",
             date: "Mai 2026",
@@ -1474,75 +1505,75 @@
     
     // ==================== ERWEITERTE TIERE ====================
     const EXTENDED_ANIMALS = {
-        sheep:     { name: "Schaf",       emoji: "🐑",   product: "Wolle",         productKey: "wool",           productEmoji: "🧶", basePrice: 45,  buyCost: 2000,   productionTime: 600000,  feedCost: 8,  levelRequired: 10, upgradeCost: 1000  },
-        goat:      { name: "Ziege",       emoji: "🐐",   product: "Ziegenkäse",    productKey: "goatCheese",     productEmoji: "🧀", basePrice: 60,  buyCost: 3000,   productionTime: 720000,  feedCost: 10, levelRequired: 12, upgradeCost: 1500  },
-        horse:     { name: "Pferd",       emoji: "🐴",   product: "Dünger",        productKey: "fertilizer",     productEmoji: "💩", basePrice: 30,  buyCost: 5000,   productionTime: 900000,  feedCost: 12, levelRequired: 14, upgradeCost: 2000  },
-        alpaca:    { name: "Alpaka",      emoji: "🦙",   product: "Alpakawolle",   productKey: "alpacaWool",     productEmoji: "🧣", basePrice: 80,  buyCost: 8000,   productionTime: 1200000, feedCost: 15, levelRequired: 16, upgradeCost: 2500  },
-        bee:       { name: "Biene",       emoji: "🐝",   product: "Honig",         productKey: "honey",          productEmoji: "🍯", basePrice: 100, buyCost: 12000,  productionTime: 1500000, feedCost: 5,  levelRequired: 18, upgradeCost: 3000  },
-        duck:      { name: "Ente",        emoji: "🦆",   product: "Entenei",       productKey: "duckEgg",        productEmoji: "🥚", basePrice: 25,  buyCost: 15000,  productionTime: 780000,  feedCost: 8,  levelRequired: 20, upgradeCost: 2000  },
-        ostrich:   { name: "Strauß",      emoji: "🐦‍⬛",  product: "Straußenei",    productKey: "ostrichEgg",     productEmoji: "🥚", basePrice: 60,  buyCost: 25000,  productionTime: 1800000, feedCost: 20, levelRequired: 22, upgradeCost: 5000  },
-        llama:     { name: "Lama",        emoji: "🦙",   product: "Lamawolle",     productKey: "llamaWool",      productEmoji: "🧣", basePrice: 120, buyCost: 40000,  productionTime: 2100000, feedCost: 18, levelRequired: 25, upgradeCost: 6000  },
-        camel:     { name: "Kamel",       emoji: "🐪",   product: "Kamelmilch",    productKey: "camelMilk",      productEmoji: "🥛", basePrice: 150, buyCost: 60000,  productionTime: 2400000, feedCost: 25, levelRequired: 28, upgradeCost: 8000  },
-        yak:       { name: "Yak",         emoji: "🦬",   product: "Yakwolle",      productKey: "yakWool",        productEmoji: "🧣", basePrice: 180, buyCost: 80000,  productionTime: 2700000, feedCost: 30, levelRequired: 30, upgradeCost: 10000 },
-        reindeer:  { name: "Rentier",     emoji: "🦌",   product: "Rentierfell",   productKey: "reindeerFur",    productEmoji: "🧣", basePrice: 200, buyCost: 100000, productionTime: 3000000, feedCost: 35, levelRequired: 33, upgradeCost: 12000 },
-        peacock:   { name: "Pfau",        emoji: "🦚",   product: "Pfauenfeder",   productKey: "peacockFeather", productEmoji: "📿", basePrice: 250, buyCost: 120000, productionTime: 3300000, feedCost: 40, levelRequired: 35, upgradeCost: 15000 },
-        silkworm:  { name: "Seidenraupe", emoji: "🐛",   product: "Seide",         productKey: "silk",           productEmoji: "👘", basePrice: 300, buyCost: 150000, productionTime: 3600000, feedCost: 20, levelRequired: 38, upgradeCost: 20000 },
-        dragon:    { name: "Drache",      emoji: "🐉",   product: "Drachenschuppe",productKey: "dragonScale",    productEmoji: "⚡", basePrice: 500, buyCost: 200000, productionTime: 4800000, feedCost: 50, levelRequired: 40, upgradeCost: 30000 }
+        sheep:     { name: "Schaf",       emoji: "🐑",   product: "Wolle",         productKey: "wool",           productEmoji: "🧶", basePrice: 35,  buyCost: 2000,   productionTime: 600000,  feedCost: 8,  levelRequired: 10, upgradeCost: 1000  },
+        goat:      { name: "Ziege",       emoji: "🐐",   product: "Ziegenkäse",    productKey: "goatCheese",     productEmoji: "🧀", basePrice: 48,  buyCost: 3000,   productionTime: 720000,  feedCost: 10, levelRequired: 12, upgradeCost: 1500  },
+        horse:     { name: "Pferd",       emoji: "🐴",   product: "Dünger",        productKey: "fertilizer",     productEmoji: "💩", basePrice: 22,  buyCost: 5000,   productionTime: 900000,  feedCost: 12, levelRequired: 14, upgradeCost: 2000  },
+        alpaca:    { name: "Alpaka",      emoji: "🦙",   product: "Alpakawolle",   productKey: "alpacaWool",     productEmoji: "🧣", basePrice: 60,  buyCost: 8000,   productionTime: 1200000, feedCost: 15, levelRequired: 16, upgradeCost: 2500  },
+        bee:       { name: "Biene",       emoji: "🐝",   product: "Honig",         productKey: "honey",          productEmoji: "🍯", basePrice: 75,  buyCost: 12000,  productionTime: 1500000, feedCost: 5,  levelRequired: 18, upgradeCost: 3000  },
+        duck:      { name: "Ente",        emoji: "🦆",   product: "Entenei",       productKey: "duckEgg",        productEmoji: "🥚", basePrice: 20,  buyCost: 15000,  productionTime: 780000,  feedCost: 8,  levelRequired: 20, upgradeCost: 2000  },
+        ostrich:   { name: "Strauß",      emoji: "🐦‍⬛",  product: "Straußenei",    productKey: "ostrichEgg",     productEmoji: "🥚", basePrice: 45,  buyCost: 25000,  productionTime: 1800000, feedCost: 20, levelRequired: 22, upgradeCost: 5000  },
+        llama:     { name: "Lama",        emoji: "🦙",   product: "Lamawolle",     productKey: "llamaWool",      productEmoji: "🧣", basePrice: 90,  buyCost: 40000,  productionTime: 2100000, feedCost: 18, levelRequired: 25, upgradeCost: 6000  },
+        camel:     { name: "Kamel",       emoji: "🐪",   product: "Kamelmilch",    productKey: "camelMilk",      productEmoji: "🥛", basePrice: 110, buyCost: 60000,  productionTime: 2400000, feedCost: 25, levelRequired: 28, upgradeCost: 8000  },
+        yak:       { name: "Yak",         emoji: "🦬",   product: "Yakwolle",      productKey: "yakWool",        productEmoji: "🧣", basePrice: 130, buyCost: 80000,  productionTime: 2700000, feedCost: 30, levelRequired: 30, upgradeCost: 10000 },
+        reindeer:  { name: "Rentier",     emoji: "🦌",   product: "Rentierfell",   productKey: "reindeerFur",    productEmoji: "🧣", basePrice: 145, buyCost: 100000, productionTime: 3000000, feedCost: 35, levelRequired: 33, upgradeCost: 12000 },
+        peacock:   { name: "Pfau",        emoji: "🦚",   product: "Pfauenfeder",   productKey: "peacockFeather", productEmoji: "📿", basePrice: 175, buyCost: 120000, productionTime: 3300000, feedCost: 40, levelRequired: 35, upgradeCost: 15000 },
+        silkworm:  { name: "Seidenraupe", emoji: "🐛",   product: "Seide",         productKey: "silk",           productEmoji: "👘", basePrice: 210, buyCost: 150000, productionTime: 3600000, feedCost: 20, levelRequired: 38, upgradeCost: 20000 },
+        dragon:    { name: "Drache",      emoji: "🐉",   product: "Drachenschuppe",productKey: "dragonScale",    productEmoji: "⚡", basePrice: 350, buyCost: 200000, productionTime: 4800000, feedCost: 50, levelRequired: 40, upgradeCost: 30000 }
     };
     
     const ANIMALS = {
-        chicken: { name: "Huhn",    emoji: "🐔", product: "Ei",      productKey: "egg",     productEmoji: "🥚", basePrice: 8,  buyCost: 250,  productionTime: 240000,  feedCost: 5, levelRequired: 6, upgradeCost: 400  },
-        cow:     { name: "Kuh",     emoji: "🐮", product: "Milch",   productKey: "milk",    productEmoji: "🥛", basePrice: 20, buyCost: 800,  productionTime: 420000,  feedCost: 5, levelRequired: 6, upgradeCost: 800  },
-        pig:     { name: "Schwein", emoji: "🐷", product: "Trüffel", productKey: "truffle", productEmoji: "🍄", basePrice: 35, buyCost: 1200, productionTime: 480000,  feedCost: 5, levelRequired: 6, upgradeCost: 1200 },
+        chicken: { name: "Huhn",    emoji: "🐔", product: "Ei",      productKey: "egg",     productEmoji: "🥚", basePrice: 6,  buyCost: 250,  productionTime: 240000,  feedCost: 5, levelRequired: 6, upgradeCost: 400  },
+        cow:     { name: "Kuh",     emoji: "🐮", product: "Milch",   productKey: "milk",    productEmoji: "🥛", basePrice: 15, buyCost: 800,  productionTime: 420000,  feedCost: 5, levelRequired: 6, upgradeCost: 800  },
+        pig:     { name: "Schwein", emoji: "🐷", product: "Trüffel", productKey: "truffle", productEmoji: "🍄", basePrice: 28, buyCost: 1200, productionTime: 480000,  feedCost: 5, levelRequired: 6, upgradeCost: 1200 },
         ...EXTENDED_ANIMALS
     };
      
     // ==================== REZEPTE ====================
     const EXTENDED_RECIPES = {
-        butter: { name: "Butter", emoji: "🧈", input: { milk: 2 }, output: "butter", outputName: "Butter", outputEmoji: "🧈", basePrice: 75, craftTime: 25000, inputNames: { milk: "Milch" } },
-        yogurt: { name: "Joghurt", emoji: "🥣", input: { milk: 3 }, output: "yogurt", outputName: "Joghurt", outputEmoji: "🥣", basePrice: 100, craftTime: 30000, inputNames: { milk: "Milch" } },
-        woolThread: { name: "Wollfaden", emoji: "🧵", input: { wool: 2 }, output: "woolThread", outputName: "Wollfaden", outputEmoji: "🧵", basePrice: 135, craftTime: 35000, inputNames: { wool: "Wolle" } },
-        scarf: { name: "Schal", emoji: "🧣", input: { wool: 3 }, output: "scarf", outputName: "Schal", outputEmoji: "🧣", basePrice: 270, craftTime: 50000, inputNames: { wool: "Wolle" } },
-        honeyCake: { name: "Honigkuchen", emoji: "🍰", input: { honey: 2, flour: 1 }, output: "honeyCake", outputName: "Honigkuchen", outputEmoji: "🍰", basePrice: 380, craftTime: 60000, inputNames: { honey: "Honig", flour: "Mehl" } },
-        silkFabric: { name: "Seidentuch", emoji: "👘", input: { silk: 4 }, output: "silkFabric", outputName: "Seidentuch", outputEmoji: "👘", basePrice: 1600, craftTime: 80000, inputNames: { silk: "Seide" } }
+        butter: { name: "Butter", emoji: "🧈", input: { milk: 2 }, output: "butter", outputName: "Butter", outputEmoji: "🧈", basePrice: 48, craftTime: 25000, inputNames: { milk: "Milch" } },
+        yogurt: { name: "Joghurt", emoji: "🥣", input: { milk: 3 }, output: "yogurt", outputName: "Joghurt", outputEmoji: "🥣", basePrice: 62, craftTime: 30000, inputNames: { milk: "Milch" } },
+        woolThread: { name: "Wollfaden", emoji: "🧵", input: { wool: 2 }, output: "woolThread", outputName: "Wollfaden", outputEmoji: "🧵", basePrice: 85, craftTime: 35000, inputNames: { wool: "Wolle" } },
+        scarf: { name: "Schal", emoji: "🧣", input: { wool: 3 }, output: "scarf", outputName: "Schal", outputEmoji: "🧣", basePrice: 160, craftTime: 50000, inputNames: { wool: "Wolle" } },
+        honeyCake: { name: "Honigkuchen", emoji: "🍰", input: { honey: 2, flour: 1 }, output: "honeyCake", outputName: "Honigkuchen", outputEmoji: "🍰", basePrice: 220, craftTime: 60000, inputNames: { honey: "Honig", flour: "Mehl" } },
+        silkFabric: { name: "Seidentuch", emoji: "👘", input: { silk: 4 }, output: "silkFabric", outputName: "Seidentuch", outputEmoji: "👘", basePrice: 650, craftTime: 80000, inputNames: { silk: "Seide" } }
     };
     
     const BASE_RECIPES = {
-        flour: { name: "Mehl", emoji: "🌾", input: { wheat: 2 }, output: "flour", outputName: "Mehl", outputEmoji: "🌾", basePrice: 70, craftTime: 20000, inputNames: { wheat: "Weizen" } },
-        cheese: { name: "Käse", emoji: "🧀", input: { milk: 2 }, output: "cheese", outputName: "Käse", outputEmoji: "🧀", basePrice: 95, craftTime: 30000, inputNames: { milk: "Milch" } },
-        bread: { name: "Brot", emoji: "🍞", input: { flour: 1, egg: 1 }, output: "bread", outputName: "Brot", outputEmoji: "🍞", basePrice: 120, craftTime: 45000, inputNames: { flour: "Mehl", egg: "Ei" } }
+        flour: { name: "Mehl", emoji: "🌾", input: { wheat: 2 }, output: "flour", outputName: "Mehl", outputEmoji: "🌾", basePrice: 45, craftTime: 20000, inputNames: { wheat: "Weizen" } },
+        cheese: { name: "Käse", emoji: "🧀", input: { milk: 2 }, output: "cheese", outputName: "Käse", outputEmoji: "🧀", basePrice: 60, craftTime: 30000, inputNames: { milk: "Milch" } },
+        bread: { name: "Brot", emoji: "🍞", input: { flour: 1, egg: 1 }, output: "bread", outputName: "Brot", outputEmoji: "🍞", basePrice: 75, craftTime: 45000, inputNames: { flour: "Mehl", egg: "Ei" } }
     };
     
     const RECIPES = { ...BASE_RECIPES, ...EXTENDED_RECIPES };
     
     // ==================== PFLANZEN ====================
     const BASE_CROPS = {
-        carrot: { name: "Karotte", emoji: "🥕", basePrice: 12, growTime: 25000, seedCost: 5, levelRequired: 1, licenseRequired: null },
-        wheat: { name: "Weizen", emoji: "🌾", basePrice: 18, growTime: 40000, seedCost: 8, levelRequired: 2, licenseRequired: null },
-        tomato: { name: "Tomate", emoji: "🍅", basePrice: 25, growTime: 60000, seedCost: 12, levelRequired: 3, licenseRequired: null },
-        strawberry: { name: "Erdbeere", emoji: "🍓", basePrice: 35, growTime: 90000, seedCost: 20, levelRequired: 4, licenseRequired: null },
-        pumpkin: { name: "Kürbis", emoji: "🎃", basePrice: 50, growTime: 130000, seedCost: 30, levelRequired: 5, licenseRequired: null },
-        pineapple: { name: "Ananas", emoji: "🍍", basePrice: 70, growTime: 180000, seedCost: 45, levelRequired: 6, licenseRequired: null },
-        coffee: { name: "Kaffee", emoji: "☕", basePrice: 90, growTime: 240000, seedCost: 60, levelRequired: 7, licenseRequired: null }
+        carrot: { name: "Karotte", emoji: "🥕", basePrice: 10, growTime: 25000, seedCost: 5, levelRequired: 1, licenseRequired: null },
+        wheat: { name: "Weizen", emoji: "🌾", basePrice: 15, growTime: 40000, seedCost: 8, levelRequired: 2, licenseRequired: null },
+        tomato: { name: "Tomate", emoji: "🍅", basePrice: 20, growTime: 60000, seedCost: 12, levelRequired: 3, licenseRequired: null },
+        strawberry: { name: "Erdbeere", emoji: "🍓", basePrice: 28, growTime: 90000, seedCost: 20, levelRequired: 4, licenseRequired: null },
+        pumpkin: { name: "Kürbis", emoji: "🎃", basePrice: 40, growTime: 130000, seedCost: 30, levelRequired: 5, licenseRequired: null },
+        pineapple: { name: "Ananas", emoji: "🍍", basePrice: 55, growTime: 180000, seedCost: 45, levelRequired: 6, licenseRequired: null },
+        coffee: { name: "Kaffee", emoji: "☕", basePrice: 70, growTime: 240000, seedCost: 60, levelRequired: 7, licenseRequired: null }
     };
     
     const EXTENDED_CROPS = {
-        blueberry: { name: "Blaubeere", emoji: "🫐", basePrice: 45, growTime: 120000, seedCost: 25, levelRequired: 8, licenseRequired: "fruitLicense1" },
-        raspberry: { name: "Himbeere", emoji: "🔴", basePrice: 48, growTime: 125000, seedCost: 28, levelRequired: 8, licenseRequired: "fruitLicense1" },
-        grape: { name: "Traube", emoji: "🍇", basePrice: 55, growTime: 140000, seedCost: 32, levelRequired: 9, licenseRequired: "fruitLicense2" },
-        peach: { name: "Pfirsich", emoji: "🍑", basePrice: 60, growTime: 150000, seedCost: 35, levelRequired: 9, licenseRequired: "fruitLicense2" },
-        lemon: { name: "Zitrone", emoji: "🍋", basePrice: 42, growTime: 130000, seedCost: 30, levelRequired: 10, licenseRequired: "citrusLicense" },
-        apple: { name: "Apfel", emoji: "🍎", basePrice: 38, growTime: 120000, seedCost: 25, levelRequired: 10, licenseRequired: "citrusLicense" },
-        banana: { name: "Banane", emoji: "🍌", basePrice: 50, growTime: 135000, seedCost: 30, levelRequired: 11, licenseRequired: "tropicalLicense" },
-        mango: { name: "Mango", emoji: "🥭", basePrice: 65, growTime: 155000, seedCost: 40, levelRequired: 11, licenseRequired: "tropicalLicense" },
-        cherry: { name: "Kirsche", emoji: "🍒", basePrice: 52, growTime: 140000, seedCost: 32, levelRequired: 12, licenseRequired: "fruitLicense4" },
-        pear: { name: "Birne", emoji: "🍐", basePrice: 45, growTime: 130000, seedCost: 28, levelRequired: 12, licenseRequired: "fruitLicense4" },
-        pomegranate: { name: "Granatapfel", emoji: "🪷", basePrice: 80, growTime: 170000, seedCost: 50, levelRequired: 13, licenseRequired: "exoticLicense" },
-        kiwi: { name: "Kiwi", emoji: "🥝", basePrice: 58, growTime: 145000, seedCost: 35, levelRequired: 13, licenseRequired: "exoticLicense" },
-        dragonfruit: { name: "Drachenfrucht", emoji: "🐉", basePrice: 100, growTime: 200000, seedCost: 60, levelRequired: 14, licenseRequired: "rareLicense" },
-        starfruit: { name: "Sternfrucht", emoji: "⭐", basePrice: 95, growTime: 190000, seedCost: 55, levelRequired: 14, licenseRequired: "rareLicense" },
-        saffron: { name: "Safran", emoji: "🌸", basePrice: 200, growTime: 300000, seedCost: 120, levelRequired: 15, licenseRequired: "premiumLicense" },
-        vanilla: { name: "Vanille", emoji: "🌿", basePrice: 180, growTime: 280000, seedCost: 100, levelRequired: 15, licenseRequired: "premiumLicense" }
+        blueberry: { name: "Blaubeere", emoji: "🫐", basePrice: 32, growTime: 120000, seedCost: 25, levelRequired: 8, licenseRequired: "fruitLicense1" },
+        raspberry: { name: "Himbeere", emoji: "🔴", basePrice: 40, growTime: 125000, seedCost: 28, levelRequired: 8, licenseRequired: "fruitLicense1" },
+        grape: { name: "Traube", emoji: "🍇", basePrice: 45, growTime: 140000, seedCost: 32, levelRequired: 9, licenseRequired: "fruitLicense2" },
+        peach: { name: "Pfirsich", emoji: "🍑", basePrice: 48, growTime: 150000, seedCost: 35, levelRequired: 9, licenseRequired: "fruitLicense2" },
+        lemon: { name: "Zitrone", emoji: "🍋", basePrice: 35, growTime: 130000, seedCost: 30, levelRequired: 10, licenseRequired: "citrusLicense" },
+        apple: { name: "Apfel", emoji: "🍎", basePrice: 32, growTime: 120000, seedCost: 25, levelRequired: 10, licenseRequired: "citrusLicense" },
+        banana: { name: "Banane", emoji: "🍌", basePrice: 42, growTime: 135000, seedCost: 30, levelRequired: 11, licenseRequired: "tropicalLicense" },
+        mango: { name: "Mango", emoji: "🥭", basePrice: 52, growTime: 155000, seedCost: 40, levelRequired: 11, licenseRequired: "tropicalLicense" },
+        cherry: { name: "Kirsche", emoji: "🍒", basePrice: 44, growTime: 140000, seedCost: 32, levelRequired: 12, licenseRequired: "fruitLicense4" },
+        pear: { name: "Birne", emoji: "🍐", basePrice: 38, growTime: 130000, seedCost: 28, levelRequired: 12, licenseRequired: "fruitLicense4" },
+        pomegranate: { name: "Granatapfel", emoji: "🪷", basePrice: 62, growTime: 170000, seedCost: 50, levelRequired: 13, licenseRequired: "exoticLicense" },
+        kiwi: { name: "Kiwi", emoji: "🥝", basePrice: 48, growTime: 145000, seedCost: 35, levelRequired: 13, licenseRequired: "exoticLicense" },
+        dragonfruit: { name: "Drachenfrucht", emoji: "🐉", basePrice: 75, growTime: 200000, seedCost: 60, levelRequired: 14, licenseRequired: "rareLicense" },
+        starfruit: { name: "Sternfrucht", emoji: "⭐", basePrice: 70, growTime: 190000, seedCost: 55, levelRequired: 14, licenseRequired: "rareLicense" },
+        saffron: { name: "Safran", emoji: "🌸", basePrice: 140, growTime: 300000, seedCost: 120, levelRequired: 15, licenseRequired: "premiumLicense" },
+        vanilla: { name: "Vanille", emoji: "🌿", basePrice: 120, growTime: 280000, seedCost: 100, levelRequired: 15, licenseRequired: "premiumLicense" }
     };
     
     const CROPS = { ...BASE_CROPS, ...EXTENDED_CROPS };
@@ -2091,6 +2122,7 @@
     const ACKER2_COST = 25000, ACKER3_COST = 30000;
     let fields = [];
     let acker2Owned = false, acker3Owned = false;
+    let ackerFilter = 0; // 0=alle, 1/2/3=nur dieser Acker
     let helperEnabled = false;
     let helperInterval = null;
     const HELPER_TICK_MS = 30000;
@@ -2130,10 +2162,13 @@
     const xpNextSpan = document.getElementById("xpNext");
     
     function getXPNeededForNextLevel() {
-        if (playerLevel <= 10) return 200 + (playerLevel - 1) * 50;
-        if (playerLevel <= 20) return 650 + (playerLevel - 10) * 80;
-        if (playerLevel <= 30) return 1450 + (playerLevel - 20) * 120;
-        return 2650 + (playerLevel - 30) * 200;
+        // Deutlich steiler: Level 1-10 ~500-2000, Level 11-25 ~2500-8000, Level 26+ ~10000+
+        if (playerLevel <= 5)  return 500  + (playerLevel - 1) * 150;
+        if (playerLevel <= 10) return 1250 + (playerLevel - 5) * 300;
+        if (playerLevel <= 15) return 2750 + (playerLevel - 10) * 600;
+        if (playerLevel <= 20) return 5750 + (playerLevel - 15) * 1000;
+        if (playerLevel <= 30) return 10750 + (playerLevel - 20) * 1500;
+        return 25750 + (playerLevel - 30) * 2500;
     }
     
     function getCurrentStorage() { let total = 0; for (let val of Object.values(inventory)) total += val; return total; }
@@ -2172,10 +2207,7 @@
     xpElements.forEach(el => { if(el) el.innerText = xpValue; });
     lvlElements.forEach(el => { if(el) el.innerText = lvlValue; });
 
-    const needed = (lvlValue <= 10) ? 200 + (lvlValue - 1) * 50
-                 : (lvlValue <= 20) ? 650 + (lvlValue - 10) * 80
-                 : (lvlValue <= 30) ? 1450 + (lvlValue - 20) * 120
-                 : 2650 + (lvlValue - 30) * 200;
+    const needed = getXPNeededForNextLevel();
 
     const xpCurrentEl = document.getElementById("xpCurrent");
     const xpNextEl = document.getElementById("xpNext");
@@ -2592,6 +2624,10 @@
     
     function getFieldProgress(field) { if (!field.cropId || field.isReady) return field.isReady ? 100 : 0; const crop = CROPS[field.cropId]; const elapsed = Date.now() - field.plantedAt; const total = crop.growTime * getGrowthModifier(); return Math.min(99, Math.floor((elapsed / total) * 100)); }
     
+    function setAckerFilter(n) {
+        ackerFilter = n;
+        renderFields();
+    }
     function renderFields() {
         if (!farmContainer) return;
         farmContainer.innerHTML = "";
@@ -2655,26 +2691,39 @@
             farmContainer.appendChild(div);
         };
         
+        // Acker-Filter-Tabs aktualisieren
+        const t2=document.getElementById('ackerTab2'); const t3=document.getElementById('ackerTab3');
+        if(t2) t2.style.display = acker2Owned ? '' : 'none';
+        if(t3) t3.style.display = acker3Owned ? '' : 'none';
+        document.querySelectorAll('.acker-filter-btn').forEach(b => b.classList.remove('active'));
+        const activeTab = ackerFilter===0 ? document.querySelector('.acker-filter-btn') : document.getElementById('ackerTab'+ackerFilter);
+        if(activeTab) activeTab.classList.add('active');
+
         // Acker 1
-        addAckerHeader("Acker 1", 1, true);
-        for (let i = 0; i < FIELDS_PER_ACKER; i++) renderFieldTile(i, i + 1);
-        
-        // Acker 2
-        if (acker2Owned) {
-            addAckerHeader("Acker 2", 2, true);
-            for (let i = FIELDS_PER_ACKER; i < 2 * FIELDS_PER_ACKER; i++) renderFieldTile(i, i - FIELDS_PER_ACKER + 1);
-        } else {
-            addBuyAckerTile(2, ACKER2_COST, null);
+        if (ackerFilter === 0 || ackerFilter === 1) {
+            addAckerHeader("Acker 1", 1, true);
+            for (let i = 0; i < FIELDS_PER_ACKER; i++) renderFieldTile(i, i + 1);
         }
-        
+
+        // Acker 2
+        if (ackerFilter === 0 || ackerFilter === 2) {
+            if (acker2Owned) {
+                addAckerHeader("Acker 2", 2, true);
+                for (let i = FIELDS_PER_ACKER; i < 2 * FIELDS_PER_ACKER; i++) renderFieldTile(i, i - FIELDS_PER_ACKER + 1);
+            } else if (ackerFilter === 0) {
+                addBuyAckerTile(2, ACKER2_COST, null);
+            }
+        }
+
         // Acker 3
-        if (acker3Owned) {
-            addAckerHeader("Acker 3", 3, true);
-            for (let i = 2 * FIELDS_PER_ACKER; i < 3 * FIELDS_PER_ACKER; i++) renderFieldTile(i, i - 2 * FIELDS_PER_ACKER + 1);
-        } else if (acker2Owned) {
-            addBuyAckerTile(3, ACKER3_COST, null);
-        } else {
-            addBuyAckerTile(3, ACKER3_COST, "Erst Acker 2 kaufen!");
+        if (ackerFilter === 0 || ackerFilter === 3) {
+            if (acker3Owned) {
+                addAckerHeader("Acker 3", 3, true);
+                for (let i = 2 * FIELDS_PER_ACKER; i < 3 * FIELDS_PER_ACKER; i++) renderFieldTile(i, i - 2 * FIELDS_PER_ACKER + 1);
+            } else if (ackerFilter === 0) {
+                if (acker2Owned) addBuyAckerTile(3, ACKER3_COST, null);
+                else addBuyAckerTile(3, ACKER3_COST, "Erst Acker 2 kaufen!");
+            }
         }
         
         document.querySelectorAll(".buy-field-btn").forEach(btn => btn.addEventListener("click", () => buyField(parseInt(btn.dataset.idx))));
@@ -3800,7 +3849,7 @@
         const key = 'mgCD_' + (window.currentUser && window.currentUser.uid ? window.currentUser.uid : 'g');
         try { const s = localStorage.getItem(key); if (s) Object.assign(MG_CD, JSON.parse(s)); } catch(e) {}
     }
-    function saveMgCooldowns() {
+    window.saveMgCooldowns = function saveMgCooldowns() {
         const key = 'mgCD_' + (window.currentUser && window.currentUser.uid ? window.currentUser.uid : 'g');
         try { localStorage.setItem(key, JSON.stringify(MG_CD)); } catch(e) {}
     }
@@ -3813,7 +3862,7 @@
         return s + 's';
     }
 
-    function renderMinigames() {
+    window.renderMinigames = function renderMinigames() {
         loadMgCooldowns();
         const el = document.getElementById('mgContent');
         if (!el) return;
@@ -3846,7 +3895,7 @@
         window._mgTimer = setInterval(function() { renderMinigames(); }, 15000);
     }
 
-    function openMg(id) {
+    window.openMg = function openMg(id) {
         if (mgCdLeft(id) > 0) { showToast('⏳ Noch nicht verfügbar!', true); return; }
         if (id === 'wheel')       mgWheel();
         else if (id === 'fishing')     mgFishing();
@@ -3855,7 +3904,7 @@
         else if (id === 'weather_bet') mgWeatherBet();
     }
 
-    function closeMg() { var m = document.getElementById('mgModal'); if (m) m.remove(); }
+    window.closeMg = function closeMg() { var m = document.getElementById('mgModal'); if (m) m.remove(); }
     function mkMg(inner) {
         closeMg();
         var d = document.createElement('div');
@@ -4249,7 +4298,38 @@
     function bindAdminButtons() { document.getElementById("adminCleanupBtn")?.addEventListener("click", () => adminCleanupOldEntries()); document.getElementById("adminClearAllBtn")?.addEventListener("click", () => clearAllLeaderboard()); document.getElementById("adminGlobalResetBtn")?.addEventListener("click", () => adminGlobalReset()); document.getElementById("adminClearChatBtn")?.addEventListener("click", () => adminClearChat()); document.getElementById("adminRemovePlayerBtn")?.addEventListener("click", () => { const name = document.getElementById("adminPlayerName").value; if (name) removePlayerFromLeaderboard(name); }); document.getElementById("adminBanPlayerBtn")?.addEventListener("click", () => { const name = document.getElementById("adminPlayerName").value; if (name) banPlayer(name); }); document.getElementById("adminUnbanPlayerBtn")?.addEventListener("click", () => { const name = document.getElementById("adminPlayerName").value; if (name) unbanPlayer(name); }); }
     
     
-// --- ADMIN BONUS SYSTEM FÜR UDO ---
+// --- ADMIN BONUS SYSTEM ---
+// Spielerliste im Admin-Panel laden
+async function loadAdminPlayerPicker() {
+    if (!isAdmin) return;
+    const snap = await database.ref('users').once('value');
+    const all = snap.val();
+    if (!all) return;
+    const container = document.getElementById('adminPlayerPicker');
+    if (!container) return;
+    container.innerHTML = '';
+    Object.entries(all).forEach(([uid, data]) => {
+        const sg = data.savegame || {};
+        const name = sg.playerName || data.displayName || uid.slice(0,8);
+        const gold = sg.gold || 0;
+        const lvl  = sg.playerLevel || 1;
+        const btn = document.createElement('div');
+        btn.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:#3a4a2a;border-radius:12px;padding:8px 12px;margin:5px 0;cursor:pointer;border:2px solid transparent;';
+        btn.dataset.uid = uid;
+        btn.dataset.name = name;
+        btn.innerHTML = '<span>👤 <b>' + name + '</b> &nbsp; Lv.' + lvl + ' &nbsp; ' + gold + '💰</span>'
+                      + '<input type="checkbox" style="width:20px;height:20px;cursor:pointer;" data-uid="' + uid + '">';
+        btn.onclick = function(e) {
+            if (e.target.tagName === 'INPUT') return;
+            const cb = this.querySelector('input');
+            cb.checked = !cb.checked;
+            this.style.borderColor = cb.checked ? '#f5a623' : 'transparent';
+            this.style.background   = cb.checked ? '#5a6a2a' : '#3a4a2a';
+        };
+        container.appendChild(btn);
+    });
+}
+
 async function giveGlobalBonus() {
     // 1. Admin-Check
     if (typeof isAdmin === 'undefined' || !isAdmin) {
@@ -4257,46 +4337,44 @@ async function giveGlobalBonus() {
         return;
     }
 
-    const goldBonus = parseInt(prompt("Wieviel GOLD soll JEDER Spieler erhalten?", "1000"));
-    const xpBonus = parseInt(prompt("Wieviel XP soll JEDER Spieler erhalten?", "500"));
+    // Modus wählen: alle oder ausgewählte
+    const container = document.getElementById('adminPlayerPicker');
+    const checked = container ? [...container.querySelectorAll('input:checked')].map(cb => cb.dataset.uid) : [];
+    const targetAll = checked.length === 0;
 
+    const goldBonus = parseInt(prompt(targetAll ? "GOLD für ALLE Spieler:" : "GOLD für " + checked.length + " ausgewählte Spieler:", "500"));
+    const xpBonus   = parseInt(prompt(targetAll ? "XP für ALLE Spieler:" : "XP für " + checked.length + " ausgewählte Spieler:", "200"));
     if (isNaN(goldBonus) || isNaN(xpBonus)) return;
 
     try {
-        // --- TEIL A: ALLE SPIELER in der Cloud updaten ---
+        // --- TEIL A: Spieler in der Cloud updaten ---
         const usersSnapshot = await database.ref('users').once('value');
         const allUsers = usersSnapshot.val();
         let updatedCount = 0;
 
         if (allUsers) {
             for (let uid in allUsers) {
+                if (!targetAll && !checked.includes(uid)) continue; // überspringen wenn nicht ausgewählt
                 const userRef = database.ref('users/' + uid + '/savegame');
                 const userSnap = await userRef.once('value');
                 const userData = userSnap.val();
                 if (userData) {
                     const newGold = (userData.gold || 0) + goldBonus;
-                    const newXP = (userData.playerXP || userData.xp || 0) + xpBonus;
-                    await userRef.update({
-                        gold: newGold,
-                        xp: newXP,
-                        playerXP: newXP,
-                        lastSave: Date.now()
-                    });
+                    const newXP   = (userData.playerXP || userData.xp || 0) + xpBonus;
+                    await userRef.update({ gold: newGold, xp: newXP, playerXP: newXP, lastSave: Date.now() });
                     updatedCount++;
                 }
             }
         }
 
-        // --- TEIL B: EIGENEN SPIELSTAND sofort anwenden ---
-        if (currentUser) {
+        // --- TEIL B: EIGENEN SPIELSTAND sofort anwenden (nur wenn Admin auch Ziel ist) ---
+        if (currentUser && (targetAll || checked.includes(currentUser.uid))) {
             window.playerGold = (window.playerGold || 0) + goldBonus;
             if (typeof addXP === 'function') addXP(xpBonus);
             else window.playerXP = (window.playerXP || 0) + xpBonus;
             if (typeof updateMoneyUI === 'function') updateMoneyUI();
             if (typeof updateLevelUI === 'function') updateLevelUI();
             if (typeof saveGameToLocal === 'function') saveGameToLocal();
-            // Timestamp vorab setzen damit globalBonus-Listener den Bonus
-            // nicht ein zweites Mal an den Admin verteilt
             localStorage.setItem('lastBonusSeen_' + currentUser.uid, Date.now() + 5000);
         }
 
