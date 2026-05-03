@@ -1076,7 +1076,6 @@
         <button id="viewAccountBtn" class="view-btn">👤 Account</button>
         <button id="viewAchievementsBtn" class="view-btn">🏆 Erfolge</button>
         <button id="viewHandbookBtn" class="view-btn">📖 Handbuch</button>
-        <button id="viewMinigamesBtn" class="view-btn">🎮 Minispiele</button>
     </div>
 
     <div class="mass-plant-row" id="massPlantRow"></div>
@@ -1100,6 +1099,11 @@
     <div id="researchView" class="research-grid hidden"></div>
     <div id="licensesView" class="licenses-grid hidden"></div>
     <div id="multiplayerView" class="multiplayer-grid hidden">
+        <div class="multiplayer-slot" style="grid-column:1/-1; padding-bottom:8px;">
+            <button onclick="window.toggleMinigames()" style="width:100%;background:linear-gradient(135deg,#3a5a2a,#5a8a3a);color:#ffefcf;border:2px solid #6f9e3f;border-radius:16px;padding:14px;font-size:1.1rem;font-weight:bold;cursor:pointer;">
+                🎮 Minispiele öffnen
+            </button>
+        </div>
         <div class="multiplayer-slot" style="grid-column:1/-1;">
             <div class="status" style="background:#3a5a3a;">👤 Spielername</div>
             <input type="text" id="playerNameInput" class="player-name-input" placeholder="Dein Name" maxlength="20">
@@ -1132,7 +1136,10 @@
             <div style="font-size: 0.6rem; margin-top: 5px; color: #aaa;">💡 Sei respektvoll! Admin kann Nachrichten löschen.</div>
         </div>
         
-        <div id="minigamesView" class="handbook-grid hidden"><div id="mgContent"></div></div>
+        <div id="minigamesView" class="handbook-grid hidden"><div style="padding:8px 10px 0;">
+            <button onclick="window.toggleMinigames()" style="background:#4a3a2a;color:#ffefcf;border:2px solid #8b6942;border-radius:20px;padding:6px 16px;font-size:.85rem;cursor:pointer;">← Zurück zum Multiplayer</button>
+        </div>
+        <div id="mgContent"></div></div>
     <div id="adminSection" class="admin-section hidden" style="grid-column:1/-1;">
             <div class="admin-title" style="color:#ff9800; font-size:1.1rem;">🛠️ ADMIN-ZENTRALE</div>
 
@@ -1350,11 +1357,21 @@
 
     
     // ==================== GAME VERSION ====================
-    const CURRENT_GAME_VERSION = "3.7";
+    const CURRENT_GAME_VERSION = "3.8";
     
     // ==================== RELEASE NOTES ("Was ist neu?") ====================
     // Neue Einträge oben hinzufügen. version: muss zu CURRENT_GAME_VERSION passen, damit beim ersten Start automatisch angezeigt wird.
     const RELEASE_NOTES = [
+        {
+            version: "3.8",
+            date: "Mai 2026",
+            title: "🎮 Minispiele im Multiplayer + Stall-Fixes",
+            changes: [
+                "🎮 <b>Minispiele</b>: Werden jetzt zuverlässig geöffnet. Zugang über den Button im Multiplayer-Bereich.",
+                "🐄 <b>Stall Auto-Sammler</b>: Badge-Anzeige korrigiert – zeigt korrekt ob aktiv oder gerade am Einsammeln.",
+                "🌩️ <b>Dürre bei Gewitter</b>: Bei Sturm/Gewitter/Regen wird keine Dürre mehr ausgelöst. Event-Badge erlischt korrekt wenn das Ereignis abgelaufen ist."
+            ]
+        },
         {
             version: "3.7",
             date: "Mai 2026",
@@ -2954,8 +2971,13 @@
             if (inProgress.length > 0) {
                 statusHtml += `<div class="status">${readyCount > 0 ? `${inProgress.length} in Produktion` : `${avgProgress}%`}</div>`;
             }
-            if (barnUpgrades.autoCollector && readyCount === 0) {
-                statusHtml += `<div class="status" style="background:#3a6e3a;">🤖 Auto-Sammler aktiv</div>`;
+            if (barnUpgrades.autoCollector) {
+                if (readyCount > 0) {
+                    // Auto-Sammler holt gleich ab
+                    statusHtml += `<div class="status" style="background:#3a6e3a;">🤖 Auto-Sammler holt ab...</div>`;
+                } else {
+                    statusHtml += `<div class="status" style="background:#2a4a2a;">🤖 Auto-Sammler aktiv</div>`;
+                }
             }
             
             const firstReadyIdx = group.find(g => g.animal.isReady)?.idx ?? group[0].idx;
@@ -3214,7 +3236,7 @@
     function renderLicenses() { const container = document.getElementById("licensesView"); if (!container) return; container.innerHTML = ""; if (!isLicensesUnlocked(playerLevel)) { container.innerHTML = `<div class="license-slot" style="grid-column:1/-1; background:#4a3a2a;"><div class="license-icon">🔒</div><div class="license-name">Noch nicht freigeschaltet</div><div class="status">Erreiche Level 10, um Lizenzen freizuschalten!</div></div>`; return; } for (let [id, license] of Object.entries(LICENSES)) { const isOwned = ownedLicenses.includes(id); const canBuy = !isOwned && playerGold >= license.cost && playerLevel >= license.levelRequired; const div = document.createElement("div"); div.className = "license-slot" + (isOwned ? " owned" : ""); div.innerHTML = `<div class="license-icon">${license.emoji}</div><div class="license-name">${license.name}</div><div class="status" style="font-size:0.65rem;">${license.description}</div><div class="status" style="background:#3a5a3a;">⭐ Level ${license.levelRequired}</div><div class="license-cost">💰 ${license.cost} Gold</div>${!isOwned ? `<button class="buy-license-btn" data-license="${id}" ${!canBuy ? 'disabled style="opacity:0.5;"' : ''}>📜 Lizenz kaufen</button>` : `<div class="status" style="background:#2a6a2a;">✅ Besitzt du</div>`}`; container.appendChild(div); } document.querySelectorAll(".buy-license-btn").forEach(btn => btn.addEventListener("click", () => buyLicense(btn.dataset.license))); }
     
     // ==================== WETTER ====================
-    function changeWeather() { if (isPaused) return; const weathers = ["sunny", "rainy", "stormy", "thunder"]; const newWeather = weathers[Math.floor(Math.random() * weathers.length)]; const oldWeather = currentWeather; currentWeather = newWeather; const weather = WEATHER_TYPES[currentWeather]; const weatherEl = document.getElementById("weatherInfo"); weatherEl.innerHTML = weather.emoji + " " + weather.name; weatherEl.className = "weather-info " + weather.color; showToast(`🌤️ Wetter ändert sich: ${weather.name}`, false); if (eventBadgeEl) { if (activeEvent) { eventBadgeEl.innerHTML = `Ereignis: ${activeEvent.name || activeEvent.type}`; eventBadgeEl.classList.remove("hidden"); } else { eventBadgeEl.classList.add("hidden"); } } for (let i = 0; i < fields.length; i++) { const f = fields[i]; if (f.owned && f.cropId && !f.isReady && f.plantedAt) { const crop = CROPS[f.cropId]; const elapsed = Date.now() - f.plantedAt; const oldTotalTime = crop.growTime * getGrowthModifierForWeather(oldWeather); const newTotalTime = crop.growTime * getGrowthModifierForWeather(newWeather); if (f.timerId) clearTimeout(f.timerId); const progressPercent = Math.min(0.99, elapsed / oldTotalTime); const newElapsed = progressPercent * newTotalTime; const remaining = Math.max(0, newTotalTime - newElapsed); f.plantedAt = Date.now() - newElapsed; f.timerId = setTimeout(() => { if (fields[i] && fields[i].cropId === f.cropId) { fields[i].isReady = true; renderFields(); saveGameToLocal(); showToast(`🌱 ${crop.name} auf Feld ${i+1} ist bereit!`); } }, remaining); } } saveGameToLocal(); const nextChange = 120000 + Math.random() * 180000; if (weatherTimer) clearTimeout(weatherTimer); weatherTimer = setTimeout(changeWeather, nextChange); }
+    function changeWeather() { if (isPaused) return; const weathers = ["sunny", "rainy", "stormy", "thunder"]; const newWeather = weathers[Math.floor(Math.random() * weathers.length)]; const oldWeather = currentWeather; currentWeather = newWeather; const weather = WEATHER_TYPES[currentWeather]; const weatherEl = document.getElementById("weatherInfo"); weatherEl.innerHTML = weather.emoji + " " + weather.name; weatherEl.className = "weather-info " + weather.color; showToast(`🌤️ Wetter ändert sich: ${weather.name}`, false); if (eventBadgeEl) { if (activeEvent && activeEvent.endTime > Date.now()) { eventBadgeEl.innerHTML = "Ereignis: " + (activeEvent.name || activeEvent.type); eventBadgeEl.classList.remove("hidden"); } else { activeEvent = null; eventBadgeEl.classList.add("hidden"); } } for (let i = 0; i < fields.length; i++) { const f = fields[i]; if (f.owned && f.cropId && !f.isReady && f.plantedAt) { const crop = CROPS[f.cropId]; const elapsed = Date.now() - f.plantedAt; const oldTotalTime = crop.growTime * getGrowthModifierForWeather(oldWeather); const newTotalTime = crop.growTime * getGrowthModifierForWeather(newWeather); if (f.timerId) clearTimeout(f.timerId); const progressPercent = Math.min(0.99, elapsed / oldTotalTime); const newElapsed = progressPercent * newTotalTime; const remaining = Math.max(0, newTotalTime - newElapsed); f.plantedAt = Date.now() - newElapsed; f.timerId = setTimeout(() => { if (fields[i] && fields[i].cropId === f.cropId) { fields[i].isReady = true; renderFields(); saveGameToLocal(); showToast(`🌱 ${crop.name} auf Feld ${i+1} ist bereit!`); } }, remaining); } } saveGameToLocal(); const nextChange = 120000 + Math.random() * 180000; if (weatherTimer) clearTimeout(weatherTimer); weatherTimer = setTimeout(changeWeather, nextChange); }
     function getGrowthModifierForWeather(weatherType) { return WEATHER_TYPES[weatherType].growthModifier; }
     function getWeatherGrowthModifier() { return WEATHER_TYPES[currentWeather].growthModifier; }
     function getWeatherHarvestRisk() { if (currentWeather === "thunder") return Math.random() < 0.2; return false; }
@@ -3244,7 +3266,6 @@
         document.getElementById("accountView").classList.toggle("hidden", view !== "account");
         document.getElementById("achievementsView").classList.toggle("hidden", view !== "achievements");
         document.getElementById("handbookView").classList.toggle("hidden", view !== "handbook");
-        document.getElementById("minigamesView").classList.toggle("hidden", view !== "minigames");
         
         document.getElementById("viewFarmBtn").classList.toggle("active", view === "farm");
         document.getElementById("viewBarnBtn").classList.toggle("active", view === "barn");
@@ -3256,7 +3277,6 @@
         document.getElementById("viewAccountBtn").classList.toggle("active", view === "account");
         document.getElementById("viewAchievementsBtn").classList.toggle("active", view === "achievements");
         document.getElementById("viewHandbookBtn").classList.toggle("active", view === "handbook");
-        document.getElementById("viewMinigamesBtn").classList.toggle("active", view === "minigames");
         
         if (view === "barn") renderBarn();
         if (view === "craft") renderCraft();
@@ -3264,7 +3284,7 @@
         if (view === "licenses") renderLicenses();
         if (view === "achievements") renderAchievements();
         if (view === "handbook") renderHandbook();
-        if (view === "minigames") renderMinigames();
+        if (view === "minigames") { if (typeof window.renderMinigames === 'function') window.renderMinigames(); }
         if (view === "multiplayer") clearChatNotifications();
         if (view === "quests") { renderLoginBonus(); renderQuests(); }
         if (view === "multiplayer" && isMultiplayerUnlocked(playerLevel)) {
@@ -3904,6 +3924,21 @@
         return s + 's';
     }
 
+    window.toggleMinigames = function toggleMinigames() {
+        var mv = document.getElementById('minigamesView');
+        var mpv = document.getElementById('multiplayerView');
+        if (!mv) return;
+        var isOpen = !mv.classList.contains('hidden');
+        if (isOpen) {
+            mv.classList.add('hidden');
+            if (mpv) mpv.classList.remove('hidden');
+        } else {
+            mv.classList.remove('hidden');
+            if (mpv) mpv.classList.add('hidden');
+            window.renderMinigames();
+        }
+    };
+
     window.renderMinigames = function renderMinigames() {
         loadMgCooldowns();
         const el = document.getElementById('mgContent');
@@ -3934,7 +3969,7 @@
         html += '</div>';
         el.innerHTML = html;
         if (window._mgTimer) clearInterval(window._mgTimer);
-        window._mgTimer = setInterval(function() { renderMinigames(); }, 15000);
+        window._mgTimer = setInterval(function() { window.renderMinigames(); }, 15000);
     }
 
     window.openMg = function openMg(id) {
@@ -4019,11 +4054,11 @@
                 if (t<1) { requestAnimationFrame(anim); }
                 else {
                     spinning=false;
-                    MG_CD.wheel = Date.now(); saveMgCooldowns();
+                    MG_CD.wheel = Date.now(); window.saveMgCooldowns();
                     var res = prizes[chosen].fn(); saveGameToLocal();
                     document.getElementById('wResult').textContent = '🎉 ' + res + '!';
                     showToast('🎰 Glücksrad: ' + res);
-                    renderMinigames();
+                    window.renderMinigames();
                 }
             }
             requestAnimationFrame(anim);
@@ -4122,11 +4157,11 @@
             gravity(); renderGrid(); setTimeout(process,350);
         }
         function end(){
-            MG_CD.match3=Date.now(); saveMgCooldowns();
+            MG_CD.match3=Date.now(); window.saveMgCooldowns();
             var gold=score*15, xp=score*3;
             playerGold+=gold; addXP(xp); updateMoneyUI(); saveGameToLocal();
             var r=document.getElementById('m3Res'); if(r) r.innerHTML='🎉 '+score+' Matches → +'+gold+'💰 +'+xp+' XP';
-            showToast('🧩 Puzzle: +'+gold+'💰 +'+xp+' XP'); renderMinigames();
+            showToast('🧩 Puzzle: +'+gold+'💰 +'+xp+' XP'); window.renderMinigames();
         }
         function renderGrid(){
             var gc=document.getElementById('m3Grid'); if(!gc)return; gc.innerHTML='';
@@ -4252,7 +4287,7 @@
         if (!chosen) { showToast('Bitte zuerst ein Wetter wählen!', true); return; }
         if (playerGold < bet) { showToast('Nicht genug Gold!', true); return; }
         playerGold -= bet; updateMoneyUI();
-        MG_CD.weather_bet=Date.now(); saveMgCooldowns();
+        MG_CD.weather_bet=Date.now(); window.saveMgCooldowns();
         var weathers=['sunny','rainy','stormy','thunder'];
         var next=weathers[Math.floor(Math.random()*weathers.length)];
         var win=chosen===next;
@@ -4274,7 +4309,7 @@
             b.className='bet-opt '+(k===next?'winner':'loser'); b.onclick=null;
         });
         var gb=document.querySelector('.mg-btn-green'); if(gb)gb.disabled=true;
-        renderMinigames();
+        window.renderMinigames();
     };
 
         // ==================== ADMIN-FUNKTIONEN ====================
@@ -4629,7 +4664,6 @@ async function forceSaveNow() {
         document.getElementById("viewAccountBtn").onclick = () => setView("account");
         document.getElementById("viewAchievementsBtn").onclick = () => setView("achievements");
         document.getElementById("viewHandbookBtn").onclick = () => setView("handbook");
-        document.getElementById("viewMinigamesBtn").onclick = () => setView("minigames");
         document.getElementById("registerBtn").onclick = () => register();
         document.getElementById("loginBtn").onclick = () => login();
         
