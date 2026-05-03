@@ -1357,11 +1357,22 @@
 
     
     // ==================== GAME VERSION ====================
-    const CURRENT_GAME_VERSION = "3.8";
+    const CURRENT_GAME_VERSION = "3.9";
     
     // ==================== RELEASE NOTES ("Was ist neu?") ====================
     // Neue Einträge oben hinzufügen. version: muss zu CURRENT_GAME_VERSION passen, damit beim ersten Start automatisch angezeigt wird.
     const RELEASE_NOTES = [
+        {
+            version: "3.9",
+            date: "Mai 2026",
+            title: "🐄 Stall-System & einheitliche Preise",
+            changes: [
+                "🎮 <b>Minispiele</b>: Öffnen jetzt sofort ohne Verzögerung.",
+                "🐄 <b>Tiere produzieren automatisch</b>: Nach dem Kauf startet die Produktion sofort – kein Füttern nötig um sie zu starten.",
+                "🌾 <b>Füttern-Cooldown</b>: Mehrfaches Klicken auf Füttern wird ignoriert (3 Sek. Sperre). Alle Tiere des gleichen Typs werden mit einem Klick gefüttert.",
+                "💰 <b>Einheitliche Marktpreise</b>: Alle Spieler sehen jetzt die gleichen Preise – gespeichert in Firebase, für alle synchron."
+            ]
+        },
         {
             version: "3.8",
             date: "Mai 2026",
@@ -2884,21 +2895,36 @@
     }
     
     function renameAnimal(idx) { const newName = prompt("Neuer Name:", animals[idx].name); if (newName?.trim()) { animals[idx].name = newName.trim(); renderBarn(); saveGameToLocal(); showToast(`Umbenannt in ${newName}`); } }
+    const _feedCooldowns = {}; // type → timestamp, verhindert Doppelklick
     function feedAnimal(idx) {
-        // Tiertyp ermitteln und ALLE Tiere dieses Typs füttern
         const animal = animals[idx];
         if (!animal) return;
         const data = ANIMALS[animal.type];
+
+        // Cooldown: 3 Sekunden pro Tiertyp
+        const now = Date.now();
+        if (_feedCooldowns[animal.type] && now - _feedCooldowns[animal.type] < 3000) {
+            showToast(`⏳ Bitte warte kurz vor dem erneuten Füttern!`, true);
+            return;
+        }
+        _feedCooldowns[animal.type] = now;
+
+        if (playerGold < data.feedCost) {
+            showToast(`Nicht genug Gold! (${data.feedCost}💰 pro Tier)`, true);
+            return;
+        }
+
+        // Alle Tiere dieses Typs füttern
         const sameType = animals.map((a,i) => ({a,i})).filter(x => x.a.type === animal.type);
-        const totalCost = data.feedCost * sameType.length;
-        if (playerGold < data.feedCost) { showToast(`Nicht genug Gold! (${data.feedCost}💰 pro Tier)`, true); return; }
         let fed = 0;
         for (const {a, i} of sameType) {
-            if (playerGold < data.feedCost) break; // Gold aufgebraucht
+            if (playerGold < data.feedCost) break;
             playerGold -= data.feedCost;
             if (a.timerId) clearTimeout(a.timerId);
+            if (animalTimerRegistry[i]) { clearTimeout(animalTimerRegistry[i]); delete animalTimerRegistry[i]; }
             a.isReady = false;
             a.productionStartTime = Date.now();
+            a._timerRunning = false;
             startAnimalProduction(a, i);
             fed++;
         }
@@ -3251,7 +3277,24 @@
     function nextDay() { if (isPaused) { showToast("⏸️ Spiel ist pausiert! Drücke Start, um fortzufahren.", true); return; } currentDay++; if (daySpan) daySpan.innerText = currentDay; dailyPriceFluctuation(); timeLeft = 180; if (timerInterval) clearInterval(timerInterval); startTimer(); saveGameToLocal(); if (!activeOrder && Math.random() < 0.4) generateRandomOrder(); triggerRandomEvent(); }
     function startTimer() { if (isPaused) return; if (timerInterval) clearInterval(timerInterval); timerInterval = setInterval(() => { if (timeLeft <= 1) nextDay(); else { timeLeft--; timerSpan.innerText = timeLeft; } }, 1000); }
     
-    async function dailyPriceFluctuation() { for (let key in globalMarketPrices) { let factor = 0.7 + Math.random() * 0.6; let newPrice = Math.floor(basePrices[key] * factor); newPrice = Math.max(basePrices[key] * 0.5, Math.min(basePrices[key] * 1.5, newPrice)); globalMarketPrices[key] = newPrice; } if (firebaseInitialized && database) await database.ref('globalPrices').set(globalMarketPrices); showToast(`📈 Tägliche Preisanpassung!`, false); }
+    async function dailyPriceFluctuation() {
+        // Neue Preise berechnen
+        const newPrices = {};
+        for (let key in globalMarketPrices) {
+            let factor = 0.7 + Math.random() * 0.6;
+            let newPrice = Math.floor(basePrices[key] * factor);
+            newPrice = Math.max(Math.floor(basePrices[key] * 0.5), Math.min(Math.floor(basePrices[key] * 1.5), newPrice));
+            newPrices[key] = newPrice;
+        }
+        // In Firebase schreiben → alle Spieler bekommen automatisch die gleichen Preise
+        if (firebaseInitialized && database) {
+            await database.ref('globalPrices').set({ ...newPrices, _updatedAt: Date.now() });
+        } else {
+            // Offline: lokal setzen
+            for (let key in newPrices) globalMarketPrices[key] = newPrices[key];
+        }
+        showToast('📈 Tägliche Preisanpassung!', false);
+    }
     
     // ==================== VIEWS ====================
     function setView(view) {
@@ -3534,22 +3577,30 @@
         const a = animals[i];
         if (a.timerId) { clearTimeout(a.timerId); a.timerId = null; }
         a._timerRunning = false;
-        if (a.isReady) continue; // bereits fertig – kein Timer nötig
+
+        if (a.isReady) continue; // bereits fertig – Timer nicht nötig
+
+        const data = ANIMALS[a.type];
+        if (!data) continue;
+
+        // Produktionszeit berechnen
+        let prodTime = data.productionTime;
+        if (barnUpgrades && barnUpgrades.speedBoost) prodTime = Math.floor(prodTime * 0.7);
+
         if (!a.productionStartTime) {
+            // Noch nie gestartet → jetzt starten (nach Kauf oder Reset)
             a.productionStartTime = Date.now();
             startAnimalProduction(a, i);
         } else {
-            // War das Tier während der Offline-Zeit fertig geworden?
-            const data = ANIMALS[a.type];
-            if (data) {
-                let prodTime = data.productionTime;
-                if (barnUpgrades && barnUpgrades.speedBoost) prodTime = Math.floor(prodTime * 0.7);
-                if (Date.now() - a.productionStartTime >= prodTime) {
-                    a.isReady = true; // Offline-Produktion abgeschlossen
-                } else {
-                    startAnimalProduction(a, i);
-                }
-            } else { startAnimalProduction(a, i); }
+            // Offline-Catch-up: War das Tier während der Abwesenheit fertig?
+            const elapsed = Date.now() - a.productionStartTime;
+            if (elapsed >= prodTime) {
+                // Tier hätte fertig produziert → sofort als bereit markieren
+                a.isReady = true;
+            } else {
+                // Noch in Produktion → Timer mit verbleibender Zeit starten
+                startAnimalProduction(a, i);
+            }
         }
     }
     
@@ -3691,7 +3742,33 @@
     async function manualCleanup() { if (!firebaseInitialized || !database) return; if (confirm("Alle Bestenlisten-Einträge löschen, die älter als 7 Tage sind?")) { const deleted = await cleanupOldLeaderboardEntries(); showToast(`🧹 ${deleted} alte Einträge wurden gelöscht!`, false); await updateLeaderboard(); } }
     
     // ==================== GLOBALE PREISE LADEN ====================
-    async function loadGlobalPrices() { if (!firebaseInitialized || !database) return; const snapshot = await database.ref('globalPrices').once('value'); const data = snapshot.val(); if (data) for (let key in globalMarketPrices) if (data[key] !== undefined) globalMarketPrices[key] = data[key]; else await dailyPriceFluctuation(); renderGlobalPrices(); renderPricePanel(); renderMarket(); database.ref('globalPrices').on('value', (snapshot) => { const newData = snapshot.val(); if (newData) { for (let key in globalMarketPrices) if (newData[key] !== undefined) globalMarketPrices[key] = newData[key]; renderGlobalPrices(); renderPricePanel(); renderMarket(); showToast(`🌍 Marktpreise wurden aktualisiert!`, false); } }); }
+    async function loadGlobalPrices() {
+        if (!firebaseInitialized || !database) return;
+        const snapshot = await database.ref('globalPrices').once('value');
+        const data = snapshot.val();
+        if (data) {
+            // _updatedAt ist kein Preis – überspringen
+            let anyPrice = false;
+            for (let key in globalMarketPrices) {
+                if (data[key] !== undefined) { globalMarketPrices[key] = data[key]; anyPrice = true; }
+            }
+            if (!anyPrice) await dailyPriceFluctuation(); // Noch keine Preise in Firebase
+        } else {
+            await dailyPriceFluctuation(); // Erstmalig Preise generieren und speichern
+        }
+        renderGlobalPrices(); renderPricePanel(); renderMarket();
+
+        // Echtzeit-Listener: wenn sich globalPrices in Firebase ändern → alle Spieler aktualisieren
+        database.ref('globalPrices').on('value', (snapshot) => {
+            const newData = snapshot.val();
+            if (newData) {
+                for (let key in globalMarketPrices) {
+                    if (newData[key] !== undefined) globalMarketPrices[key] = newData[key];
+                }
+                renderGlobalPrices(); renderPricePanel(); renderMarket();
+            }
+        });
+    }
     function renderGlobalPrices() { const container = document.getElementById("globalPricesPanel"); if (!container) return; const products = [{ id: "carrot", name: "Karotte", emoji: "🥕", price: globalMarketPrices.carrot, basePrice: 12 },{ id: "wheat", name: "Weizen", emoji: "🌾", price: globalMarketPrices.wheat, basePrice: 18 },{ id: "tomato", name: "Tomate", emoji: "🍅", price: globalMarketPrices.tomato, basePrice: 25 },{ id: "strawberry", name: "Erdbeere", emoji: "🍓", price: globalMarketPrices.strawberry, basePrice: 35 },{ id: "pumpkin", name: "Kürbis", emoji: "🎃", price: globalMarketPrices.pumpkin, basePrice: 50 },{ id: "pineapple", name: "Ananas", emoji: "🍍", price: globalMarketPrices.pineapple, basePrice: 70 },{ id: "coffee", name: "Kaffee", emoji: "☕", price: globalMarketPrices.coffee, basePrice: 90 },{ id: "egg", name: "Ei", emoji: "🥚", price: globalMarketPrices.egg, basePrice: 8 },{ id: "milk", name: "Milch", emoji: "🥛", price: globalMarketPrices.milk, basePrice: 20 },{ id: "truffle", name: "Trüffel", emoji: "🍄", price: globalMarketPrices.truffle, basePrice: 35 },{ id: "flour", name: "Mehl", emoji: "🌾", price: globalMarketPrices.flour, basePrice: 30 },{ id: "cheese", name: "Käse", emoji: "🧀", price: globalMarketPrices.cheese, basePrice: 45 },{ id: "bread", name: "Brot", emoji: "🍞", price: globalMarketPrices.bread, basePrice: 40 },{ id: "wool", name: "Wolle", emoji: "🧶", price: globalMarketPrices.wool, basePrice: 45 },{ id: "honey", name: "Honig", emoji: "🍯", price: globalMarketPrices.honey, basePrice: 100 },{ id: "silk", name: "Seide", emoji: "👘", price: globalMarketPrices.silk, basePrice: 300 },{ id: "dragonScale", name: "Drachenschuppe", emoji: "⚡", price: globalMarketPrices.dragonScale, basePrice: 500 }]; container.innerHTML = products.map(p => { const percent = (p.price / p.basePrice) * 100; let priceClass = percent >= 110 ? "price-good" : (percent <= 90 ? "price-bad" : ""); let trend = percent >= 110 ? "📈" : (percent <= 90 ? "📉" : "➖"); return `<div class="price-card"><div style="font-size:1.5rem;">${p.emoji}</div><div><strong>${p.name}</strong> ${trend}</div><div class="price-value ${priceClass}">🌍 ${p.price}💰</div><div style="font-size:0.6rem;">Basis: ${p.basePrice}</div></div>`; }).join(''); }
     
     // ==================== HANDELSANGEBOTE ====================
@@ -3990,7 +4067,7 @@
         document.body.appendChild(d);
         d.addEventListener('click', function(e) { if (e.target === d) window.closeMg(); });
         // Callback nach DOM-Update ausführen (wichtig für Canvas!)
-        if (callback) setTimeout(callback, 30);
+        if (callback) setTimeout(callback, 0);
         return d;
     }
 
