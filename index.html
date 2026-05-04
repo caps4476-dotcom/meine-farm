@@ -4625,544 +4625,385 @@
 
     
     // ==================== SCHIFFE VERSENKEN ====================
-    // Firebase-Pfad: battleship/{gameId}/...
-    // Struktur:
-    //   host: uid, guest: uid, hostName, guestName
-    //   status: 'waiting'|'placing'|'playing'|'finished'
-    //   hostBoard: [100 Felder], guestBoard: [100 Felder]  (nur eigene Schiffe)
-    //   hostShots: [100 Felder], guestShots: [100 Felder]  (eigene Schüsse)
-    //   turn: 'host'|'guest'
-    //   winner: 'host'|'guest'|null
+    // Status-Fluss: waiting → placing → host_ready/guest_ready → playing → finished
+    // Firebase speichert Arrays als Objekte → bsArr() konvertiert zurück
 
-    const BS_SHIPS = [
-        {name:'Schlachtschiff', size:5, symbol:'🚢'},
-        {name:'Kreuzer',        size:4, symbol:'🛳'},
-        {name:'Zerstörer A',    size:3, symbol:'⛴'},
-        {name:'Zerstörer B',    size:3, symbol:'⛴'},
-        {name:'U-Boot',         size:2, symbol:'🤿'}
+    const BS_SHIPS=[
+        {name:'Schlachtschiff',size:5,symbol:'🚢'},
+        {name:'Kreuzer',size:4,symbol:'🛳'},
+        {name:'Zerstörer A',size:3,symbol:'⛴'},
+        {name:'Zerstörer B',size:3,symbol:'⛴'},
+        {name:'U-Boot',size:2,symbol:'🤿'}
     ];
-    const BS_REWARD_WIN  = 500;
-    const BS_REWARD_LOSS = 50;
+    const BS_WIN_GOLD=500, BS_LOSS_GOLD=50;
 
-    let bsGameId    = null;
-    let bsRole      = null; // 'host' | 'guest'
-    let bsMyBoard   = new Array(100).fill(0);  // 0=empty,1=ship,2=hit,3=miss
-    let bsEnemyView = new Array(100).fill(0);  // 0=unknown,1=hit,2=miss
-    let bsPlacing   = { shipIdx:0, horizontal:true };
-    let bsPlaced    = [];  // which ships are placed
-    let bsListener  = null;
-    let bsGameData  = null;
+    let bsGameId=null,bsRole=null,bsListener=null,bsGameData=null;
+    let bsMyBoard=[],bsPlaced=[],bsPlacing={shipIdx:0,horizontal:true},bsRewarded=false;
 
-    // ── Hilfsfunktionen ──────────────────────────────────────────────────────
-    function bsIdx(row,col){ return row*10+col; }
-    function bsRC(idx){ return {row:Math.floor(idx/10), col:idx%10}; }
-
-    function bsGetPlayerName() {
-        const inp = document.getElementById('playerNameInput');
-        return (inp && inp.value.trim()) || playerName || ('Spieler-'+((currentUser&&currentUser.uid)||'?').slice(0,6));
+    function bsIdx(r,col){return r*10+col;}
+    function bsRC(i){return {row:Math.floor(i/10),col:i%10};}
+    function bsArr(obj){
+        if(Array.isArray(obj))return obj;
+        const a=new Array(100).fill(0);
+        if(obj)Object.keys(obj).forEach(k=>{a[+k]=obj[k]||0;});
+        return a;
     }
-
-    function bsCanPlace(board, idx, size, horizontal) {
-        const {row,col} = bsRC(idx);
-        for (let i=0; i<size; i++) {
-            const r = horizontal ? row : row+i;
-            const c = horizontal ? col+i : col;
-            if (r>9||c>9) return false;
-            if (board[bsIdx(r,c)]!==0) return false;
-            // Kein direkter Nachbar
-            for (let dr=-1;dr<=1;dr++) for (let dc=-1;dc<=1;dc++) {
-                const nr=r+dr, nc=c+dc;
-                if (nr>=0&&nr<=9&&nc>=0&&nc<=9&&board[bsIdx(nr,nc)]===1) return false;
+    function bsShots(obj){
+        const s=new Set();
+        if(obj)Object.keys(obj).forEach(k=>{if(obj[k]===1)s.add(+k);});
+        return s;
+    }
+    function bsBoardObj(arr){const o={};arr.forEach((v,i)=>{if(v)o[i]=v;});return o;}
+    function bsCanPlace(board,idx,size,horiz){
+        const {row,col}=bsRC(idx);
+        for(let i=0;i<size;i++){
+            const r=horiz?row:row+i,c=horiz?col+i:col;
+            if(r>9||c>9)return false;
+            if(board[bsIdx(r,c)])return false;
+            for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
+                const nr=r+dr,nc=c+dc;
+                if(nr>=0&&nr<=9&&nc>=0&&nc<=9&&board[bsIdx(nr,nc)]>0)return false;
             }
         }
         return true;
     }
-
-    function bsPlaceShip(board, idx, size, horizontal, shipId) {
-        const {row,col} = bsRC(idx);
-        for (let i=0; i<size; i++) {
-            const r = horizontal ? row : row+i;
-            const cp = horizontal ? col+i : col;
-            board[bsIdx(r,cp)] = shipId; // store ship id (1-5) instead of 1
+    function bsDo(board,idx,size,horiz,id){
+        const {row,col}=bsRC(idx);
+        for(let i=0;i<size;i++){
+            const r=horiz?row:row+i,cp=horiz?col+i:col;
+            board[bsIdx(r,cp)]=id;
         }
     }
-
-    function bsCheckSunk(board, shots, shipId, size) {
-        // Find all cells of this ship and check if all are hit
-        const cells = [];
-        for (let i=0;i<100;i++) if(board[i]===shipId) cells.push(i);
-        return cells.length===size && cells.every(i => shots[i]===1);
+    function bsAllSunk(board,shotSet){
+        for(let i=0;i<100;i++)if(board[i]>0&&!shotSet.has(i))return false;
+        return true;
+    }
+    function bsMyName(){
+        const inp=document.getElementById('playerNameInput');
+        return (inp&&inp.value.trim())||(typeof playerName!=='undefined'&&playerName)||'Gast';
     }
 
-    function bsCountAlive(board, shots) {
-        for (let i=0;i<100;i++) if(board[i]>0 && shots[i]!==1) return true;
-        return false;
-    }
-
-    // ── View öffnen/schließen ─────────────────────────────────────────────────
-    window.openBattleship = function() {
-        const bsView = document.getElementById('battleshipView');
-        const mgView = document.getElementById('minigamesView');
-        if (!bsView) return;
-        if (!firebaseInitialized || !database) { showToast('Firebase nicht verbunden!', true); return; }
-        if (mgView) mgView.style.display = 'none';
-        bsView.style.display = 'block';
+    // ── ÖFFNEN / SCHLIESSEN ────────────────────────────────────────────────
+    window.openBattleship=function(){
+        if(!firebaseInitialized||!database||!currentUser){showToast('Bitte zuerst einloggen!',true);return;}
+        const bv=document.getElementById('battleshipView');
+        const mg=document.getElementById('minigamesView');
+        if(!bv)return;
+        if(mg)mg.style.display='none';
+        bv.style.display='block';
         bsRenderLobby();
     };
-
-    window.closeBattleship = function() {
-        const bsView = document.getElementById('battleshipView');
-        if (bsListener) { bsListener(); bsListener=null; }
-        if (bsGameId && bsGameData && bsGameData.status !== 'finished') {
-            try { database.ref('battleship/'+bsGameId+'/status').set('abandoned'); } catch(e){}
+    window.closeBattleship=function(){
+        clearInterval(window._bsTimer);
+        if(bsListener){bsListener();bsListener=null;}
+        if(bsGameId&&bsGameData&&bsGameData.status!=='finished'){
+            try{database.ref('battleship/'+bsGameId+'/status').set('abandoned');}catch(e){}
         }
-        bsGameId=null; bsRole=null; bsGameData=null;
-        clearInterval(window._bsLobbyTimer);
-        if (bsView) bsView.style.display = 'none';
+        bsGameId=null;bsRole=null;bsGameData=null;bsRewarded=false;
+        const bv=document.getElementById('battleshipView');
+        if(bv)bv.style.display='none';
     };
 
-    // ── LOBBY ─────────────────────────────────────────────────────────────────
-    async function bsRenderLobby() {
-        const el = document.getElementById('battleshipContent');
-        if (!el) return;
-        el.innerHTML = '<div class="bs-container"><div class="bs-title">🚢 Schiffe versenken</div><div class="bs-status">⏳ Lädt Spiele...</div></div>';
-
-        // Offene Spiele laden
-        const snap = await database.ref('battleship').orderByChild('status').equalTo('waiting').once('value');
-        const games = snap.val() || {};
-
-        let gameRows = '';
-        let myOpenGame = null;
-        for (const [gid, g] of Object.entries(games)) {
-            if (Date.now() - (g.createdAt||0) > 5*60000) {
-                database.ref('battleship/'+gid).remove(); continue;
+    // ── LOBBY ──────────────────────────────────────────────────────────────
+    async function bsRenderLobby(){
+        const el=document.getElementById('battleshipContent');
+        if(!el)return;
+        clearInterval(window._bsTimer);
+        el.innerHTML='<div class="bs-container"><div class="bs-status">⏳ Lade Lobby...</div></div>';
+        try{
+            const snap=await database.ref('battleship').orderByChild('status').equalTo('waiting').once('value');
+            const games=snap.val()||{};
+            const myUid=currentUser.uid;
+            const now=Date.now();
+            let rows='',myGame=null;
+            for(const[gid,g] of Object.entries(games)){
+                if(now-(g.createdAt||0)>10*60000){database.ref('battleship/'+gid).remove();continue;}
+                if(g.host===myUid){myGame=gid;continue;}
+                rows+=`<div class="bs-lobby-card">
+                    <div><b>${g.hostName||'Unbekannt'}</b><br>
+                    <span style="font-size:.72rem;color:#b0a070;">vor ${Math.floor((now-(g.createdAt||now))/60000)} Min.</span></div>
+                    <button class="bs-btn bs-btn-green" onclick="window.bsJoin('${gid}')">⚔️ Beitreten</button>
+                </div>`;
             }
-            if (g.host === (currentUser&&currentUser.uid)) { myOpenGame=gid; continue; }
-            gameRows += `<div class="bs-lobby-card">
-                <div><b>${g.hostName||'Unbekannt'}</b><br><span style="font-size:.75rem;color:#b0a070;">wartet auf Gegner...</span></div>
-                <button class="bs-btn bs-btn-green" onclick="window.bsJoinGame('${gid}')">⚔️ Beitreten</button>
+            if(!rows)rows='<div style="color:#b0a070;text-align:center;padding:12px;">Keine offenen Spiele – erstelle eines!</div>';
+            el.innerHTML=`<div class="bs-container">
+                <div class="bs-title">🚢 Schiffe versenken</div>
+                <div style="text-align:center;font-size:.8rem;color:#b0a070;margin-bottom:10px;">
+                    Sieger: +${BS_WIN_GOLD}💰 +100XP | Verlierer: +${BS_LOSS_GOLD}💰 +20XP
+                </div>
+                ${myGame
+                    ?`<div class="bs-status">⏳ Dein Spiel wartet auf Gegner
+                        <button class="bs-btn bs-btn-red" onclick="window.bsCancelLobby('${myGame}')" style="padding:4px 10px;font-size:.78rem;margin-left:8px;">❌ Abbrechen</button></div>`
+                    :`<button class="bs-btn bs-btn-green" onclick="window.bsCreate()" style="width:100%;margin-bottom:10px;">➕ Neues Spiel erstellen</button>`}
+                <div style="font-weight:bold;color:#4a8abf;margin:8px 0 5px;">Offene Spiele:</div>
+                <div>${rows}</div>
+                <div style="text-align:center;margin-top:14px;">
+                    <button class="bs-btn bs-btn-red" onclick="window.closeBattleship()">✖ Zurück</button>
+                </div>
             </div>`;
-        }
-        if (!gameRows) gameRows = '<div style="color:#b0a070;text-align:center;padding:12px;">Keine offenen Spiele. Erstelle eines!</div>';
-
-        el.innerHTML = `<div class="bs-container">
-            <div class="bs-title">🚢 Schiffe versenken</div>
-            <div style="text-align:center;font-size:.8rem;color:#b0a070;margin-bottom:10px;">
-                Versenke alle 5 Schiffe des Gegners! Gewinner: +${BS_REWARD_WIN}💰 | Verlierer: +${BS_REWARD_LOSS}💰
-            </div>
-            ${myOpenGame ? `<div class="bs-status">⏳ Dein Spiel wartet auf einen Gegner...
-                <button class="bs-btn bs-btn-red" onclick="window.bsCancelGame('${myOpenGame}')" style="margin-left:10px;padding:4px 12px;font-size:.8rem;">❌ Abbrechen</button>
-            </div>` : `<button class="bs-btn bs-btn-green" onclick="window.bsCreateGame()" style="width:100%;margin-bottom:10px;">➕ Neues Spiel erstellen</button>`}
-            <div style="font-weight:bold;color:#4a8abf;margin:10px 0 6px;">Offene Spiele:</div>
-            <div id="bsGameList">${gameRows}</div>
-            <div style="margin-top:14px;text-align:center;">
-                <button class="bs-btn bs-btn-red" onclick="window.closeBattleship()">✖ Zurück zum Multiplayer</button>
-            </div>
-        </div>`;
-
-        // Auto-refresh alle 5s
-        if (window._bsLobbyTimer) clearInterval(window._bsLobbyTimer);
-        window._bsLobbyTimer = setInterval(function(){
-            if (!document.getElementById('bsGameList')) { clearInterval(window._bsLobbyTimer); return; }
-            bsRenderLobby();
-        }, 5000);
+        }catch(e){el.innerHTML=`<div class="bs-container"><div class="bs-status">Fehler: ${e.message}</div><button class="bs-btn" onclick="bsRenderLobby()">🔄 Neu laden</button></div>`;}
+        window._bsTimer=setInterval(function(){if(!document.getElementById('battleshipContent'))return clearInterval(window._bsTimer);bsRenderLobby();},5000);
     }
-
-    window.bsCreateGame = async function() {
-        if (!currentUser) { showToast('Bitte einloggen!', true); return; }
-        clearInterval(window._bsLobbyTimer);
-        const gameId = currentUser.uid + '_' + Date.now();
-        await database.ref('battleship/'+gameId).set({
-            host: currentUser.uid,
-            hostName: bsGetPlayerName(),
-            guest: null, guestName: null,
-            status: 'waiting',
-            hostBoard: Array(100).fill(0),
-            guestBoard: Array(100).fill(0),
-            hostShots: Array(100).fill(0),
-            guestShots: Array(100).fill(0),
-            turn: 'host',
-            winner: null,
-            createdAt: Date.now()
-        });
-        bsGameId = gameId;
-        bsRole = 'host';
-        bsMyBoard = new Array(100).fill(0);
-        bsEnemyView = new Array(100).fill(0);
-        bsPlaced = [];
-        bsPlacing = {shipIdx:0, horizontal:true};
-        bsRenderPlacing();
-        bsListenGame();
-    };
-
-    window.bsJoinGame = async function(gameId) {
-        if (!currentUser) { showToast('Bitte einloggen!', true); return; }
-        clearInterval(window._bsLobbyTimer);
-        bsGameId = gameId;
-        bsRole = 'guest';
-        bsMyBoard = new Array(100).fill(0);
-        bsEnemyView = new Array(100).fill(0);
-        bsPlaced = [];
-        bsPlacing = {shipIdx:0, horizontal:true};
-        await database.ref('battleship/'+gameId).update({
-            guest: currentUser.uid,
-            guestName: bsGetPlayerName(),
-            status: 'placing'
-        });
-        bsRenderPlacing();
-        bsListenGame();
-    };
-
-    window.bsCancelGame = async function(gameId) {
-        clearInterval(window._bsLobbyTimer);
-        await database.ref('battleship/'+gameId).remove();
-        bsGameId=null; bsRole=null;
+    window.bsCancelLobby=async function(gid){
+        clearInterval(window._bsTimer);
+        await database.ref('battleship/'+gid).remove();
         bsRenderLobby();
     };
 
-    // ── SCHIFFE PLATZIEREN ────────────────────────────────────────────────────
-    function bsRenderPlacing() {
-        const el = document.getElementById('battleshipContent');
-        if (!el) return;
-        clearInterval(window._bsLobbyTimer);
+    // ── ERSTELLEN / BEITRETEN ─────────────────────────────────────────────
+    window.bsCreate=async function(){
+        if(!currentUser){showToast('Bitte einloggen!',true);return;}
+        clearInterval(window._bsTimer);
+        const gid=currentUser.uid+'_bs_'+Date.now();
+        bsGameId=gid;bsRole='host';
+        bsMyBoard=new Array(100).fill(0);bsPlaced=[];bsPlacing={shipIdx:0,horizontal:true};bsRewarded=false;
+        await database.ref('battleship/'+gid).set({
+            host:currentUser.uid,hostName:bsMyName(),
+            guest:null,guestName:null,
+            status:'waiting',hostReady:false,guestReady:false,
+            turn:'host',winner:null,createdAt:Date.now()
+        });
+        bsListenGame();
+        bsShowPlace();
+    };
+    window.bsJoin=async function(gid){
+        if(!currentUser){showToast('Bitte einloggen!',true);return;}
+        clearInterval(window._bsTimer);
+        bsGameId=gid;bsRole='guest';
+        bsMyBoard=new Array(100).fill(0);bsPlaced=[];bsPlacing={shipIdx:0,horizontal:true};bsRewarded=false;
+        await database.ref('battleship/'+gid).update({
+            guest:currentUser.uid,guestName:bsMyName(),status:'placing'
+        });
+        bsListenGame();
+        bsShowPlace();
+    };
 
-        const ship = BS_SHIPS[bsPlacing.shipIdx];
-        let shipBtns = BS_SHIPS.map((s,i) => {
-            const cls = bsPlaced.includes(i) ? 'placed' : i===bsPlacing.shipIdx ? 'selected' : '';
-            return `<button class="bs-ship-btn ${cls}" onclick="window.bsSelectShip(${i})">${s.symbol} ${s.name} (${s.size})</button>`;
+    // ── SCHIFFE PLATZIEREN ─────────────────────────────────────────────────
+    function bsShowPlace(){
+        const el=document.getElementById('battleshipContent');if(!el)return;
+        const allDone=bsPlaced.length===BS_SHIPS.length;
+        const cur=BS_SHIPS[bsPlacing.shipIdx];
+        const shipBtns=BS_SHIPS.map((s,i)=>{
+            const cls=bsPlaced.includes(i)?'placed':i===bsPlacing.shipIdx?'selected':'';
+            return `<button class="bs-ship-btn ${cls}" onclick="window.bsSel(${i})">${s.symbol} ${s.name}(${s.size})</button>`;
         }).join('');
-
-        el.innerHTML = `<div class="bs-container">
-            <div class="bs-title">🚢 Schiffe platzieren</div>
-            <div class="bs-status">Wähle ein Schiff und klicke auf dein Raster</div>
-            <div style="text-align:center;margin:6px 0;">
-                <button class="bs-orient-btn ${bsPlacing.horizontal?'active':''}" onclick="window.bsToggleOrient()">↔ Horizontal</button>
-                <button class="bs-orient-btn ${!bsPlacing.horizontal?'active':''}" onclick="window.bsToggleOrient()">↕ Vertikal</button>
+        el.innerHTML=`<div class="bs-container">
+            <div class="bs-title">⚓ Schiffe platzieren</div>
+            <div class="bs-status">Wähle ein Schiff → klicke auf dein Raster</div>
+            <div style="text-align:center;margin:6px 0;display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
+                <button class="bs-orient-btn ${bsPlacing.horizontal?'active':''}" onclick="window.bsOrient()">↔ Horizontal</button>
+                <button class="bs-orient-btn ${!bsPlacing.horizontal?'active':''}" onclick="window.bsOrient()">↕ Vertikal</button>
+                <button class="bs-btn" onclick="window.bsRand()" style="padding:4px 12px;font-size:.8rem;">🎲 Zufall</button>
+                <button class="bs-btn" onclick="window.bsReset()" style="padding:4px 12px;font-size:.8rem;">🔄 Reset</button>
             </div>
             <div class="bs-place-ships">${shipBtns}</div>
-            <div style="text-align:center;margin-bottom:6px;font-size:.8rem;color:#b0a070;">
-                ${ship ? `Ausgewählt: ${ship.symbol} ${ship.name} (${ship.size} Felder)` : 'Alle Schiffe platziert!'}
+            <div style="text-align:center;font-size:.8rem;color:#b0a070;margin:4px 0;">
+                ${cur&&!allDone?`Platziere: ${cur.symbol} ${cur.name} (${cur.size} Felder)`:'✅ Alle platziert!'}
             </div>
             <div class="bs-boards"><div class="bs-board-wrap">
                 <div class="bs-board-label">Dein Raster</div>
                 <div class="bs-grid" id="bsMyGrid"></div>
             </div></div>
+            <div id="bsPlMsg" style="text-align:center;color:#f5a623;min-height:18px;font-size:.82rem;margin-top:4px;"></div>
             <div style="text-align:center;margin-top:10px;">
-                <button class="bs-btn" onclick="window.bsRandomPlace()">🎲 Zufällig</button>
-                <button class="bs-btn" onclick="window.bsResetPlace()">🔄 Neu</button>
-                ${bsPlaced.length===BS_SHIPS.length ? `<button class="bs-btn bs-btn-green" onclick="window.bsConfirmPlacement()">✅ Bereit!</button>` : ''}
+                ${allDone?`<button class="bs-btn bs-btn-green" onclick="window.bsConfirm()">✅ Bereit! Los geht's</button>`:''}
                 <button class="bs-btn bs-btn-red" onclick="window.closeBattleship()">✖ Abbrechen</button>
             </div>
-            <div id="bsPlaceInfo" style="text-align:center;color:#f5a623;margin-top:6px;font-size:.85rem;"></div>
         </div>`;
-        bsRenderMyGridForPlacing();
+        bsBuildGrid();
     }
-
-    function bsRenderMyGridForPlacing() {
-        const grid = document.getElementById('bsMyGrid');
-        if (!grid) return;
-        grid.innerHTML = '';
-        for (let i=0;i<100;i++) {
-            const cell = document.createElement('div');
-            cell.className = 'bs-cell' + (bsMyBoard[i]>0 ? ' ship' : '');
-            cell.dataset.idx = i;
-            cell.onclick = function() { window.bsCellClick(parseInt(this.dataset.idx)); };
-            // Hover-Vorschau
-            cell.onmouseenter = function() { bsPreviewPlace(parseInt(this.dataset.idx), true); };
-            cell.onmouseleave = function() { bsPreviewPlace(parseInt(this.dataset.idx), false); };
-            grid.appendChild(cell);
+    function bsBuildGrid(){
+        const g=document.getElementById('bsMyGrid');if(!g)return;g.innerHTML='';
+        for(let i=0;i<100;i++){
+            const d=document.createElement('div');
+            d.className='bs-cell'+(bsMyBoard[i]?' ship':'');
+            d.dataset.idx=i;
+            d.onclick=function(){window.bsCell(+this.dataset.idx);};
+            d.onmouseenter=function(){bsHov(+this.dataset.idx,true);};
+            d.onmouseleave=function(){bsHov(+this.dataset.idx,false);};
+            g.appendChild(d);
         }
     }
-
-    function bsPreviewPlace(idx, show) {
-        if (bsPlaced.length >= BS_SHIPS.length) return;
-        const ship = BS_SHIPS[bsPlacing.shipIdx];
-        if (!ship) return;
-        const cells = document.querySelectorAll('#bsMyGrid .bs-cell');
-        const canPlace = bsCanPlace(bsMyBoard, idx, ship.size, bsPlacing.horizontal);
-        const {row,col} = bsRC(idx);
-        for (let i=0;i<ship.size;i++) {
-            const r = bsPlacing.horizontal ? row : row+i;
-            const cp = bsPlacing.horizontal ? col+i : col;
-            if (r<=9&&cp<=9) {
-                const ci = bsIdx(r,cp);
-                if (cells[ci]) cells[ci].style.background = show ? (canPlace?'#4a7a3a':'#7a2a2a') : '';
+    function bsHov(idx,show){
+        if(bsPlaced.length>=BS_SHIPS.length)return;
+        const ship=BS_SHIPS[bsPlacing.shipIdx];if(!ship)return;
+        const ok=bsCanPlace(bsMyBoard,idx,ship.size,bsPlacing.horizontal);
+        const {row,col}=bsRC(idx);
+        for(let i=0;i<ship.size;i++){
+            const r=bsPlacing.horizontal?row:row+i,cp=bsPlacing.horizontal?col+i:col;
+            if(r<=9&&cp<=9){
+                const cells=document.querySelectorAll('#bsMyGrid .bs-cell');
+                const ci=bsIdx(r,cp);
+                if(cells[ci])cells[ci].style.background=show?(ok?'#4a7a3a':'#7a2a2a'):'';
             }
         }
     }
-
-    window.bsCellClick = function(idx) {
-        if (bsPlaced.length >= BS_SHIPS.length) return;
-        const shipIdx = bsPlacing.shipIdx;
-        const ship = BS_SHIPS[shipIdx];
-        if (!ship || bsPlaced.includes(shipIdx)) return;
-        if (!bsCanPlace(bsMyBoard, idx, ship.size, bsPlacing.horizontal)) {
-            document.getElementById('bsPlaceInfo').textContent = '❌ Hier kann das Schiff nicht platziert werden!';
-            return;
+    window.bsCell=function(idx){
+        if(bsPlaced.length>=BS_SHIPS.length)return;
+        const si=bsPlacing.shipIdx,ship=BS_SHIPS[si];
+        if(!ship||bsPlaced.includes(si))return;
+        if(!bsCanPlace(bsMyBoard,idx,ship.size,bsPlacing.horizontal)){
+            const m=document.getElementById('bsPlMsg');if(m)m.textContent='❌ Hier nicht möglich!';return;
         }
-        bsPlaceShip(bsMyBoard, idx, ship.size, bsPlacing.horizontal, shipIdx+1);
-        bsPlaced.push(shipIdx);
-        // Nächstes Schiff auswählen
-        for (let i=0;i<BS_SHIPS.length;i++) {
-            if (!bsPlaced.includes(i)) { bsPlacing.shipIdx=i; break; }
+        bsDo(bsMyBoard,idx,ship.size,bsPlacing.horizontal,si+1);
+        bsPlaced.push(si);
+        for(let i=0;i<BS_SHIPS.length;i++){if(!bsPlaced.includes(i)){bsPlacing.shipIdx=i;break;}}
+        bsShowPlace();
+    };
+    window.bsSel=function(i){if(!bsPlaced.includes(i)){bsPlacing.shipIdx=i;bsShowPlace();}};
+    window.bsOrient=function(){bsPlacing.horizontal=!bsPlacing.horizontal;bsShowPlace();};
+    window.bsRand=function(){
+        bsMyBoard=new Array(100).fill(0);bsPlaced=[];
+        for(let s=0;s<BS_SHIPS.length;s++){
+            const ship=BS_SHIPS[s];let ok=false,t=0;
+            while(!ok&&t++<500){const h=Math.random()<.5,i=Math.floor(Math.random()*100);
+                if(bsCanPlace(bsMyBoard,i,ship.size,h)){bsDo(bsMyBoard,i,ship.size,h,s+1);bsPlaced.push(s);ok=true;}}
         }
-        bsRenderPlacing();
+        bsPlacing.shipIdx=BS_SHIPS.length;bsShowPlace();
     };
+    window.bsReset=function(){bsMyBoard=new Array(100).fill(0);bsPlaced=[];bsPlacing={shipIdx:0,horizontal:true};bsShowPlace();};
 
-    window.bsSelectShip = function(idx) {
-        if (bsPlaced.includes(idx)) return;
-        bsPlacing.shipIdx = idx;
-        bsRenderPlacing();
+    // ── BEREIT ─────────────────────────────────────────────────────────────
+    window.bsConfirm=async function(){
+        if(bsPlaced.length<BS_SHIPS.length){showToast('Platziere zuerst alle Schiffe!',true);return;}
+        if(!bsGameId){showToast('Kein aktives Spiel!',true);return;}
+        const bk=bsRole==='host'?'hostBoard':'guestBoard';
+        const rk=bsRole==='host'?'hostReady':'guestReady';
+        const snap=await database.ref('battleship/'+bsGameId).once('value');
+        const g=snap.val();
+        if(!g){showToast('Spiel nicht mehr vorhanden!',true);window.closeBattleship();return;}
+        const otherReady=bsRole==='host'?g.guestReady:g.hostReady;
+        const upd={[bk]:bsBoardObj(bsMyBoard),[rk]:true};
+        upd.status=otherReady?'playing':(bsRole==='host'?'host_ready':'guest_ready');
+        if(otherReady)upd.turn='host';
+        await database.ref('battleship/'+bsGameId).update(upd);
+        bsShowWait();
     };
-
-    window.bsToggleOrient = function() {
-        bsPlacing.horizontal = !bsPlacing.horizontal;
-        bsRenderPlacing();
-    };
-
-    window.bsRandomPlace = function() {
-        bsMyBoard = new Array(100).fill(0);
-        bsPlaced = [];
-        for (let s=0;s<BS_SHIPS.length;s++) {
-            const ship = BS_SHIPS[s];
-            let placed = false, tries = 0;
-            while (!placed && tries<200) {
-                tries++;
-                const horizontal = Math.random()<0.5;
-                const idx = Math.floor(Math.random()*100);
-                if (bsCanPlace(bsMyBoard, idx, ship.size, horizontal)) {
-                    bsPlaceShip(bsMyBoard, idx, ship.size, horizontal, s+1);
-                    bsPlaced.push(s);
-                    placed = true;
-                }
-            }
-        }
-        bsPlacing.shipIdx = BS_SHIPS.length;
-        bsRenderPlacing();
-    };
-
-    window.bsResetPlace = function() {
-        bsMyBoard = new Array(100).fill(0);
-        bsPlaced = [];
-        bsPlacing = {shipIdx:0, horizontal:true};
-        bsRenderPlacing();
-    };
-
-    window.bsConfirmPlacement = async function() {
-        if (bsPlaced.length < BS_SHIPS.length) { showToast('Platziere zuerst alle Schiffe!', true); return; }
-        const boardKey = bsRole==='host' ? 'hostBoard' : 'guestBoard';
-        const update = {}; update[boardKey] = bsMyBoard;
-        // Host: Status bleibt 'placing' bis Guest fertig
-        // Wenn beide fertig: Status → 'playing'
-        const snap = await database.ref('battleship/'+bsGameId).once('value');
-        const g = snap.val();
-        if (!g) { showToast('Spiel nicht mehr vorhanden!', true); window.closeBattleship(); return; }
-        const otherBoard = bsRole==='host' ? g.guestBoard : g.hostBoard;
-        const otherReady = otherBoard && otherBoard.some(v=>v>0);
-        update.status = (otherReady || bsRole==='guest') && (g.status==='placing' || g.status==='waiting') ? 'playing' : 'placing';
-        if (bsRole==='host' && g.status==='waiting' && !otherReady) update.status='placing';
-        await database.ref('battleship/'+bsGameId).update(update);
-        bsRenderWaiting();
-    };
-
-    function bsRenderWaiting() {
-        const el = document.getElementById('battleshipContent');
-        if (!el) return;
-        el.innerHTML = `<div class="bs-container">
+    function bsShowWait(){
+        const el=document.getElementById('battleshipContent');if(!el)return;
+        el.innerHTML=`<div class="bs-container">
             <div class="bs-title">🚢 Schiffe versenken</div>
-            <div class="bs-status">⏳ Warte auf Gegner...</div>
-            <div style="text-align:center;margin-top:14px;">
-                <button class="bs-btn bs-btn-red" onclick="window.closeBattleship()">✖ Abbrechen</button>
+            <div class="bs-status">⏳ Deine Schiffe sind platziert!<br>
+            <span style="font-size:.78rem;color:#b0c890;">Warte auf den Gegner...</span></div>
+            <div style="text-align:center;margin-top:12px;">
+                <button class="bs-btn bs-btn-red" onclick="window.closeBattleship()">✖ Aufgeben</button>
             </div>
         </div>`;
     }
 
-    // ── SPIEL-LISTENER ────────────────────────────────────────────────────────
-    function bsListenGame() {
-        if (bsListener) { bsListener(); bsListener=null; }
-        if (!bsGameId) return;
-        const ref = database.ref('battleship/'+bsGameId);
-        const handler = ref.on('value', function(snap) {
-            const g = snap.val();
-            if (!g) { showToast('Spiel wurde beendet.', false); window.closeBattleship(); return; }
-            bsGameData = g;
-            if (g.status==='abandoned') { showToast('Gegner hat das Spiel verlassen!', false); window.closeBattleship(); return; }
-
-            // Eigenes Board mit Firebase-Schüssen zusammenführen
-            const myBoardFromDB = bsRole==='host' ? g.hostBoard : g.guestBoard;
-            const myShots       = bsRole==='host' ? g.hostShots : g.guestShots;
-            const enemyShots    = bsRole==='host' ? g.guestShots : g.hostShots;
-            const enemyBoard    = bsRole==='host' ? g.guestBoard : g.hostBoard;
-
-            // Eigenes Board: was der Gegner auf uns geschossen hat anzeigen
-            if (myBoardFromDB) {
-                for (let i=0;i<100;i++) {
-                    if (myBoardFromDB[i]>0 && enemyShots[i]===1) bsMyBoard[i]=myBoardFromDB[i]; // ship hit
-                    else if (myBoardFromDB[i]>0) bsMyBoard[i]=myBoardFromDB[i];
-                    else bsMyBoard[i]=0;
-                }
-            }
-
-            // Gegner-View: unsere Schüsse
-            if (myShots) {
-                for (let i=0;i<100;i++) {
-                    if (myShots[i]===1 && enemyBoard && enemyBoard[i]>0) bsEnemyView[i]=1; // hit
-                    else if (myShots[i]===1) bsEnemyView[i]=2; // miss
-                    else bsEnemyView[i]=0;
-                }
-            }
-
-            if (g.status==='waiting') { bsRenderPlacing(); }
-            else if (g.status==='placing') {
-                const myBoardKey = bsRole==='host' ? 'hostBoard' : 'guestBoard';
-                if (!g[myBoardKey] || !g[myBoardKey].some(v=>v>0)) bsRenderPlacing();
-                else bsRenderWaiting();
-            }
-            else if (g.status==='playing') bsRenderGame(g);
-            else if (g.status==='finished') bsRenderFinished(g);
-        });
-        bsListener = function(){ ref.off('value', handler); };
+    // ── ECHTZEIT-LISTENER ─────────────────────────────────────────────────
+    function bsListenGame(){
+        if(bsListener){bsListener();bsListener=null;}
+        if(!bsGameId)return;
+        const ref=database.ref('battleship/'+bsGameId);
+        function handler(snap){
+            const g=snap.val();
+            if(!g){showToast('Spiel beendet.',false);window.closeBattleship();return;}
+            bsGameData=g;
+            const st=g.status;
+            if(st==='abandoned'){showToast('Gegner hat das Spiel verlassen!',false);window.closeBattleship();return;}
+            const myReady=bsRole==='host'?g.hostReady:g.guestReady;
+            if(st==='waiting'||st==='placing'||st==='host_ready'||st==='guest_ready'){
+                if(myReady)bsShowWait();
+                // sonst läuft bsShowPlace() noch
+            }else if(st==='playing'){bsRenderGame(g);}
+            else if(st==='finished'){bsRenderFinished(g);}
+        }
+        ref.on('value',handler);
+        bsListener=function(){ref.off('value',handler);};
     }
 
-    // ── SPIELFELD RENDERN ─────────────────────────────────────────────────────
-    function bsRenderGame(g) {
-        const el = document.getElementById('battleshipContent');
-        if (!el) return;
-        const myTurn = g.turn === bsRole;
-        const myName   = bsRole==='host' ? g.hostName : g.guestName;
-        const oppName  = bsRole==='host' ? (g.guestName||'Gegner') : (g.hostName||'Gegner');
-
-        const myShots    = bsRole==='host' ? g.hostShots : g.guestShots;
-        const enemyBoard = bsRole==='host' ? g.guestBoard : g.hostBoard;
-        const enemyShots = bsRole==='host' ? g.guestShots : g.hostShots;
-        const myBoardDB  = bsRole==='host' ? g.hostBoard : g.guestBoard;
-
-        el.innerHTML = `<div class="bs-container">
+    // ── SPIELFELD ─────────────────────────────────────────────────────────
+    function bsRenderGame(g){
+        const el=document.getElementById('battleshipContent');if(!el)return;
+        const myTurn=g.turn===bsRole;
+        const myName=bsRole==='host'?(g.hostName||'Du'):(g.guestName||'Du');
+        const oppName=bsRole==='host'?(g.guestName||'Gegner'):(g.hostName||'Gegner');
+        const myBd=bsArr(bsRole==='host'?g.hostBoard:g.guestBoard);
+        const oppBd=bsArr(bsRole==='host'?g.guestBoard:g.hostBoard);
+        const myS=bsShots(bsRole==='host'?g.hostShots:g.guestShots);
+        const oppS=bsShots(bsRole==='host'?g.guestShots:g.hostShots);
+        el.innerHTML=`<div class="bs-container">
             <div class="bs-title">🚢 Schiffe versenken</div>
             <div class="bs-status ${myTurn?'your-turn':'opponent-turn'}">
-                ${myTurn ? '⚔️ Dein Zug – klicke auf das gegnerische Raster!' : `⏳ ${oppName} ist am Zug...`}
+                ${myTurn?'⚔️ Dein Zug – klicke auf Gegner-Raster!':'⏳ '+oppName+' ist am Zug...'}
             </div>
             <div class="bs-boards">
                 <div class="bs-board-wrap">
-                    <div class="bs-board-label">👤 ${myName} (Du)</div>
-                    <div class="bs-grid" id="bsOwnGrid"></div>
+                    <div class="bs-board-label">👤 ${myName}</div>
+                    <div class="bs-grid" id="bsOG"></div>
                 </div>
                 <div class="bs-board-wrap">
-                    <div class="bs-board-label">🎯 ${oppName} (Gegner)</div>
-                    <div class="bs-grid" id="bsEnemyGrid"></div>
+                    <div class="bs-board-label">🎯 ${oppName}</div>
+                    <div class="bs-grid" id="bsEG"></div>
                 </div>
             </div>
-            <div id="bsShotInfo" style="text-align:center;color:#f5a623;min-height:24px;font-size:.85rem;margin-top:4px;"></div>
+            <div id="bsMsg" style="text-align:center;color:#f5a623;min-height:20px;font-size:.85rem;margin-top:4px;"></div>
             <div style="text-align:center;margin-top:8px;">
                 <button class="bs-btn bs-btn-red" onclick="window.closeBattleship()">🏳️ Aufgeben</button>
             </div>
         </div>`;
-
-        // Eigenes Raster rendern (mit Gegners Treffern)
-        const ownGrid = document.getElementById('bsOwnGrid');
-        if (ownGrid) {
-            for (let i=0;i<100;i++) {
-                const cell = document.createElement('div');
-                let cls = 'bs-cell';
-                const isShip = myBoardDB && myBoardDB[i]>0;
-                const wasHit = enemyShots && enemyShots[i]===1;
-                if (isShip && wasHit) cls+=' hit';
-                else if (isShip) cls+=' ship';
-                else if (wasHit) cls+=' miss';
-                cell.className = cls;
-                cell.title = isShip&&wasHit?'Getroffen!':isShip?'Dein Schiff':'';
-                ownGrid.appendChild(cell);
-            }
+        const og=document.getElementById('bsOG');
+        if(og)for(let i=0;i<100;i++){
+            const d=document.createElement('div');
+            const ship=myBd[i]>0,hit=oppS.has(i);
+            d.className='bs-cell'+(ship&&hit?' hit':ship?' ship':hit?' miss':'');
+            d.textContent=ship&&hit?'💥':'';
+            og.appendChild(d);
         }
-
-        // Gegner-Raster rendern (mit unseren Schüssen)
-        const enemyGrid = document.getElementById('bsEnemyGrid');
-        if (enemyGrid) {
-            for (let i=0;i<100;i++) {
-                const cell = document.createElement('div');
-                const shot = myShots && myShots[i]===1;
-                const isHit = shot && enemyBoard && enemyBoard[i]>0;
-                let cls = 'bs-cell';
-                if (shot && isHit) cls+=' enemy-hit';
-                else if (shot) cls+=' enemy-miss';
-                else cls+=' enemy-unknown';
-                cell.className = cls;
-                cell.textContent = isHit?'💥':shot?'🌊':'';
-                if (!shot && myTurn) {
-                    cell.dataset.idx = i;
-                    cell.onclick = function() { window.bsShoot(parseInt(this.dataset.idx)); };
-                }
-                enemyGrid.appendChild(cell);
-            }
+        const eg=document.getElementById('bsEG');
+        if(eg)for(let i=0;i<100;i++){
+            const d=document.createElement('div');
+            const shot=myS.has(i),hit=shot&&oppBd[i]>0;
+            d.className='bs-cell'+(hit?' enemy-hit':shot?' enemy-miss':myTurn?' enemy-unknown':'');
+            d.textContent=hit?'💥':shot?'🌊':'';
+            if(!shot&&myTurn){d.dataset.idx=i;d.onclick=function(){window.bsShoot(+this.dataset.idx);};}
+            eg.appendChild(d);
         }
     }
-
-    window.bsShoot = async function(idx) {
-        if (!bsGameData || bsGameData.turn!==bsRole) { showToast('Noch nicht dein Zug!', true); return; }
-        if (!bsGameId) return;
-        const myShots    = bsRole==='host' ? bsGameData.hostShots : bsGameData.guestShots;
-        const enemyBoard = bsRole==='host' ? bsGameData.guestBoard : bsGameData.hostBoard;
-        if (!myShots || !enemyBoard) return;
-        if (myShots[idx]===1) { showToast('Dieses Feld wurde schon beschossen!', true); return; }
-
-        const newShots = [...myShots];
-        newShots[idx] = 1;
-        const isHit = enemyBoard[idx]>0;
-        const shotsKey = bsRole==='host' ? 'hostShots' : 'guestShots';
-
-        // Prüfe Gewinn: alle Schiffe versenkt?
-        const allSunk = enemyBoard.every((v,i) => v===0 || newShots[i]===1);
-
-        const update = {};
-        update[shotsKey] = newShots;
-        update['turn'] = bsRole==='host' ? 'guest' : 'host'; // Gegner dran (immer wechseln)
-
-        if (allSunk) {
-            update['status'] = 'finished';
-            update['winner'] = bsRole;
-        }
-
-        await database.ref('battleship/'+bsGameId).update(update);
-
-        const info = document.getElementById('bsShotInfo');
-        if (info) info.textContent = isHit ? '💥 Treffer!' : '🌊 Wasser!';
-        showToast(isHit ? '💥 Treffer!' : '🌊 Wasser!', false);
+    window.bsShoot=async function(idx){
+        if(!bsGameData||bsGameData.turn!==bsRole){showToast('Nicht dein Zug!',true);return;}
+        const myS=bsShots(bsRole==='host'?bsGameData.hostShots:bsGameData.guestShots);
+        if(myS.has(idx)){showToast('Bereits beschossen!',true);return;}
+        const oppBd=bsArr(bsRole==='host'?bsGameData.guestBoard:bsGameData.hostBoard);
+        const hit=oppBd[idx]>0;
+        const sk=bsRole==='host'?'hostShots':'guestShots';
+        const newS={};myS.forEach(i=>{newS[i]=1;});newS[idx]=1;
+        const allSet=new Set(Object.keys(newS).map(Number));
+        const won=bsAllSunk(oppBd,allSet);
+        const upd={[sk]:newS,turn:bsRole==='host'?'guest':'host'};
+        if(won){upd.status='finished';upd.winner=bsRole;}
+        await database.ref('battleship/'+bsGameId).update(upd);
+        const m=document.getElementById('bsMsg');
+        if(m)m.textContent=hit?'💥 Treffer!':'🌊 Wasser!';
+        showToast(hit?'💥 Treffer!':'🌊 Wasser!',false);
     };
 
-    // ── SPIELENDE ─────────────────────────────────────────────────────────────
-    function bsRenderFinished(g) {
-        const el = document.getElementById('battleshipContent');
-        if (!el) return;
-        if (bsListener) { bsListener(); bsListener=null; }
-
-        const won = g.winner === bsRole;
-        const reward = won ? BS_REWARD_WIN : BS_REWARD_LOSS;
-        playerGold += reward; updateMoneyUI();
-        if (won) addXP(100); else addXP(20);
-        saveGameToLocal();
-
-        // Verhindere Doppelvergabe
-        if (!bsGameData || bsGameData._rewarded) { /* already awarded */ }
-        if (bsGameData) bsGameData._rewarded = true;
-
-        const oppName = bsRole==='host' ? (g.guestName||'Gegner') : (g.hostName||'Gegner');
-        el.innerHTML = `<div class="bs-container">
-            <div class="bs-title">🚢 Spielende!</div>
+    // ── SPIELENDE ─────────────────────────────────────────────────────────
+    function bsRenderFinished(g){
+        if(bsRewarded)return;bsRewarded=true;
+        if(bsListener){bsListener();bsListener=null;}
+        const won=g.winner===bsRole;
+        playerGold+=won?BS_WIN_GOLD:BS_LOSS_GOLD;
+        addXP(won?100:20);updateMoneyUI();saveGameToLocal();
+        const opp=bsRole==='host'?(g.guestName||'Gegner'):(g.hostName||'Gegner');
+        const el=document.getElementById('battleshipContent');if(!el)return;
+        el.innerHTML=`<div class="bs-container">
+            <div class="bs-title">🏁 Spielende</div>
             <div class="bs-status ${won?'won':'lost'}" style="font-size:1.2rem;padding:16px;">
-                ${won ? '🏆 Du hast gewonnen!' : '😔 Du hast verloren.'}
+                ${won?'🏆 Du hast gewonnen!':'😔 Du hast verloren.'}
             </div>
-            <div style="text-align:center;margin:12px 0;font-size:.95rem;">
-                Belohnung: <b style="color:#f5a623;">+${reward}💰</b> ${won?'+ 100 XP':'+ 20 XP'}
-                <br>Gegner: <b>${oppName}</b>
+            <div style="text-align:center;margin:12px 0;">
+                <b style="color:#f5a623;">+${won?BS_WIN_GOLD:BS_LOSS_GOLD}💰 ${won?'+ 100 XP':'+ 20 XP'}</b><br>
+                <span style="font-size:.85rem;color:#b0a070;">Gegner: ${opp}</span>
             </div>
             <div style="text-align:center;">
                 <button class="bs-btn bs-btn-green" onclick="window.openBattleship()">🔄 Neue Runde</button>
                 <button class="bs-btn bs-btn-red" onclick="window.closeBattleship()">✖ Zurück</button>
             </div>
         </div>`;
-        showToast(won ? '🏆 Gewonnen! +'+BS_REWARD_WIN+'💰' : '😔 Verloren. +'+BS_REWARD_LOSS+'💰', false);
+        showToast(won?'🏆 Gewonnen! +'+BS_WIN_GOLD+'💰':'😔 Verloren. +'+BS_LOSS_GOLD+'💰',false);
     }
-
 
         // ==================== ADMIN-FUNKTIONEN ====================
     function checkAdminStatus() {
