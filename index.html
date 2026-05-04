@@ -1200,6 +1200,7 @@
                 <div style="background:#3a2a1a;border-radius:12px;padding:10px;margin:6px 0;">
                     <div style="font-weight:bold;color:#f5a623;margin-bottom:6px;">🎁 Bonus vergeben</div>
                     <button onclick="loadAdminPlayerPicker()" style="background:#4a6e8b;color:white;border:none;padding:6px 12px;border-radius:8px;cursor:pointer;margin-bottom:8px;">🔄 Spielerliste laden</button>
+                    <button onclick="adminRestoreGold()" style="background:#8b2020;color:white;border:none;padding:6px 12px;border-radius:8px;cursor:pointer;margin-bottom:8px;">🛡️ Gold einer Spielerin wiederherstellen</button>
                     <div id="adminPlayerPicker" style="max-height:200px;overflow-y:auto;margin:6px 0;"></div>
                     <div style="font-size:.72rem;color:#b0a070;margin-bottom:6px;">☑️ Spieler anklicken = nur dieser bekommt Bonus. Kein Haken = alle.</div>
                     <button onclick="giveGlobalBonus()" style="background:#e67e22;color:white;border:none;padding:8px 14px;border-radius:8px;cursor:pointer;">🎁 Bonus vergeben</button>
@@ -1407,11 +1408,22 @@
 
     
     // ==================== GAME VERSION ====================
-    const CURRENT_GAME_VERSION = "4.2";
+    const CURRENT_GAME_VERSION = "4.3";
     
     // ==================== RELEASE NOTES ("Was ist neu?") ====================
     // Neue Einträge oben hinzufügen. version: muss zu CURRENT_GAME_VERSION passen, damit beim ersten Start automatisch angezeigt wird.
     const RELEASE_NOTES = [
+        {
+            version: "4.3",
+            date: "Mai 2026",
+            title: "🛡️ Gold-Schutz & Datensicherheit",
+            changes: [
+                "🛡️ <b>Gold-Schutz</b>: Das Spiel erkennt jetzt wenn Gold fälschlicherweise auf 0 stehen würde und blockiert das Speichern.",
+                "💾 <b>Lokales Backup</b>: Wenn kein Cloud-Spielstand gefunden wird aber ein lokales Backup mit Gold existiert, wird dieses automatisch verwendet.",
+                "🔄 <b>Race-Condition behoben</b>: Auto-Save kann nicht mehr während des Cloud-Ladens feuern und dabei Gold überschreiben.",
+                "🛡️ <b>Admin: Gold wiederherstellen</b>: Neuer Button in der Admin-Zentrale zum Wiederherstellen von verlorenen Gold-Beständen."
+            ]
+        },
         {
             version: "4.2",
             date: "Mai 2026",
@@ -3441,7 +3453,7 @@
     function startAutoSave() { 
         if (autoSaveInterval) clearInterval(autoSaveInterval); 
         autoSaveInterval = setInterval(async () => { 
-            if (currentUser && !isPaused) await autoSaveToCloud(); 
+            if (currentUser && !isPaused && !isLoadingFromCloud) await autoSaveToCloud(); 
         }, 5 * 60 * 1000); 
     }
 
@@ -3485,6 +3497,14 @@
     async function autoSaveToCloud() {
         if (!currentUser) return;
         if (!authReady) return;
+        if (isLoadingFromCloud) { console.warn("⚠️ autoSaveToCloud blockiert – Cloud-Laden läuft noch"); return; }
+        // Sicherheitscheck: Gold darf nie 0 sein wenn Level > 1 oder Tiere vorhanden
+        if ((playerGold === 0 || playerGold === null || playerGold === undefined) 
+            && (playerLevel > 1 || animals.length > 0 || Object.keys(inventory).length > 0)) {
+            console.error("🛡️ Gold-Schutz: Speichern blockiert – Gold ist 0 aber Spielstand hat Fortschritt!");
+            showToast("⚠️ Speichern pausiert (Datenschutz)", false);
+            return;
+        }
         try {
             const saveData = {
                 gold: playerGold || 0,
@@ -3598,12 +3618,34 @@
                 await applyCloudData(data);
                 console.log("✅ Cloud-Daten erfolgreich geladen und angewendet");
             } else {
-                console.log("ℹ️ Kein Cloud-Spielstand gefunden. Starte neu.");
-                playerGold = 500;
-                playerXP = 0;
-                playerLevel = 1;
-                isLoadingFromCloud = false;
-                await autoSaveToCloud();
+                // Kein Cloud-Spielstand – aber erst lokales Backup prüfen!
+                const localRaw = localStorage.getItem('farmPremium');
+                if (localRaw) {
+                    try {
+                        const localData = JSON.parse(localRaw);
+                        if (localData.gold > 100 || localData.playerLevel > 1) {
+                            console.log("ℹ️ Kein Cloud-Spielstand, aber lokales Backup mit Gold=" + localData.gold + " gefunden – verwende lokale Daten");
+                            isLoadingFromCloud = false;
+                            await applyCloudData(localData);
+                            showToast("💾 Lokalen Spielstand wiederhergestellt!", false);
+                        } else {
+                            console.log("ℹ️ Kein Cloud-Spielstand gefunden. Starte neu.");
+                            playerGold = 500; playerXP = 0; playerLevel = 1;
+                            isLoadingFromCloud = false;
+                            await autoSaveToCloud();
+                        }
+                    } catch(e) {
+                        console.log("ℹ️ Lokales Backup fehlerhaft. Starte neu.");
+                        playerGold = 500; playerXP = 0; playerLevel = 1;
+                        isLoadingFromCloud = false;
+                        await autoSaveToCloud();
+                    }
+                } else {
+                    console.log("ℹ️ Kein Cloud-Spielstand gefunden. Starte neu.");
+                    playerGold = 500; playerXP = 0; playerLevel = 1;
+                    isLoadingFromCloud = false;
+                    await autoSaveToCloud();
+                }
             }
         } catch (error) {
             console.error("Fehler beim Laden:", error);
@@ -3616,8 +3658,19 @@
     async function applyCloudData(data) {
     if (!data) return;
 
-    // GOLD
-    playerGold = data.gold !== undefined ? data.gold : playerGold;
+    // GOLD – Sicherheitscheck: niemals mit 0 überschreiben wenn wir mehr hatten
+    if (data.gold !== undefined && data.gold !== null) {
+        // Lokalen Wert als Fallback prüfen
+        const localBackup = (() => { try { const l=localStorage.getItem('farmPremium'); return l?JSON.parse(l).gold||0:0; } catch(e){return 0;} })();
+        if (data.gold === 0 && localBackup > 100) {
+            console.warn('🛡️ Gold-Schutz: Firebase hat 0, lokales Backup hat ' + localBackup + ' – behalte lokalen Wert');
+            playerGold = localBackup;
+        } else {
+            playerGold = data.gold;
+        }
+    }
+    // Protokoll für späteren Vergleich
+    window._lastKnownGold = playerGold;
     
     // INVENTAR & REST
     inventory = data.inventory || {};
@@ -3733,6 +3786,12 @@
     
     // Lokale Backups (Browser-Speicher)
     function saveGameToLocal() {
+        // Sicherheitscheck: Gold-Verlust verhindern
+        if ((playerGold === 0 || playerGold === null || playerGold === undefined)
+            && (playerLevel > 1 || animals.length > 0)) {
+            console.warn('🛡️ saveGameToLocal: Gold=0 bei Level>1 oder Tieren – lokales Speichern übersprungen');
+            return;
+        }
         const saveData = { 
             gold: playerGold||0, inventory: inventory||{}, day: currentDay||1, maxStorage: maxStorage||50, 
             fields: fields.map(f => ({ owned: f.owned||false, cropId: f.cropId||null, plantedAt: f.plantedAt||null, isReady: f.isReady||false })), 
@@ -5244,6 +5303,40 @@ async function loadAdminPlayerPicker() {
 
     if (shown === 0) container.innerHTML = '<div style="color:#b0a070;text-align:center;padding:8px;">Keine aktiven Spieler gefunden.</div>';
     else { const info = document.createElement('div'); info.style.cssText='font-size:.72rem;color:#b0a070;text-align:center;margin-top:4px;'; info.textContent = shown + ' aktive Spieler (heute)'; container.appendChild(info); }
+}
+
+async function adminRestoreGold() {
+    if (!isAdmin) { alert("Kein Zugriff!"); return; }
+    const uid   = prompt("UID oder Name der Spielerin:");
+    if (!uid) return;
+    const amount = parseInt(prompt("Wie viel Gold wiederherstellen?", "80000"));
+    if (isNaN(amount) || amount <= 0) return;
+
+    // Suche nach UID oder Name
+    const snap = await database.ref('users').once('value');
+    const all = snap.val() || {};
+    let targetUid = null;
+    // Direkte UID
+    if (all[uid]) { targetUid = uid; }
+    else {
+        // Name suchen
+        for (const [id, data] of Object.entries(all)) {
+            const name = data.playerName || (data.savegame||{}).playerName || '';
+            if (name.toLowerCase().includes(uid.toLowerCase())) { targetUid = id; break; }
+        }
+    }
+    if (!targetUid) { alert("Spieler nicht gefunden: " + uid); return; }
+
+    const sgRef = database.ref('users/' + targetUid + '/savegame');
+    const sgSnap = await sgRef.once('value');
+    const sg = sgSnap.val() || {};
+    const currentGold = sg.gold || 0;
+
+    if (!confirm("Spieler: " + (all[targetUid].playerName||targetUid) + "\nAktuelles Gold: " + currentGold + "\nNeues Gold: " + amount + "\n\nFortfahren?")) return;
+
+    await sgRef.update({ gold: amount, lastSave: Date.now() });
+    alert("✅ Gold wurde auf " + amount + " gesetzt für: " + (all[targetUid].playerName||targetUid));
+    showToast("✅ Gold wiederhergestellt!", false);
 }
 
 async function giveGlobalBonus() {
