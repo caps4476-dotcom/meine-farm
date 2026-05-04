@@ -1177,13 +1177,19 @@
             <div style="font-size: 0.6rem; margin-top: 5px; color: #aaa;">💡 Sei respektvoll! Admin kann Nachrichten löschen.</div>
         </div>
         
-        <div id="battleshipView" class="handbook-grid hidden" style="grid-column:1/-1;">
-            <div id="battleshipContent"></div>
-        </div>
-        <div id="minigamesView" class="handbook-grid hidden"><div style="padding:8px 10px 0;">
+    <!-- Minispiele Overlay (außerhalb aller Views) -->
+    <div id="minigamesView" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#1a1f14; z-index:200; overflow-y:auto;">
+        <div style="padding:8px 10px 0; position:sticky; top:0; background:#1a1f14; z-index:201; border-bottom:1px solid #3a4a2a;">
             <button onclick="window.toggleMinigames()" style="background:#4a3a2a;color:#ffefcf;border:2px solid #8b6942;border-radius:20px;padding:6px 16px;font-size:.85rem;cursor:pointer;">← Zurück zum Multiplayer</button>
         </div>
-        <div id="mgContent"></div></div>
+        <div id="mgContent" style="padding:8px;"></div>
+    </div>
+
+    <!-- Schiffe versenken Overlay (außerhalb aller Views) -->
+    <div id="battleshipView" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#0d1a2a; z-index:200; overflow-y:auto;">
+        <div id="battleshipContent"></div>
+    </div>
+
     <div id="adminSection" class="admin-section hidden" style="grid-column:1/-1;">
             <div class="admin-title" style="color:#ff9800; font-size:1.1rem;">🛠️ ADMIN-ZENTRALE</div>
 
@@ -1401,11 +1407,21 @@
 
     
     // ==================== GAME VERSION ====================
-    const CURRENT_GAME_VERSION = "4.1";
+    const CURRENT_GAME_VERSION = "4.2";
     
     // ==================== RELEASE NOTES ("Was ist neu?") ====================
     // Neue Einträge oben hinzufügen. version: muss zu CURRENT_GAME_VERSION passen, damit beim ersten Start automatisch angezeigt wird.
     const RELEASE_NOTES = [
+        {
+            version: "4.2",
+            date: "Mai 2026",
+            title: "🔧 Minispiele & Schiffe versenken repariert",
+            changes: [
+                "🎮 <b>Minispiele</b>: Button funktioniert jetzt zuverlässig – Overlay öffnet sich korrekt.",
+                "🚢 <b>Schiffe versenken</b>: Button funktioniert jetzt zuverlässig – Lobby lädt sofort.",
+                "🔧 <b>Fix</b>: Views waren falsch verschachtelt (innerhalb von Multiplayer-View). Jetzt eigenständige Overlays."
+            ]
+        },
         {
             version: "4.1",
             date: "Mai 2026",
@@ -4076,15 +4092,12 @@
 
     window.toggleMinigames = function toggleMinigames() {
         var mv = document.getElementById('minigamesView');
-        var mpv = document.getElementById('multiplayerView');
         if (!mv) return;
-        var isOpen = !mv.classList.contains('hidden');
+        var isOpen = mv.style.display !== 'none' && mv.style.display !== '';
         if (isOpen) {
-            mv.classList.add('hidden');
-            if (mpv) mpv.classList.remove('hidden');
+            mv.style.display = 'none';
         } else {
-            mv.classList.remove('hidden');
-            if (mpv) mpv.classList.add('hidden');
+            mv.style.display = 'block';
             window.renderMinigames();
         }
     };
@@ -4629,26 +4642,24 @@
 
     // ── View öffnen/schließen ─────────────────────────────────────────────────
     window.openBattleship = function() {
-        const bsView  = document.getElementById('battleshipView');
-        const mpView  = document.getElementById('multiplayerView');
-        const mgView  = document.getElementById('minigamesView');
+        const bsView = document.getElementById('battleshipView');
+        const mgView = document.getElementById('minigamesView');
         if (!bsView) return;
-        if (mgView && !mgView.classList.contains('hidden')) mgView.classList.add('hidden');
-        if (mpView) mpView.classList.add('hidden');
-        bsView.classList.remove('hidden');
+        if (!firebaseInitialized || !database) { showToast('Firebase nicht verbunden!', true); return; }
+        if (mgView) mgView.style.display = 'none';
+        bsView.style.display = 'block';
         bsRenderLobby();
     };
 
     window.closeBattleship = function() {
         const bsView = document.getElementById('battleshipView');
-        const mpView = document.getElementById('multiplayerView');
         if (bsListener) { bsListener(); bsListener=null; }
         if (bsGameId && bsGameData && bsGameData.status !== 'finished') {
-            database.ref('battleship/'+bsGameId+'/status').set('abandoned');
+            try { database.ref('battleship/'+bsGameId+'/status').set('abandoned'); } catch(e){}
         }
         bsGameId=null; bsRole=null; bsGameData=null;
-        if (bsView) bsView.classList.add('hidden');
-        if (mpView) mpView.classList.remove('hidden');
+        clearInterval(window._bsLobbyTimer);
+        if (bsView) bsView.style.display = 'none';
     };
 
     // ── LOBBY ─────────────────────────────────────────────────────────────────
