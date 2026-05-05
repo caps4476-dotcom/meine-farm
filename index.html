@@ -3063,7 +3063,7 @@
         for (const {a, i} of sameType) {
             if (playerGold < data.feedCost) break;
             playerGold -= data.feedCost;
-            if (a.timerId) clearTimeout(a.timerId);
+            if (a.timerId) { clearTimeout(a.timerId); a.timerId = null; }
             if (animalTimerRegistry[i]) { clearTimeout(animalTimerRegistry[i]); delete animalTimerRegistry[i]; }
             a.isReady = false;
             a.productionStartTime = Date.now();
@@ -3074,18 +3074,10 @@
         updateMoneyUI();
         showToast(`🌾 ${fed} × ${data.name} gefüttert! (-${data.feedCost * fed}💰)`);
         renderBarn(); saveGameToLocal();
-        // Sicherstellen dass alle gefütterten Tiere einen laufenden Timer haben
-        for (const {a, i} of sameType) {
-            if (!a.isReady && !animalTimerRegistry[i]) {
-                a.productionStartTime = Date.now();
-                startAnimalProduction(a, i);
-            }
-        }
     }
     
     function collectProduct(idx) {
         if (checkAndBlockBanned()) return;
-        if (isPaused) { showToast("⏸️ Spiel ist pausiert!", true); return; }
         const animal = animals[idx]; if (!animal) return;
         const data = ANIMALS[animal.type];
         // Alle bereiten Tiere desselben Typs sammeln
@@ -3105,13 +3097,7 @@
             renderBarn(); renderMarket(); saveGameToLocal(); addXP(4 * totalAmount);
             updateQuestProgress('animal', totalAmount);
             showToast(`✅ +${totalAmount} ${data.product} gesammelt! +${4*totalAmount} XP`);
-            // Nach manuellem Sammeln sofort neue Produktion starten
-            for (const {a, i} of readyOfType) {
-                if (!a.isReady && !a.productionStartTime) {
-                    a.productionStartTime = Date.now();
-                    startAnimalProduction(a, i);
-                }
-            }
+
         } else showToast(`❌ Lager voll!`, true);
     }
     
@@ -3176,9 +3162,9 @@
                 <div style="font-size:0.6rem; color:#b0a070; margin-bottom:2px;">${data.product} ${data.productEmoji}</div>
                 ${statusHtml}
                 <div>
-                    <button class="feed-btn" data-idx="${firstIdx}">🌾 Füttern (${data.feedCost}💰)</button>
+                    <button class="feed-btn" data-idx="${firstIdx}">🌾 Alle füttern (${data.feedCost * count}💰)</button>
                 </div>
-                ${readyCount > 0 && !barnUpgrades.autoCollector ? `<button class="collect-btn" data-idx="${firstReadyIdx}">📦 Sammeln (${readyCount}x)</button>` : ""}
+                ${readyCount > 0 && !barnUpgrades.autoCollector ? `<button class="collect-btn" data-idx="${firstReadyIdx}">📦 Alle sammeln (${readyCount}x)</button>` : ""}
                 <div class="progress-bar-container"><div class="progress-bar-fill" style="width:${readyCount > 0 ? 100 : avgProgress}%;"></div></div>`;
             
             barnContainer.appendChild(div);
