@@ -1334,7 +1334,7 @@
     // ==================== LOGIN & AUTH ====================
     const loginScreenElem = document.getElementById("loginScreen"), gameWrapperElem = document.getElementById("gameWrapper"), loginModeElem = document.getElementById("loginMode"), registerModeElem = document.getElementById("registerMode"), loginErrorMsgElem = document.getElementById("loginErrorMsg");
     function showLoginError(msg) { loginErrorMsgElem.innerText = msg; setTimeout(() => { loginErrorMsgElem.innerText = ""; }, 3000); }
-    function initFirebase() { try { if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); } database = firebase.database(); auth = firebase.auth(); firebaseInitialized = true; console.log("Firebase initialisiert!"); auth.onAuthStateChanged((user) => { authReady = true; currentUser = user; updateAuthUI(); updateTopLoginStatus(); checkAdminStatus(); if (user) { loginScreenElem.classList.add("hidden"); gameWrapperElem.classList.remove("hidden"); showToast(`👋 Willkommen!`, false); loadGameFromCloud(); updateOnlineStatus(); updateLeaderboard(); loadLoginBonusData(); loadQuests(); loadResearchProgress(); checkLoginBonus(); startAutoSave(); startSessionCheck(); initRealPlayDays(); startRealDayCheck(); } else { stopSessionCheck(); loginScreenElem.classList.remove("hidden"); gameWrapperElem.classList.add("hidden"); updateTopLoginStatus(); updateLeaderboard(); if (document.getElementById("loginEmailScreen")) document.getElementById("loginEmailScreen").value = ""; if (document.getElementById("loginPasswordScreen")) document.getElementById("loginPasswordScreen").value = ""; if (document.getElementById("registerEmailScreen")) document.getElementById("registerEmailScreen").value = ""; if (document.getElementById("registerPasswordScreen")) document.getElementById("registerPasswordScreen").value = ""; loginModeElem.style.display = "block"; registerModeElem.style.display = "none"; } }); return true; } catch(e) { console.warn("Firebase Fehler:", e); return false; } }
+    function initFirebase() { try { if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); } database = firebase.database(); auth = firebase.auth(); firebaseInitialized = true; console.log("Firebase initialisiert!"); auth.onAuthStateChanged((user) => { authReady = true; currentUser = user; updateAuthUI(); updateTopLoginStatus(); checkAdminStatus(); if (user) { loginScreenElem.classList.add("hidden"); gameWrapperElem.classList.remove("hidden"); showToast(`👋 Willkommen!`, false); loadGameFromCloud(); updateOnlineStatus(); updateLeaderboard(); loadLoginBonusData(); setTimeout(async function(){ await loadBannedPlayers(); if(isBanned) showBanMessage(); }, 2000); loadQuests(); loadResearchProgress(); checkLoginBonus(); startAutoSave(); startSessionCheck(); initRealPlayDays(); startRealDayCheck(); } else { stopSessionCheck(); loginScreenElem.classList.remove("hidden"); gameWrapperElem.classList.add("hidden"); updateTopLoginStatus(); updateLeaderboard(); if (document.getElementById("loginEmailScreen")) document.getElementById("loginEmailScreen").value = ""; if (document.getElementById("loginPasswordScreen")) document.getElementById("loginPasswordScreen").value = ""; if (document.getElementById("registerEmailScreen")) document.getElementById("registerEmailScreen").value = ""; if (document.getElementById("registerPasswordScreen")) document.getElementById("registerPasswordScreen").value = ""; loginModeElem.style.display = "block"; registerModeElem.style.display = "none"; } }); return true; } catch(e) { console.warn("Firebase Fehler:", e); return false; } }
     document.getElementById("doLoginBtn").onclick = async () => { const email = document.getElementById("loginEmailScreen").value, password = document.getElementById("loginPasswordScreen").value; if (!email || !password) { showLoginError("❌ Bitte E-Mail und Passwort eingeben!"); return; } if (!auth) { showLoginError("❌ Verbindung wird aufgebaut, bitte kurz warten..."); setTimeout(() => document.getElementById("doLoginBtn").click(), 2000); return; } try { await auth.signInWithEmailAndPassword(email, password); } catch(err) { showLoginError("❌ " + err.message); } };
     document.getElementById("doRegisterBtn").onclick = async () => { const email = document.getElementById("registerEmailScreen").value, password = document.getElementById("registerPasswordScreen").value; if (!email || !password) { showLoginError("❌ Bitte E-Mail und Passwort eingeben!"); return; } if (password.length < 6) { showLoginError("❌ Passwort muss mindestens 6 Zeichen lang sein!"); return; } if (!auth) { showLoginError("❌ Verbindung wird aufgebaut, bitte kurz warten..."); return; } try { await auth.createUserWithEmailAndPassword(email, password); } catch(err) { showLoginError("❌ " + err.message); } };
     document.getElementById("showRegisterBtn").onclick = () => { loginModeElem.style.display = "none"; registerModeElem.style.display = "block"; loginErrorMsgElem.innerText = ""; };
@@ -1408,11 +1408,22 @@
 
     
     // ==================== GAME VERSION ====================
-    const CURRENT_GAME_VERSION = "4.3";
+    const CURRENT_GAME_VERSION = "4.4";
     
     // ==================== RELEASE NOTES ("Was ist neu?") ====================
     // Neue Einträge oben hinzufügen. version: muss zu CURRENT_GAME_VERSION passen, damit beim ersten Start automatisch angezeigt wird.
     const RELEASE_NOTES = [
+        {
+            version: "4.4",
+            date: "Mai 2026",
+            title: "🚫 Bann-System & Bugfixes",
+            changes: [
+                "🚫 <b>Bann-System</b>: Gesperrte Spieler sehen sofort eine Meldung und können keine Spielaktionen mehr ausführen.",
+                "🏆 <b>Bestenliste</b>: Wird jetzt nach Level sortiert statt nach Gold.",
+                "🐄 <b>Auto-Sammler</b>: Tierprodukte werden nach dem Login wieder korrekt automatisch gesammelt.",
+                "🚢 <b>Schiffe versenken</b>: Verbindung zwischen zwei Spielern funktioniert jetzt zuverlässig."
+            ]
+        },
         {
             version: "4.3",
             date: "Mai 2026",
@@ -1569,6 +1580,7 @@
     const ADMIN_EMAILS = ["caps4476@web.de"];
     let isAdmin = false;
     let bannedPlayers = [];
+    let isBanned = false; // true wenn aktueller Spieler gebannt ist
 
     // ==================== FIREBASE KONFIGURATION ====================
     const firebaseConfig = {
@@ -2473,6 +2485,7 @@
     }
     
     function massPlant(cropId, ackerNum = 0) {
+        if (checkAndBlockBanned()) return;
         if (isPaused) { showToast("⏸️ Spiel ist pausiert! Drücke Start, um fortzufahren.", true); return; }
         const crop = CROPS[cropId];
         if (playerLevel < crop.levelRequired) { showToast(`🔒 ${crop.name} wird auf Level ${crop.levelRequired} freigeschaltet!`, true); return; }
@@ -2577,6 +2590,7 @@
     }
     
     function harvestField(fieldIdx) {
+        if (checkAndBlockBanned()) return;
         if (isPaused) { showToast("⏸️ Spiel ist pausiert! Drücke Start, um fortzufahren.", true); return; }
         const f = fields[fieldIdx];
         if (!f.owned || !f.cropId || !f.isReady) { showToast("Nichts zu ernten!", true); return; }
@@ -2998,6 +3012,7 @@
     function renameAnimal(idx) { const newName = prompt("Neuer Name:", animals[idx].name); if (newName?.trim()) { animals[idx].name = newName.trim(); renderBarn(); saveGameToLocal(); showToast(`Umbenannt in ${newName}`); } }
     const _feedCooldowns = {}; // type → timestamp, verhindert Doppelklick
     function feedAnimal(idx) {
+        if (checkAndBlockBanned()) return;
         const animal = animals[idx];
         if (!animal) return;
         const data = ANIMALS[animal.type];
@@ -3035,6 +3050,7 @@
     }
     
     function collectProduct(idx) {
+        if (checkAndBlockBanned()) return;
         if (isPaused) { showToast("⏸️ Spiel ist pausiert!", true); return; }
         const animal = animals[idx]; if (!animal) return;
         const data = ANIMALS[animal.type];
@@ -3273,7 +3289,7 @@
         if (pricePanel.children.length === 0) pricePanel.innerHTML = "<div style='padding:15px;'>🧺 Dein Lager ist leer. Ernte oder verarbeite etwas, um Preise zu sehen!</div>";
     }
     
-    function sellProduct(productKey) { if (isPaused) { showToast("⏸️ Spiel ist pausiert! Drücke Start, um fortzufahren.", true); return; } if (inventory[productKey] > 0) { let price = globalMarketPrices[productKey]; removeFromInventory(productKey, 1); playerGold += price; stats.totalGoldEarned += price; updateMoneyUI(); renderMarket(); saveGameToLocal(); checkAchievements(); updateComplexPrice(productKey, 1); updateLeaderboard(); showToast(`💰 +${price} Gold (1 verkauft)!`); updateQuestProgress("sell", 1); } else showToast(`Nichts zu verkaufen!`, true); }
+    function sellProduct(productKey) { if (checkAndBlockBanned()) return; if (isPaused) { showToast("⏸️ Spiel ist pausiert! Drücke Start, um fortzufahren.", true); return; } if (inventory[productKey] > 0) { let price = globalMarketPrices[productKey]; removeFromInventory(productKey, 1); playerGold += price; stats.totalGoldEarned += price; updateMoneyUI(); renderMarket(); saveGameToLocal(); checkAchievements(); updateComplexPrice(productKey, 1); updateLeaderboard(); showToast(`💰 +${price} Gold (1 verkauft)!`); updateQuestProgress("sell", 1); } else showToast(`Nichts zu verkaufen!`, true); }
     
     function sellAllProduct(productKey) { if (isPaused) { showToast("⏸️ Spiel ist pausiert! Drücke Start, um fortzufahren.", true); return; } const amount = inventory[productKey]; if (amount > 0) { let price = globalMarketPrices[productKey]; const totalGold = amount * price; removeFromInventory(productKey, amount); playerGold += totalGold; stats.totalGoldEarned += totalGold; updateMoneyUI(); renderMarket(); saveGameToLocal(); checkAchievements(); updateComplexPrice(productKey, amount); updateLeaderboard(); const names = { carrot:"Karotte", wheat:"Weizen", tomato:"Tomate", strawberry:"Erdbeere", pumpkin:"Kürbis", pineapple:"Ananas", coffee:"Kaffee", blueberry:"Blaubeere", raspberry:"Himbeere", grape:"Traube", peach:"Pfirsich", lemon:"Zitrone", apple:"Apfel", banana:"Banane", mango:"Mango", cherry:"Kirsche", pear:"Birne", pomegranate:"Granatapfel", kiwi:"Kiwi", dragonfruit:"Drachenfrucht", starfruit:"Sternfrucht", saffron:"Safran", vanilla:"Vanille", egg:"Ei", milk:"Milch", truffle:"Trüffel", flour:"Mehl", cheese:"Käse", bread:"Brot", wool:"Wolle", goatCheese:"Ziegenkäse", fertilizer:"Dünger", alpacaWool:"Alpakawolle", honey:"Honig", duckEgg:"Entenei", ostrichEgg:"Straußenei", camelMilk:"Kamelmilch", reindeerFur:"Rentierfell", peacockFeather:"Pfauenfeder", silk:"Seide", dragonScale:"Drachenschuppe", butter:"Butter", yogurt:"Joghurt", woolThread:"Wollfaden", scarf:"Schal", honeyCake:"Honigkuchen", silkFabric:"Seidentuch" }; showToast(`💰 +${totalGold} Gold (${amount}x ${names[productKey] || productKey} verkauft)!`); updateQuestProgress("sell", amount); } else showToast(`Nichts zu verkaufen!`, true); }
     
@@ -3713,6 +3729,9 @@
     if (acker2Owned) { for (let i = FIELDS_PER_ACKER; i < 2 * FIELDS_PER_ACKER; i++) if (fields[i]) fields[i].owned = true; }
     if (acker3Owned) { for (let i = 2 * FIELDS_PER_ACKER; i < 3 * FIELDS_PER_ACKER; i++) if (fields[i]) fields[i].owned = true; }
     
+    // barnUpgrades aus Cloud-Daten laden BEVOR Tiere starten (autoCollector-Check!)
+    if (data.barnUpgrades) barnUpgrades = { ...barnUpgrades, ...data.barnUpgrades };
+
     // Tiere wiederherstellen - erst alle Timer komplett leeren
     for (let key in animalTimerRegistry) { clearTimeout(animalTimerRegistry[key]); delete animalTimerRegistry[key]; }
     for (let i = 0; i < animals.length; i++) {
@@ -3884,7 +3903,7 @@
     async function updateOnlineStatus() { if (!firebaseInitialized || !database) return; if (!currentUser) { if (lastOnlineUpdate) await removeOnlineStatus(); return; } try { const playerNameInput = document.getElementById("playerNameInput"); const currentPlayerName = playerNameInput?.value || playerName || "Anonymous"; const onlineData = { name: currentPlayerName, gold: playerGold, level: playerLevel, online: true, lastSeen: Date.now(), uid: currentUser.uid }; await database.ref('onlinePlayers/' + currentUser.uid).set(onlineData); lastOnlineUpdate = Date.now(); if (onlineStatusInterval) clearInterval(onlineStatusInterval); onlineStatusInterval = setInterval(() => { if (currentUser && !isPaused) updateOnlineStatus(); }, 30000); } catch(err) { console.warn("Online-Status Update fehlgeschlagen:", err); } }
     async function removeOnlineStatus() { if (!firebaseInitialized || !database) return; if (!lastOnlineUpdate) return; try { if (currentUser) await database.ref('onlinePlayers/' + currentUser.uid).update({ online: false, lastSeen: Date.now() }); if (onlineStatusInterval) { clearInterval(onlineStatusInterval); onlineStatusInterval = null; } } catch(err) { console.warn("Online-Status entfernen fehlgeschlagen:", err); } }
     async function cleanupOfflinePlayers() { if (!firebaseInitialized || !database) return; const fiveMinutesAgo = Date.now() - (5 * 60 * 1000); const allOnline = await database.ref('onlinePlayers').once('value'); const updates = {}; let deletedCount = 0; allOnline.forEach(child => { const player = child.val(); if ((!player.online && player.lastSeen && player.lastSeen < fiveMinutesAgo) || (player.online && player.lastSeen && player.lastSeen < fiveMinutesAgo)) { updates[child.key] = null; deletedCount++; } }); if (deletedCount > 0) await database.ref('onlinePlayers').update(updates); return deletedCount; }
-    async function updateLeaderboardWithBans() { if (!firebaseInitialized || !database) return; await loadBannedPlayers(); const lastCleanup = localStorage.getItem("lastOnlineCleanup"); if (!lastCleanup || Date.now() - parseInt(lastCleanup) > 5 * 60 * 1000) { await cleanupOfflinePlayers(); localStorage.setItem("lastOnlineCleanup", Date.now().toString()); } const onlineSnapshot = await database.ref('onlinePlayers').once('value'); const onlinePlayers = {}; onlineSnapshot.forEach(child => { const player = child.val(); if (player.online === true && !bannedPlayers.some(b => b.name === player.name)) onlinePlayers[player.name] = player; }); const playerNameInput = document.getElementById("playerNameInput"); const currentPlayerName = playerNameInput?.value || playerName || "Anonymous"; if (currentUser && !bannedPlayers.some(b => b.name === currentPlayerName) && !isPaused) { const scoreRef = database.ref('leaderboard/' + currentPlayerName); await scoreRef.set({ name: currentPlayerName, gold: playerGold, level: playerLevel, day: currentDay, timestamp: Date.now(), online: true }); } const snapshot = await database.ref('leaderboard').orderByChild('gold').limitToLast(20).once('value'); const scores = []; snapshot.forEach(child => { const entry = child.val(); if (!bannedPlayers.some(b => b.name === entry.name)) scores.push(entry); }); scores.reverse(); scores.splice(10); const container = document.getElementById("leaderboardList"); if (container) { container.innerHTML = scores.map((s, i) => { const isOnline = onlinePlayers[s.name] !== undefined; const isCurrentPlayer = s.name === currentPlayerName && currentUser; return `<div class="leaderboard-entry ${isOnline ? 'online' : ''}" style="${isCurrentPlayer ? 'background: rgba(245, 166, 35, 0.2);' : ''}"><div class="leaderboard-name"><span class="online-indicator ${isOnline ? 'online-true' : 'online-false'}"></span>${i+1}. ${s.name} ${isCurrentPlayer ? '👑' : ''}</div><div class="leaderboard-gold">💰 ${s.gold}</div><div>⭐ Level ${s.level}</div>${isAdmin ? `<button class="admin-btn danger" style="font-size:0.6rem;" onclick="adminRemovePlayerFromList('${s.name}')">🗑️</button>` : ''}</div>`; }).join(''); if (scores.length === 0) container.innerHTML = "<div class='status'>Noch keine Einträge. Spiele und erscheine hier!</div>"; const onlineCount = Object.keys(onlinePlayers).length; const existingCount = container.parentElement.querySelector(".online-count"); if (existingCount) existingCount.remove(); const onlineCountDiv = document.createElement("div"); onlineCountDiv.className = "online-count"; onlineCountDiv.style.textAlign = "center"; onlineCountDiv.style.marginTop = "10px"; onlineCountDiv.style.fontSize = "0.7rem"; onlineCountDiv.style.color = "#ffefcf"; onlineCountDiv.innerHTML = `🟢 ${onlineCount} Spieler online ${isAdmin ? '| 👑 Admin-Modus' : ''}`; container.parentElement.appendChild(onlineCountDiv); } }
+    async function updateLeaderboardWithBans() { if (!firebaseInitialized || !database) return; await loadBannedPlayers(); const lastCleanup = localStorage.getItem("lastOnlineCleanup"); if (!lastCleanup || Date.now() - parseInt(lastCleanup) > 5 * 60 * 1000) { await cleanupOfflinePlayers(); localStorage.setItem("lastOnlineCleanup", Date.now().toString()); } const onlineSnapshot = await database.ref('onlinePlayers').once('value'); const onlinePlayers = {}; onlineSnapshot.forEach(child => { const player = child.val(); if (player.online === true && !bannedPlayers.some(b => b.name === player.name)) onlinePlayers[player.name] = player; }); const playerNameInput = document.getElementById("playerNameInput"); const currentPlayerName = playerNameInput?.value || playerName || "Anonymous"; if (currentUser && !bannedPlayers.some(b => b.name === currentPlayerName) && !isPaused) { const scoreRef = database.ref('leaderboard/' + currentPlayerName); await scoreRef.set({ name: currentPlayerName, gold: playerGold, level: playerLevel, day: currentDay, timestamp: Date.now(), online: true }); } const snapshot = await database.ref('leaderboard').orderByChild('level').limitToLast(20).once('value'); const scores = []; snapshot.forEach(child => { const entry = child.val(); if (!bannedPlayers.some(b => b.name === entry.name)) scores.push(entry); }); scores.reverse(); scores.splice(10); const container = document.getElementById("leaderboardList"); if (container) { container.innerHTML = scores.map((s, i) => { const isOnline = onlinePlayers[s.name] !== undefined; const isCurrentPlayer = s.name === currentPlayerName && currentUser; return `<div class="leaderboard-entry ${isOnline ? 'online' : ''}" style="${isCurrentPlayer ? 'background: rgba(245, 166, 35, 0.2);' : ''}"><div class="leaderboard-name"><span class="online-indicator ${isOnline ? 'online-true' : 'online-false'}"></span>${i+1}. ${s.name} ${isCurrentPlayer ? '👑' : ''}</div><div class="leaderboard-gold">⭐ Level ${s.level} &nbsp;|&nbsp; 💰 ${s.gold}</div><div style="display:none"></div>${isAdmin ? `<button class="admin-btn danger" style="font-size:0.6rem;" onclick="adminRemovePlayerFromList('${s.name}')">🗑️</button>` : ''}</div>`; }).join(''); if (scores.length === 0) container.innerHTML = "<div class='status'>Noch keine Einträge. Spiele und erscheine hier!</div>"; const onlineCount = Object.keys(onlinePlayers).length; const existingCount = container.parentElement.querySelector(".online-count"); if (existingCount) existingCount.remove(); const onlineCountDiv = document.createElement("div"); onlineCountDiv.className = "online-count"; onlineCountDiv.style.textAlign = "center"; onlineCountDiv.style.marginTop = "10px"; onlineCountDiv.style.fontSize = "0.7rem"; onlineCountDiv.style.color = "#ffefcf"; onlineCountDiv.innerHTML = `🟢 ${onlineCount} Spieler online ${isAdmin ? '| 👑 Admin-Modus' : ''}`; container.parentElement.appendChild(onlineCountDiv); } }
     async function updateLeaderboard() { await updateLeaderboardWithBans(); }
     async function cleanupOldLeaderboardEntries() { if (!firebaseInitialized || !database) return 0; const oneWeekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000); const allEntries = await database.ref('leaderboard').once('value'); const updates = {}; let deletedCount = 0; allEntries.forEach(child => { const entry = child.val(); if (entry.timestamp && entry.timestamp < oneWeekAgo) { updates[child.key] = null; deletedCount++; } }); if (deletedCount > 0) await database.ref('leaderboard').update(updates); return deletedCount; }
     async function manualCleanup() { if (!firebaseInitialized || !database) return; if (confirm("Alle Bestenlisten-Einträge löschen, die älter als 7 Tage sind?")) { const deleted = await cleanupOldLeaderboardEntries(); showToast(`🧹 ${deleted} alte Einträge wurden gelöscht!`, false); await updateLeaderboard(); } }
@@ -4769,10 +4788,19 @@
     window.bsJoin=async function(gid){
         if(!currentUser){showToast('Bitte einloggen!',true);return;}
         clearInterval(window._bsTimer);
+        // Prüfen ob Spiel noch offen ist
+        const chk = await database.ref('battleship/'+gid).once('value');
+        const chkData = chk.val();
+        if(!chkData||chkData.status!=='waiting'){
+            showToast('Dieses Spiel ist nicht mehr verfügbar!',true);
+            bsRenderLobby(); return;
+        }
         bsGameId=gid;bsRole='guest';
         bsMyBoard=new Array(100).fill(0);bsPlaced=[];bsPlacing={shipIdx:0,horizontal:true};bsRewarded=false;
         await database.ref('battleship/'+gid).update({
-            guest:currentUser.uid,guestName:bsMyName(),status:'placing'
+            guest:currentUser.uid, guestName:bsMyName(),
+            status:'placing',      // Beide müssen noch platzieren
+            guestReady:false
         });
         bsListenGame();
         bsShowPlace();
@@ -4879,12 +4907,15 @@
         await database.ref('battleship/'+bsGameId).update(upd);
         bsShowWait();
     };
-    function bsShowWait(){
+    function bsShowWait(otherAlsoReady=false){
         const el=document.getElementById('battleshipContent');if(!el)return;
         el.innerHTML=`<div class="bs-container">
             <div class="bs-title">🚢 Schiffe versenken</div>
-            <div class="bs-status">⏳ Deine Schiffe sind platziert!<br>
-            <span style="font-size:.78rem;color:#b0c890;">Warte auf den Gegner...</span></div>
+            <div class="bs-status">
+                ${otherAlsoReady
+                    ? '🚀 Beide bereit – Spiel startet...'
+                    : '⏳ Deine Schiffe sind platziert!<br><span style="font-size:.78rem;color:#b0c890;">Warte auf den Gegner...</span>'}
+            </div>
             <div style="text-align:center;margin-top:12px;">
                 <button class="bs-btn bs-btn-red" onclick="window.closeBattleship()">✖ Aufgeben</button>
             </div>
@@ -4896,23 +4927,30 @@
         if(bsListener){bsListener();bsListener=null;}
         if(!bsGameId)return;
         const ref=database.ref('battleship/'+bsGameId);
+        let _lastSt='';
         function handler(snap){
             const g=snap.val();
-            if(!g){showToast('Spiel beendet.',false);window.closeBattleship();return;}
+            if(!g){showToast('Spiel nicht mehr vorhanden.',false);window.closeBattleship();return;}
             bsGameData=g;
             const st=g.status;
             if(st==='abandoned'){showToast('Gegner hat das Spiel verlassen!',false);window.closeBattleship();return;}
-            const myReady=bsRole==='host'?g.hostReady:g.guestReady;
-            if(st==='waiting'||st==='placing'||st==='host_ready'||st==='guest_ready'){
-                if(myReady)bsShowWait();
-                // sonst läuft bsShowPlace() noch
-            }else if(st==='playing'){bsRenderGame(g);}
-            else if(st==='finished'){bsRenderFinished(g);}
+            const myReady  = bsRole==='host' ? !!g.hostReady  : !!g.guestReady;
+            const oppReady = bsRole==='host' ? !!g.guestReady : !!g.hostReady;
+            if(st==='playing'){
+                bsRenderGame(g); // immer rendern wenn playing (Züge kommen rein)
+            }else if(st==='finished'){
+                bsRenderFinished(g);
+            }else if(st==='abandoned'){
+                showToast('Gegner hat das Spiel verlassen!',false); window.closeBattleship();
+            }else{
+                // waiting / placing / host_ready / guest_ready
+                if(myReady) bsShowWait(oppReady);
+                // Wenn ich nicht ready bin: bsShowPlace() läuft noch – nicht überschreiben
+            }
         }
         ref.on('value',handler);
         bsListener=function(){ref.off('value',handler);};
     }
-
     // ── SPIELFELD ─────────────────────────────────────────────────────────
     function bsRenderGame(g){
         const el=document.getElementById('battleshipContent');if(!el)return;
@@ -5005,6 +5043,37 @@
         showToast(won?'🏆 Gewonnen! +'+BS_WIN_GOLD+'💰':'😔 Verloren. +'+BS_LOSS_GOLD+'💰',false);
     }
 
+        // Bann-Anzeige
+    function showBanMessage() {
+        let banDiv = document.getElementById('banOverlay');
+        if (!banDiv) {
+            banDiv = document.createElement('div');
+            banDiv.id = 'banOverlay';
+            banDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.92);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+            banDiv.innerHTML = `<div style="background:#2c1010;border:3px solid #c44;border-radius:20px;padding:30px;max-width:380px;text-align:center;color:#ffefcf;">
+                <div style="font-size:3rem;margin-bottom:10px;">🚫</div>
+                <div style="font-size:1.3rem;font-weight:bold;color:#e74c3c;margin-bottom:12px;">Konto gesperrt</div>
+                <div style="font-size:.95rem;line-height:1.5;color:#ffb0b0;">
+                    Du wurdest gesperrt bis zur Klärung der Sachlage.<br><br>
+                    Bei Fragen wende dich an den Administrator.
+                </div>
+            </div>`;
+            document.body.appendChild(banDiv);
+        }
+        banDiv.style.display = 'flex';
+        // Alle Spielaktionen deaktivieren
+        isPaused = true;
+    }
+    function hideBanMessage() {
+        const banDiv = document.getElementById('banOverlay');
+        if (banDiv) banDiv.style.display = 'none';
+        isBanned = false;
+    }
+    function checkAndBlockBanned() {
+        if (isBanned) { showBanMessage(); return true; }
+        return false;
+    }
+
         // ==================== ADMIN-FUNKTIONEN ====================
     function checkAdminStatus() {
     // Wir prüfen beides: Deine ID ODER ob deine Email in der Liste steht
@@ -5029,7 +5098,20 @@
     }
 }
 
-    async function loadBannedPlayers() { if (!firebaseInitialized || !database) return; const snapshot = await database.ref('bannedPlayers').once('value'); const data = snapshot.val(); bannedPlayers = []; if (data) for (let id in data) bannedPlayers.push({ name: id, ...data[id] }); updateBannedListDisplay(); }
+    async function loadBannedPlayers() {
+        if (!firebaseInitialized || !database) return;
+        const snapshot = await database.ref('bannedPlayers').once('value');
+        const data = snapshot.val();
+        bannedPlayers = [];
+        if (data) for (let id in data) bannedPlayers.push({ name: id, ...data[id] });
+        updateBannedListDisplay();
+        // Prüfen ob der aktuelle Spieler gebannt ist
+        const myName = (document.getElementById('playerNameInput')?.value || playerName || '').trim();
+        const wasBanned = isBanned;
+        isBanned = myName && bannedPlayers.some(b => b.name === myName);
+        if (isBanned && !wasBanned) showBanMessage();
+        else if (!isBanned && wasBanned) hideBanMessage();
+    }
     async function banPlayer(playerName) { if (!isAdmin) { showToast("❌ Keine Admin-Rechte!", true); return; } if (!playerName) { showToast("❌ Bitte Spielername eingeben!", true); return; } try { await database.ref('bannedPlayers/' + playerName).set({ bannedAt: Date.now(), bannedBy: currentUser.email }); showToast(`🚫 Spieler "${playerName}" wurde gebannt!`, false); await loadBannedPlayers(); await updateLeaderboard(); } catch(err) { showToast("❌ Fehler beim Bannen: " + err.message, true); } }
     async function unbanPlayer(playerName) { if (!isAdmin) { showToast("❌ Keine Admin-Rechte!", true); return; } if (!playerName) { showToast("❌ Bitte Spielername eingeben!", true); return; } try { await database.ref('bannedPlayers/' + playerName).remove(); showToast(`✅ Bann für "${playerName}" aufgehoben!`, false); await loadBannedPlayers(); await updateLeaderboard(); } catch(err) { showToast("❌ Fehler: " + err.message, true); } }
     async function removePlayerFromLeaderboard(playerName) { if (!isAdmin) { showToast("❌ Keine Admin-Rechte!", true); return; } if (!playerName) { showToast("❌ Bitte Spielername eingeben!", true); return; } try { await database.ref('leaderboard/' + playerName).remove(); showToast(`🗑️ Spieler "${playerName}" aus Bestenliste entfernt!`, false); await updateLeaderboard(); } catch(err) { showToast("❌ Fehler: " + err.message, true); } }
