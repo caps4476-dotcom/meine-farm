@@ -1408,11 +1408,21 @@
 
     
     // ==================== GAME VERSION ====================
-    const CURRENT_GAME_VERSION = "4.5";
+    const CURRENT_GAME_VERSION = "4.6";
     
     // ==================== RELEASE NOTES ("Was ist neu?") ====================
     // Neue Einträge oben hinzufügen. version: muss zu CURRENT_GAME_VERSION passen, damit beim ersten Start automatisch angezeigt wird.
     const RELEASE_NOTES = [
+        {
+            version: "4.6",
+            date: "Mai 2026",
+            title: "🐄 Auto-Sammler grundlegend repariert",
+            changes: [
+                "🤖 <b>Auto-Sammler</b>: Grundlegender Fehler behoben – beim Laden der Seite werden Tiere mit autoCollector jetzt sofort geerntet und ein neuer Zyklus gestartet, auch wenn isReady=true gespeichert war.",
+                "💾 <b>Speichern</b>: Mit aktivem Auto-Sammler wird isReady=false gespeichert damit nach dem nächsten Login der Timer sauber neu startet.",
+                "🔁 <b>Upgrade-Aktivierung</b>: Beim Kauf des Auto-Sammlers starten alle fertigen Tiere sofort automatisch."
+            ]
+        },
         {
             version: "4.5",
             date: "Mai 2026",
@@ -2934,7 +2944,7 @@
             delete animalTimerRegistry[idx];
             animal._timerRunning = false;
             animal.timerId = null;
-            if (!animals[idx] || animals[idx] !== animal) return;
+            if (!animals[idx]) return; // Tier existiert noch?
 
             const autoOn = barnUpgrades && barnUpgrades.autoCollector;
 
@@ -3486,7 +3496,8 @@
     }
     
     // ==================== EXPORT/IMPORT ====================
-    function exportGame() { const saveData = { gold: playerGold, inventory, day: currentDay, currentPrices: globalMarketPrices, maxStorage, fields: fields.map(f => ({ owned: f.owned, cropId: f.cropId, plantedAt: f.plantedAt, isReady: f.isReady })), barnOwned, barnUpgrades, acker2Owned, acker3Owned, helperEnabled, lastSeenReleaseVersion, animals: animals.map(a => ({ type: a.type, name: a.name, isReady: a.isReady, productionStartTime: a.productionStartTime })), achievements, stats, playerLevel, playerXP, completedResearch, researchProgress, ownedLicenses, currentWeather, timestamp: Date.now(), version: CURRENT_GAME_VERSION }; const dataStr = JSON.stringify(saveData); const blob = new Blob([dataStr], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `farm_save_v${CURRENT_GAME_VERSION}_${new Date().toISOString().slice(0,19)}.json`; a.click(); URL.revokeObjectURL(url); showToast("💾 Spielstand exportiert!"); }
+    function exportGame() { const saveData = { gold: playerGold, inventory, day: currentDay, currentPrices: globalMarketPrices, maxStorage, fields: fields.map(f => ({ owned: f.owned, cropId: f.cropId, plantedAt: f.plantedAt, isReady: f.isReady })), barnOwned, barnUpgrades, acker2Owned, acker3Owned, helperEnabled, lastSeenReleaseVersion, animals: animals.map(a => ({ type: a.type, name: a.name, // Mit Auto-Sammler isReady=false speichern damit Timer nach Reload sauber startet
+                    isReady: (barnUpgrades && barnUpgrades.autoCollector) ? false : a.isReady, productionStartTime: a.productionStartTime || Date.now() })), achievements, stats, playerLevel, playerXP, completedResearch, researchProgress, ownedLicenses, currentWeather, timestamp: Date.now(), version: CURRENT_GAME_VERSION }; const dataStr = JSON.stringify(saveData); const blob = new Blob([dataStr], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `farm_save_v${CURRENT_GAME_VERSION}_${new Date().toISOString().slice(0,19)}.json`; a.click(); URL.revokeObjectURL(url); showToast("💾 Spielstand exportiert!"); }
     
     function importGame(file) { const reader = new FileReader(); reader.onload = (e) => { try { const data = JSON.parse(e.target.result); playerGold = data.gold; inventory = data.inventory; currentDay = data.day; maxStorage = data.maxStorage; playerLevel = data.playerLevel || 1; playerXP = data.playerXP || 0; completedResearch = data.completedResearch || []; ownedLicenses = data.ownedLicenses || []; if (data.researchProgress) researchProgress = data.researchProgress; else initResearchProgress(); if (data.currentWeather) currentWeather = data.currentWeather; applyResearchBonuses(); for (let i = 0; i < fields.length && i < data.fields.length; i++) { fields[i].owned = data.fields[i].owned; fields[i].cropId = data.fields[i].cropId; fields[i].plantedAt = data.fields[i].plantedAt; fields[i].isReady = data.fields[i].isReady; } barnOwned = data.barnOwned; barnUpgrades = data.barnUpgrades || { autoCollector: false, speedBoost: false }; acker2Owned = data.acker2Owned || false; acker3Owned = data.acker3Owned || false; if (acker2Owned) { for (let i = FIELDS_PER_ACKER; i < 2 * FIELDS_PER_ACKER; i++) if (fields[i]) fields[i].owned = true; } if (acker3Owned) { for (let i = 2 * FIELDS_PER_ACKER; i < 3 * FIELDS_PER_ACKER; i++) if (fields[i]) fields[i].owned = true; } animals = data.animals || []; for (let a of animals) { if (!a.isReady) { if (!a.productionStartTime) a.productionStartTime = Date.now(); startAnimalProduction(a, animals.indexOf(a)); } } achievements = data.achievements || achievements; stats = data.stats || stats; helperEnabled = data.helperEnabled || false; if (data.lastSeenReleaseVersion) lastSeenReleaseVersion = data.lastSeenReleaseVersion; updateMoneyUI(); updateLevelUI(); updateStorageUI(); renderFields(); renderPricePanel(); renderMarket(); if (isBarnUnlocked(playerLevel) && barnOwned) renderBarn(); updateViewButtons(); updateMassPlantButtons(); updateHelperUI(); if (helperEnabled && getMaxHelperLevel() > 0) startHelperLoop(); else stopHelperLoop(); const weather = WEATHER_TYPES[currentWeather] || WEATHER_TYPES.sunny; const weatherEl = document.getElementById("weatherInfo"); weatherEl.innerHTML = weather.emoji + " " + weather.name; weatherEl.className = "weather-info " + weather.color; showToast("📂 Spielstand importiert!"); saveGameToLocal(); updateLeaderboard(); } catch(err) { showToast("Fehler beim Import!", true); } }; reader.readAsText(file); }
     
@@ -3759,35 +3770,63 @@
     // barnUpgrades aus Cloud-Daten laden BEVOR Tiere starten (autoCollector-Check!)
     if (data.barnUpgrades) barnUpgrades = { ...barnUpgrades, ...data.barnUpgrades };
 
-    // Tiere wiederherstellen - erst alle Timer komplett leeren
+    // Tiere wiederherstellen
     for (let key in animalTimerRegistry) { clearTimeout(animalTimerRegistry[key]); delete animalTimerRegistry[key]; }
     for (let i = 0; i < animals.length; i++) {
         const a = animals[i];
         if (a.timerId) { clearTimeout(a.timerId); a.timerId = null; }
         a._timerRunning = false;
 
-        if (a.isReady) continue; // bereits fertig – Timer nicht nötig
+        const animalData = ANIMALS[a.type];
+        if (!animalData) continue;
 
-        const data = ANIMALS[a.type];
-        if (!data) continue;
+        const autoOn = barnUpgrades && barnUpgrades.autoCollector;
 
-        // Produktionszeit berechnen
-        let prodTime = data.productionTime;
+        if (a.isReady) {
+            if (autoOn) {
+                // Auto-Sammler: sofort einsammeln und neuen Zyklus starten
+                const amount = (typeof getDoubleChance==='function' && Math.random()<getDoubleChance()) ? 2 : 1;
+                if (addToInventory(animalData.productKey, amount)) {
+                    a.isReady = false;
+                    a.productionStartTime = Date.now();
+                    addXP(4 * amount);
+                    startAnimalProduction(a, i);
+                } else {
+                    // Lager voll – bereit lassen, User muss Platz schaffen
+                    // Timer trotzdem starten damit es nach Lager-Leeren weitergeht
+                    startAnimalProduction(a, i);
+                }
+            }
+            // Ohne Auto-Sammler: isReady=true bleibt, User klickt manuell
+            continue;
+        }
+
+        // Tier ist noch nicht fertig → Timer starten
+        let prodTime = animalData.productionTime;
         if (barnUpgrades && barnUpgrades.speedBoost) prodTime = Math.floor(prodTime * 0.7);
 
         if (!a.productionStartTime) {
-            // Noch nie gestartet → jetzt starten (nach Kauf oder Reset)
             a.productionStartTime = Date.now();
             startAnimalProduction(a, i);
         } else {
-            // Offline-Catch-up: War das Tier während der Abwesenheit fertig?
             const elapsed = Date.now() - a.productionStartTime;
             if (elapsed >= prodTime) {
-                // Tier hätte fertig produziert → sofort als bereit markieren
-                a.isReady = true;
+                // Offline abgeschlossen
+                if (autoOn) {
+                    const amount = (typeof getDoubleChance==='function' && Math.random()<getDoubleChance()) ? 2 : 1;
+                    if (addToInventory(animalData.productKey, amount)) {
+                        a.isReady = false;
+                        a.productionStartTime = Date.now();
+                        addXP(4 * amount);
+                    } else {
+                        a.isReady = true;
+                    }
+                } else {
+                    a.isReady = true;
+                }
+                startAnimalProduction(a, i);
             } else {
-                // Noch in Produktion → Timer mit verbleibender Zeit starten
-                startAnimalProduction(a, i); // forceStart: auch wenn paused
+                startAnimalProduction(a, i);
             }
         }
     }
