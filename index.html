@@ -1408,11 +1408,22 @@
 
     
     // ==================== GAME VERSION ====================
-    const CURRENT_GAME_VERSION = "4.4";
+    const CURRENT_GAME_VERSION = "4.5";
     
     // ==================== RELEASE NOTES ("Was ist neu?") ====================
     // Neue Einträge oben hinzufügen. version: muss zu CURRENT_GAME_VERSION passen, damit beim ersten Start automatisch angezeigt wird.
     const RELEASE_NOTES = [
+        {
+            version: "4.5",
+            date: "Mai 2026",
+            title: "🐄 Auto-Sammler & Auto-Füttern kombiniert",
+            changes: [
+                "🤖 <b>Auto-Sammler überarbeitet</b>: Sammeln und Füttern ist jetzt ein kombinierter Zyklus. Sobald ein Tier fertig produziert hat, wird das Produkt automatisch eingesammelt und sofort eine neue Produktion gestartet – komplett ohne Klicken.",
+                "🐄 <b>Zuverlässiger Start</b>: Tier-Timer starten jetzt auch wenn das Spiel beim Laden kurz pausiert war.",
+                "🔄 <b>Manuelles Sammeln</b>: Startet nach dem Sammeln automatisch einen neuen Produktionszyklus.",
+                "⚠️ <b>Lager voll</b>: Bei vollem Lager wird das Tier als bereit markiert und nach 60 Sekunden erneut versucht einzulagern."
+            ]
+        },
         {
             version: "4.4",
             date: "Mai 2026",
@@ -2897,60 +2908,76 @@
     // Registry verhindert doppelte Timer - key = Tier-Index
     const animalTimerRegistry = {};
 
-    function startAnimalProduction(animal, idx, forceStart=false) { 
-        if (isPaused && !forceStart) return;
+    function startAnimalProduction(animal, idx) {
+        // isPaused blockiert Tier-Timer NICHT – Tiere produzieren immer weiter
         if (!animal || !ANIMALS[animal.type]) return;
 
-        // Jeden bestehenden Timer für diesen Index stoppen
-        if (animalTimerRegistry[idx]) {
-            clearTimeout(animalTimerRegistry[idx]);
-            delete animalTimerRegistry[idx];
-        }
+        // Bestehende Timer stoppen
+        if (animalTimerRegistry[idx]) { clearTimeout(animalTimerRegistry[idx]); delete animalTimerRegistry[idx]; }
         if (animal.timerId) { clearTimeout(animal.timerId); animal.timerId = null; }
         animal._timerRunning = false;
-        
+
         const data = ANIMALS[animal.type];
         let prodTime = data.productionTime;
-        if (barnUpgrades.speedBoost) prodTime = Math.floor(prodTime * 0.7);
-        prodTime = Math.floor(prodTime * getAnimalProdModifier());
-        
-        // Falls noch keine Startzeit gesetzt ist, jetzt setzen (Schutz für neu gekaufte Tiere)
+        if (barnUpgrades && barnUpgrades.speedBoost) prodTime = Math.floor(prodTime * 0.7);
+        if (typeof getAnimalProdModifier === 'function') prodTime = Math.floor(prodTime * getAnimalProdModifier());
+
+        // Startzeit setzen falls noch keine vorhanden
         if (!animal.productionStartTime) animal.productionStartTime = Date.now();
-        
-        // Verbleibende Zeit berechnen
-        const elapsed = Date.now() - animal.productionStartTime;
-        const remaining = Math.max(2000, prodTime - elapsed);
+
+        const elapsed   = Date.now() - animal.productionStartTime;
+        const remaining = Math.max(1000, prodTime - elapsed);
 
         animal._timerRunning = true;
         const timerId = setTimeout(() => {
-            // Prüfen ob dieser Timer noch aktuell ist
             if (animalTimerRegistry[idx] !== timerId) return;
             delete animalTimerRegistry[idx];
             animal._timerRunning = false;
             animal.timerId = null;
-
-            // Sicherstellen dass das Tier noch existiert und gleich ist
             if (!animals[idx] || animals[idx] !== animal) return;
 
-            if (barnUpgrades.autoCollector) {
-                const amount = Math.random() < getDoubleChance() ? 2 : 1;
+            const autoOn = barnUpgrades && barnUpgrades.autoCollector;
+
+            if (autoOn) {
+                // ── AUTO-MODUS: Sammeln + sofort neu Füttern ──
+                const amount = (typeof getDoubleChance==='function' && Math.random() < getDoubleChance()) ? 2 : 1;
                 if (addToInventory(data.productKey, amount)) {
+                    // Produkt eingesammelt → sofort neue Produktion starten
                     animals[idx].isReady = false;
                     animals[idx].productionStartTime = Date.now();
                     addXP(4 * amount);
-                    showToast(`🤖 +${amount} ${data.product} (${animals[idx].name}) +${4*amount} XP`);
+                    updateQuestProgress('animal', amount);
+                    showToast(`🤖 Auto: +${amount} ${data.product} – nächste Produktion startet!`);
                     renderBarn();
                     saveGameToLocal();
-                    startAnimalProduction(animals[idx], idx);
+                    startAnimalProduction(animals[idx], idx); // sofort neuen Zyklus starten
                 } else {
+                    // Lager voll → als bereit markieren, User muss manuell leeren
                     animals[idx].isReady = true;
-                    showToast(`⚠️ Lager voll! ${data.product} konnte nicht eingelagert werden.`, true);
+                    showToast(`⚠️ Lager voll! ${data.product} kann nicht eingelagert werden.`, true);
                     renderBarn();
                     saveGameToLocal();
+                    // Alle 60 Sekunden erneut prüfen ob Lager frei
+                    const retryId = setTimeout(() => {
+                        if (!animals[idx] || !animals[idx].isReady) return;
+                        if (addToInventory(data.productKey, 1)) {
+                            animals[idx].isReady = false;
+                            animals[idx].productionStartTime = Date.now();
+                            addXP(4); updateQuestProgress('animal', 1);
+                            showToast(`🤖 Lager wieder frei! +1 ${data.product}`);
+                            renderBarn(); saveGameToLocal();
+                            startAnimalProduction(animals[idx], idx);
+                        } else {
+                            startAnimalProduction(animals[idx], idx); // erneut versuchen
+                        }
+                    }, 60000);
+                    animalTimerRegistry[idx] = retryId;
+                    animals[idx].timerId = retryId;
                 }
             } else {
+                // ── MANUELLER MODUS: Bereit anzeigen, User sammelt selbst ──
                 animals[idx].isReady = true;
-                showToast(`🐔 ${data.name} (${animals[idx].name}) hat ein Produkt fertig!`);
+                showToast(`🐔 ${data.name} (${animals[idx].name || data.name}) hat produziert!`);
                 renderBarn();
                 saveGameToLocal();
             }
@@ -3047,6 +3074,13 @@
         updateMoneyUI();
         showToast(`🌾 ${fed} × ${data.name} gefüttert! (-${data.feedCost * fed}💰)`);
         renderBarn(); saveGameToLocal();
+        // Sicherstellen dass alle gefütterten Tiere einen laufenden Timer haben
+        for (const {a, i} of sameType) {
+            if (!a.isReady && !animalTimerRegistry[i]) {
+                a.productionStartTime = Date.now();
+                startAnimalProduction(a, i);
+            }
+        }
     }
     
     function collectProduct(idx) {
@@ -3069,7 +3103,15 @@
         }
         if (totalAmount > 0) {
             renderBarn(); renderMarket(); saveGameToLocal(); addXP(4 * totalAmount);
+            updateQuestProgress('animal', totalAmount);
             showToast(`✅ +${totalAmount} ${data.product} gesammelt! +${4*totalAmount} XP`);
+            // Nach manuellem Sammeln sofort neue Produktion starten
+            for (const {a, i} of readyOfType) {
+                if (!a.isReady && !a.productionStartTime) {
+                    a.productionStartTime = Date.now();
+                    startAnimalProduction(a, i);
+                }
+            }
         } else showToast(`❌ Lager voll!`, true);
     }
     
@@ -3116,10 +3158,9 @@
             }
             if (barnUpgrades.autoCollector) {
                 if (readyCount > 0) {
-                    // Auto-Sammler holt gleich ab
-                    statusHtml += `<div class="status" style="background:#3a6e3a;">🤖 Auto-Sammler holt ab...</div>`;
-                } else {
-                    statusHtml += `<div class="status" style="background:#2a4a2a;">🤖 Auto-Sammler aktiv</div>`;
+                    statusHtml += `<div class="status" style="background:#3a6e3a;">🤖 Wird automatisch eingesammelt</div>`;
+                } else if (inProgress.length > 0) {
+                    statusHtml += `<div class="status" style="background:#2a4a2a;">🤖 Auto-Zyklus läuft</div>`;
                 }
             }
             
@@ -3760,7 +3801,7 @@
                 a.isReady = true;
             } else {
                 // Noch in Produktion → Timer mit verbleibender Zeit starten
-                startAnimalProduction(a, i, true); // forceStart: auch wenn paused
+                startAnimalProduction(a, i); // forceStart: auch wenn paused
             }
         }
     }
