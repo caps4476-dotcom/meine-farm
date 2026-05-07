@@ -2075,7 +2075,7 @@
             }
         }
         // ==================== GAME VERSION ====================
-        const CURRENT_GAME_VERSION = "4.5";
+        const CURRENT_GAME_VERSION = "4.8";
         // ==================== RELEASE NOTES ====================
         const RELEASE_NOTES = [
             { version: "4.5", date: "Mai 2026", title: "🐄 Auto-Sammler & Auto-Füttern kombiniert",
@@ -4476,11 +4476,7 @@
                     actionHtml = "";
                 if (isCompleted) { statusHtml =
                         `<div class="status" style="background:#2a6a2a;">✅ Freigeschaltet (Aktiv)</div>`; } else if (
-                    isActive) { const remainingTime = Math.max(0, Math.ceil((p.activeResearch - Date.now()) /
-                        1000)); const minutes = Math.floor(remainingTime / 60); const seconds = remainingTime %
-                        60;
-                    statusHtml =
-                        `<div class="status" style="background:#f5a623;">⏳ Forschung läuft... ${minutes}:${seconds.toString().padStart(2,'0')} min</div>`; } else { const canStart =
+                    isActive) { const _rt = (p.activeResearch && p.activeResearch > Date.now()) ? Math.max(0, Math.ceil((p.activeResearch - Date.now()) / 1000)) : 0; const minutes = Math.floor(_rt / 60); const seconds = _rt % 60; const timeStr = (isNaN(minutes)||isNaN(seconds)) ? '--:--' : minutes+':'+String(seconds).padStart(2,'0'); statusHtml = `<div class="status" style="background:#f5a623;">⏳ Forschung läuft... ${timeStr} min</div>`; } else { const canStart =
                     goldPaid >= goldNeeded && allResourcesPaid;
                     statusHtml =
                     `<div class="status">📦 Fortschritt: ${Math.floor(percent)}%</div>`;
@@ -4682,7 +4678,11 @@
                         if (fields[i]) fields[i].owned = true; } if (acker3Owned) { for (let i = 2 *
                             FIELDS_PER_ACKER; i < 3 * FIELDS_PER_ACKER; i++)
                         if (fields[i]) fields[i].owned = true; }
-                    animals = data.animals || []; for (let a of animals) { if (!a.isReady) { if (!a
+                    // Animals validieren: nur Einträge mit gültigem type übernehmen
+            animals = (data.animals || []).filter(a => a && a.type && ANIMALS[a.type]);
+            if (data.animals && data.animals.length > 0 && animals.length < data.animals.length) {
+                console.warn('⚠️ ' + (data.animals.length - animals.length) + ' ungültige Tier-Einträge übersprungen');
+            } for (let a of animals) { if (!a.isReady) { if (!a
                             .productionStartTime) a.productionStartTime = Date.now();
                         startAnimalProduction(a, animals.indexOf(a)); } }
                     achievements = data.achievements || achievements;
@@ -4756,8 +4756,12 @@
                     acker3Owned: acker3Owned || false,
                     helperEnabled: helperEnabled || false,
                     lastSeenReleaseVersion: lastSeenReleaseVersion || null,
-                    animals: (animals || []).map(a => ({ type: a.type || null, name: a.name || null,
-                        isReady: a.isReady || false, productionStartTime: a.productionStartTime || null })),
+                    animals: (animals || []).filter(a => a && a.type && ANIMALS[a.type]).map(a => ({
+                        type: a.type || null,
+                        name: a.name || null,
+                        isReady: (barnUpgrades && barnUpgrades.autoCollector) ? false : (a.isReady || false),
+                        productionStartTime: a.productionStartTime || Date.now()
+                    })),
                     achievements: achievements || [],
                     stats: stats || {},
                     completedResearch: completedResearch || [],
@@ -4858,7 +4862,11 @@
             acker3Owned = data.acker3Owned || false;
             helperEnabled = data.helperEnabled || false;
             if (data.lastSeenReleaseVersion) lastSeenReleaseVersion = data.lastSeenReleaseVersion;
-            animals = data.animals || [];
+            // Animals validieren: nur Einträge mit gültigem type übernehmen
+            animals = (data.animals || []).filter(a => a && a.type && ANIMALS[a.type]);
+            if (data.animals && data.animals.length > 0 && animals.length < data.animals.length) {
+                console.warn('⚠️ ' + (data.animals.length - animals.length) + ' ungültige Tier-Einträge übersprungen');
+            }
             achievements = data.achievements || achievements;
             stats = data.stats || stats;
             completedResearch = data.completedResearch || [];
@@ -4920,8 +4928,12 @@
                 acker3Owned: acker3Owned || false,
                 helperEnabled: helperEnabled || false,
                 lastSeenReleaseVersion: lastSeenReleaseVersion || null,
-                animals: (animals || []).map(a => ({ type: a.type || null, name: a.name || null,
-                    isReady: a.isReady || false, productionStartTime: a.productionStartTime || null })),
+                animals: (animals || []).filter(a => a && a.type && ANIMALS[a.type]).map(a => ({
+                    type: a.type || null,
+                    name: a.name || null,
+                    isReady: (barnUpgrades && barnUpgrades.autoCollector) ? false : (a.isReady || false),
+                    productionStartTime: a.productionStartTime || Date.now()
+                })),
                 achievements: achievements || [],
                 stats: stats || {},
                 playerLevel: playerLevel || 1,
@@ -4956,8 +4968,12 @@
                 acker3Owned: acker3Owned || false,
                 helperEnabled: helperEnabled || false,
                 lastSeenReleaseVersion: lastSeenReleaseVersion || null,
-                animals: (animals || []).map(a => ({ type: a.type || null, name: a.name || null,
-                    isReady: a.isReady || false, productionStartTime: a.productionStartTime || null })),
+                animals: (animals || []).filter(a => a && a.type && ANIMALS[a.type]).map(a => ({
+                    type: a.type || null,
+                    name: a.name || null,
+                    isReady: (barnUpgrades && barnUpgrades.autoCollector) ? false : (a.isReady || false),
+                    productionStartTime: a.productionStartTime || Date.now()
+                })),
                 achievements: achievements || [],
                 stats: stats || {},
                 playerLevel: playerLevel || 1,
@@ -6412,16 +6428,26 @@
                 if (weatherTimer) clearTimeout(weatherTimer);
                 weatherTimer = setTimeout(changeWeather, nextChange);
                 setInterval(() => { if (!activeOrder && Math.random() < 0.15) generateRandomOrder(); }, 25000);
-                if (typeof firebase !== 'undefined' && firebase.auth) firebase.auth().onAuthStateChanged((
-                (user) => { if (user) { const savegameRef = firebase.database().ref('users/' + user.uid +
-                        '/savegame');
-                        savegameRef.on('value', (snapshot) => { const cloudData = snapshot.val(); if (
-                                cloudData && typeof applyCloudData === 'function') { if (
-                                    cloudData.gold !== window.playerGold) { applyCloudData(
-                                        cloudData); if (typeof updateMoneyUI === 'function')
-                                    updateMoneyUI();
-                                console.log(
-                                    "Sync: Cloud-Daten (Admin-Bonus oder Save) übernommen."); } } }); } }));
+                // Sync-Listener NUR für Gold-Änderungen durch Admin-Bonus
+                // NICHT für komplettes applyCloudData (würde Tiere/Inventar überschreiben)
+                if (typeof firebase !== 'undefined' && firebase.auth) firebase.auth().onAuthStateChanged((user) => {
+                    if (user) {
+                        const goldRef = firebase.database().ref('users/' + user.uid + '/savegame/gold');
+                        goldRef.on('value', (snapshot) => {
+                            const cloudGold = snapshot.val();
+                            if (cloudGold !== null && cloudGold !== undefined && !isLoadingFromCloud) {
+                                // Nur Gold synchronisieren wenn deutlich höher als lokal
+                                // (Admin-Bonus Erkennung: Cloud hat mehr als lokal)
+                                if (cloudGold > window.playerGold + 50) {
+                                    console.log("Sync: Admin-Bonus erkannt, Cloud-Gold: " + cloudGold + " > Lokal: " + window.playerGold);
+                                    window.playerGold = cloudGold;
+                                    if (typeof updateMoneyUI === 'function') updateMoneyUI();
+                                    if (typeof saveGameToLocal === 'function') saveGameToLocal();
+                                }
+                            }
+                        });
+                    }
+                });
             } catch (e) { console.error("Init-Fehler:", e); }
         }
         // ==================== ADMIN-FUNKTIONEN ====================
