@@ -2934,7 +2934,7 @@
             delete animalTimerRegistry[idx];
             animal._timerRunning = false;
             animal.timerId = null;
-            if (!animals[idx] || animals[idx] !== animal) return;
+            if (!animals[idx]) return; // Tier existiert noch?
 
             const autoOn = barnUpgrades && barnUpgrades.autoCollector;
 
@@ -3063,7 +3063,7 @@
         for (const {a, i} of sameType) {
             if (playerGold < data.feedCost) break;
             playerGold -= data.feedCost;
-            if (a.timerId) clearTimeout(a.timerId);
+            if (a.timerId) { clearTimeout(a.timerId); a.timerId = null; }
             if (animalTimerRegistry[i]) { clearTimeout(animalTimerRegistry[i]); delete animalTimerRegistry[i]; }
             a.isReady = false;
             a.productionStartTime = Date.now();
@@ -3074,18 +3074,10 @@
         updateMoneyUI();
         showToast(`🌾 ${fed} × ${data.name} gefüttert! (-${data.feedCost * fed}💰)`);
         renderBarn(); saveGameToLocal();
-        // Sicherstellen dass alle gefütterten Tiere einen laufenden Timer haben
-        for (const {a, i} of sameType) {
-            if (!a.isReady && !animalTimerRegistry[i]) {
-                a.productionStartTime = Date.now();
-                startAnimalProduction(a, i);
-            }
-        }
     }
     
     function collectProduct(idx) {
         if (checkAndBlockBanned()) return;
-        if (isPaused) { showToast("⏸️ Spiel ist pausiert!", true); return; }
         const animal = animals[idx]; if (!animal) return;
         const data = ANIMALS[animal.type];
         // Alle bereiten Tiere desselben Typs sammeln
@@ -3105,13 +3097,7 @@
             renderBarn(); renderMarket(); saveGameToLocal(); addXP(4 * totalAmount);
             updateQuestProgress('animal', totalAmount);
             showToast(`✅ +${totalAmount} ${data.product} gesammelt! +${4*totalAmount} XP`);
-            // Nach manuellem Sammeln sofort neue Produktion starten
-            for (const {a, i} of readyOfType) {
-                if (!a.isReady && !a.productionStartTime) {
-                    a.productionStartTime = Date.now();
-                    startAnimalProduction(a, i);
-                }
-            }
+
         } else showToast(`❌ Lager voll!`, true);
     }
     
@@ -3176,9 +3162,9 @@
                 <div style="font-size:0.6rem; color:#b0a070; margin-bottom:2px;">${data.product} ${data.productEmoji}</div>
                 ${statusHtml}
                 <div>
-                    <button class="feed-btn" data-idx="${firstIdx}">🌾 Füttern (${data.feedCost}💰)</button>
+                    <button class="feed-btn" data-idx="${firstIdx}">🌾 Alle füttern (${data.feedCost * count}💰)</button>
                 </div>
-                ${readyCount > 0 && !barnUpgrades.autoCollector ? `<button class="collect-btn" data-idx="${firstReadyIdx}">📦 Sammeln (${readyCount}x)</button>` : ""}
+                ${readyCount > 0 && !barnUpgrades.autoCollector ? `<button class="collect-btn" data-idx="${firstReadyIdx}">📦 Alle sammeln (${readyCount}x)</button>` : ""}
                 <div class="progress-bar-container"><div class="progress-bar-fill" style="width:${readyCount > 0 ? 100 : avgProgress}%;"></div></div>`;
             
             barnContainer.appendChild(div);
@@ -3500,7 +3486,7 @@
     }
     
     // ==================== EXPORT/IMPORT ====================
-    function exportGame() { const saveData = { gold: playerGold, inventory, day: currentDay, currentPrices: globalMarketPrices, maxStorage, fields: fields.map(f => ({ owned: f.owned, cropId: f.cropId, plantedAt: f.plantedAt, isReady: f.isReady })), barnOwned, barnUpgrades, acker2Owned, acker3Owned, helperEnabled, lastSeenReleaseVersion, animals: animals.map(a => ({ type: a.type, name: a.name, isReady: a.isReady, productionStartTime: a.productionStartTime })), achievements, stats, playerLevel, playerXP, completedResearch, researchProgress, ownedLicenses, currentWeather, timestamp: Date.now(), version: CURRENT_GAME_VERSION }; const dataStr = JSON.stringify(saveData); const blob = new Blob([dataStr], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `farm_save_v${CURRENT_GAME_VERSION}_${new Date().toISOString().slice(0,19)}.json`; a.click(); URL.revokeObjectURL(url); showToast("💾 Spielstand exportiert!"); }
+    function exportGame() { const saveData = { gold: playerGold, inventory, day: currentDay, currentPrices: globalMarketPrices, maxStorage, fields: fields.map(f => ({ owned: f.owned, cropId: f.cropId, plantedAt: f.plantedAt, isReady: f.isReady })), barnOwned, barnUpgrades, acker2Owned, acker3Owned, helperEnabled, lastSeenReleaseVersion, animals: animals.map(a => ({ type: a.type, name: a.name, isReady: (barnUpgrades && barnUpgrades.autoCollector) ? false : a.isReady, productionStartTime: a.productionStartTime || Date.now() })), achievements, stats, playerLevel, playerXP, completedResearch, researchProgress, ownedLicenses, currentWeather, timestamp: Date.now(), version: CURRENT_GAME_VERSION }; const dataStr = JSON.stringify(saveData); const blob = new Blob([dataStr], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `farm_save_v${CURRENT_GAME_VERSION}_${new Date().toISOString().slice(0,19)}.json`; a.click(); URL.revokeObjectURL(url); showToast("💾 Spielstand exportiert!"); }
     
     function importGame(file) { const reader = new FileReader(); reader.onload = (e) => { try { const data = JSON.parse(e.target.result); playerGold = data.gold; inventory = data.inventory; currentDay = data.day; maxStorage = data.maxStorage; playerLevel = data.playerLevel || 1; playerXP = data.playerXP || 0; completedResearch = data.completedResearch || []; ownedLicenses = data.ownedLicenses || []; if (data.researchProgress) researchProgress = data.researchProgress; else initResearchProgress(); if (data.currentWeather) currentWeather = data.currentWeather; applyResearchBonuses(); for (let i = 0; i < fields.length && i < data.fields.length; i++) { fields[i].owned = data.fields[i].owned; fields[i].cropId = data.fields[i].cropId; fields[i].plantedAt = data.fields[i].plantedAt; fields[i].isReady = data.fields[i].isReady; } barnOwned = data.barnOwned; barnUpgrades = data.barnUpgrades || { autoCollector: false, speedBoost: false }; acker2Owned = data.acker2Owned || false; acker3Owned = data.acker3Owned || false; if (acker2Owned) { for (let i = FIELDS_PER_ACKER; i < 2 * FIELDS_PER_ACKER; i++) if (fields[i]) fields[i].owned = true; } if (acker3Owned) { for (let i = 2 * FIELDS_PER_ACKER; i < 3 * FIELDS_PER_ACKER; i++) if (fields[i]) fields[i].owned = true; } animals = data.animals || []; for (let a of animals) { if (!a.isReady) { if (!a.productionStartTime) a.productionStartTime = Date.now(); startAnimalProduction(a, animals.indexOf(a)); } } achievements = data.achievements || achievements; stats = data.stats || stats; helperEnabled = data.helperEnabled || false; if (data.lastSeenReleaseVersion) lastSeenReleaseVersion = data.lastSeenReleaseVersion; updateMoneyUI(); updateLevelUI(); updateStorageUI(); renderFields(); renderPricePanel(); renderMarket(); if (isBarnUnlocked(playerLevel) && barnOwned) renderBarn(); updateViewButtons(); updateMassPlantButtons(); updateHelperUI(); if (helperEnabled && getMaxHelperLevel() > 0) startHelperLoop(); else stopHelperLoop(); const weather = WEATHER_TYPES[currentWeather] || WEATHER_TYPES.sunny; const weatherEl = document.getElementById("weatherInfo"); weatherEl.innerHTML = weather.emoji + " " + weather.name; weatherEl.className = "weather-info " + weather.color; showToast("📂 Spielstand importiert!"); saveGameToLocal(); updateLeaderboard(); } catch(err) { showToast("Fehler beim Import!", true); } }; reader.readAsText(file); }
     
@@ -3780,10 +3766,24 @@
         if (a.timerId) { clearTimeout(a.timerId); a.timerId = null; }
         a._timerRunning = false;
 
-        if (a.isReady) continue; // bereits fertig – Timer nicht nötig
-
         const data = ANIMALS[a.type];
         if (!data) continue;
+        const autoOn = barnUpgrades && barnUpgrades.autoCollector;
+
+        if (a.isReady) {
+            if (autoOn) {
+                const amt = (typeof getDoubleChance==='function' && Math.random()<getDoubleChance()) ? 2 : 1;
+                if (addToInventory(data.productKey, amt)) {
+                    a.isReady = false;
+                    a.productionStartTime = Date.now();
+                    addXP(4 * amt);
+                    startAnimalProduction(a, i);
+                } else {
+                    startAnimalProduction(a, i);
+                }
+            }
+            continue;
+        }
 
         // Produktionszeit berechnen
         let prodTime = data.productionTime;
