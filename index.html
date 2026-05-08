@@ -2075,7 +2075,7 @@
             }
         }
         // ==================== GAME VERSION ====================
-        const CURRENT_GAME_VERSION = "4.8";
+        const CURRENT_GAME_VERSION = "4.9";
         // ==================== RELEASE NOTES ====================
         const RELEASE_NOTES = [
             { version: "4.5", date: "Mai 2026", title: "🐄 Auto-Sammler & Auto-Füttern kombiniert",
@@ -4299,26 +4299,39 @@
         function loadResearchProgressFromLS() {
             const saved = localStorage.getItem('farmResearchProgress');
             if (saved) {
-                const parsed = JSON.parse(saved);
-                // Timer wiederherstellen, die noch nicht abgelaufen sind
-                for (let [id, p] of Object.entries(parsed)) {
-                    if (p.activeResearch && p.activeResearch > Date.now()) {
-                        const remaining = p.activeResearch - Date.now();
-                        p.timerId = setTimeout(() => completeResearch(id), remaining);
-                    } else if (p.activeResearch && p.activeResearch <= Date.now()) {
-                        p.activeResearch = null;
-                        completedResearch.push(id);
-                    }
-                    // resourcesPaid-Objekt sicherstellen
-                    if (!p.resourcesPaid) p.resourcesPaid = {};
-                    const r = RESEARCH[id];
-                    if (r) {
-                        for (let res of Object.keys(r.resources)) {
-                            if (!p.resourcesPaid[res]) p.resourcesPaid[res] = 0;
+                try {
+                    const parsed = JSON.parse(saved);
+                    for (let [id, p] of Object.entries(parsed)) {
+                        // Abgelaufene oder ungültige activeResearch bereinigen
+                        if (p.activeResearch !== null && p.activeResearch !== undefined) {
+                            if (p.activeResearch <= Date.now()) {
+                                // Abgelaufen → als abgeschlossen markieren
+                                p.activeResearch = null;
+                                p.timerId = null;
+                                if (!completedResearch.includes(id)) completedResearch.push(id);
+                            } else {
+                                // Noch aktiv → Timer wiederherstellen
+                                const remaining = p.activeResearch - Date.now();
+                                p.timerId = setTimeout(() => completeResearch(id), remaining);
+                            }
+                        } else {
+                            // Sicherstellen dass null (nicht undefined/0/false)
+                            p.activeResearch = null;
+                            p.timerId = null;
+                        }
+                        // resourcesPaid-Objekt sicherstellen
+                        if (!p.resourcesPaid) p.resourcesPaid = {};
+                        const r = RESEARCH[id];
+                        if (r) {
+                            for (let res of Object.keys(r.resources)) {
+                                if (p.resourcesPaid[res] === undefined) p.resourcesPaid[res] = 0;
+                            }
                         }
                     }
+                    researchProgress = parsed;
+                } catch(e) {
+                    console.warn('Forschungsfortschritt konnte nicht geladen werden:', e);
                 }
-                researchProgress = parsed;
             }
         }
 
@@ -4359,11 +4372,11 @@
             if (!checkResearchPrereq(researchId)) return;
             if (completedResearch.includes(researchId)) { showToast(
                     "❌ Diese Forschung ist bereits abgeschlossen!", true); return; }
-            if (p.activeResearch) { showToast("❌ Diese Forschung läuft bereits!", true); return; }
+            if (p.activeResearch && p.activeResearch > Date.now()) { showToast("❌ Diese Forschung läuft bereits!", true); return; }
             const goldNeeded = r.goldCost;
             const goldPaid = p.goldPaid || 0;
             const goldRemaining = goldNeeded - goldPaid;
-            const payAmount = Math.min(100, goldRemaining, playerGold);
+            const payAmount = Math.min(goldRemaining, playerGold); // Alles auf einmal
             if (payAmount <= 0) { showToast("❌ Kein Gold mehr benötigt oder nicht genug Gold!", true); return; }
             playerGold -= payAmount;
             p.goldPaid = (p.goldPaid || 0) + payAmount;
@@ -4383,7 +4396,7 @@
             if (!r || !p) return;
             if (completedResearch.includes(researchId)) { showToast(
                     "❌ Diese Forschung ist bereits abgeschlossen!", true); return; }
-            if (p.activeResearch) { showToast("❌ Diese Forschung läuft bereits!", true); return; }
+            if (p.activeResearch && p.activeResearch > Date.now()) { showToast("❌ Diese Forschung läuft bereits!", true); return; }
             const needed = r.resources[resource];
             const paid = p.resourcesPaid[resource] || 0;
             const remaining = needed - paid;
@@ -4407,7 +4420,7 @@
             if (!checkResearchPrereq(researchId)) return;
             if (completedResearch.includes(researchId)) { showToast(
                     "❌ Diese Forschung ist bereits abgeschlossen!", true); return; }
-            if (p.activeResearch) { showToast("❌ Diese Forschung läuft bereits!", true); return; }
+            if (p.activeResearch && p.activeResearch > Date.now()) { showToast("❌ Diese Forschung läuft bereits!", true); return; }
             const goldNeeded = r.goldCost;
             const goldPaid = p.goldPaid || 0;
             if (goldPaid < goldNeeded) { showToast(
@@ -4453,7 +4466,7 @@
                 const isCompleted = completedResearch.includes(id);
                 const p = researchProgress[id] || { goldPaid: 0, resourcesPaid: {}, activeResearch: null,
                     timerId: null };
-                const isActive = p.activeResearch !== null;
+                const isActive = p.activeResearch !== null && p.activeResearch !== undefined && p.activeResearch > Date.now();
                 const goldNeeded = r.goldCost;
                 const goldPaid = p.goldPaid || 0;
                 const goldRemaining = goldNeeded - goldPaid;
@@ -4481,7 +4494,7 @@
                     statusHtml =
                     `<div class="status">📦 Fortschritt: ${Math.floor(percent)}%</div>`;
                     actionHtml =
-                        `<div style="margin-top:8px;">${goldRemaining > 0 ? `<button class="research-pay-gold-btn" data-research="${id}" style="background:#f5a623; border:none; border-radius:20px; padding:4px 8px; margin:2px; font-size:0.7rem;">💰 Gold einzahlen (${Math.min(goldRemaining, 100)}💰)</button>` : ''}${canStart ? `<button class="research-start-btn" data-research="${id}" style="background:#2c6e6e; border:none; border-radius:20px; padding:6px 12px; margin:5px; font-weight:bold;">🔬 Forschung starten</button>` : ''}</div>`; }
+                        `<div style="margin-top:8px;">${goldRemaining > 0 ? `<button class="research-pay-gold-btn" data-research="${id}" style="background:#f5a623; border:none; border-radius:20px; padding:4px 8px; margin:2px; font-size:0.7rem;">💰 Alles einzahlen (${Math.min(goldRemaining, playerGold)}💰)</button>` : ''}${canStart ? `<button class="research-start-btn" data-research="${id}" style="background:#2c6e6e; border:none; border-radius:20px; padding:6px 12px; margin:5px; font-weight:bold;">🔬 Forschung starten</button>` : ''}</div>`; }
                 const div = document.createElement("div");
                 div.className = "research-slot" + (isCompleted ? " completed" : "") + (isActive ? " researching" : "");
                 div.innerHTML =
@@ -4663,7 +4676,33 @@
                     playerXP = data.playerXP || 0;
                     completedResearch = data.completedResearch || [];
                     ownedLicenses = data.ownedLicenses || []; if (data.researchProgress)
-                    researchProgress = data.researchProgress; else initResearchProgress(); if (data
+                    // researchProgress aus Cloud laden und bereinigen
+                    researchProgress = {};
+                    for (let [id, p] of Object.entries(data.researchProgress)) {
+                        const rp = { ...p };
+                        // Abgelaufene activeResearch bereinigen
+                        if (rp.activeResearch !== null && rp.activeResearch !== undefined) {
+                            if (rp.activeResearch <= Date.now()) {
+                                rp.activeResearch = null;
+                                rp.timerId = null;
+                                if (!completedResearch.includes(id)) completedResearch.push(id);
+                            } else {
+                                const rem = rp.activeResearch - Date.now();
+                                rp.timerId = setTimeout(() => completeResearch(id), rem);
+                            }
+                        } else {
+                            rp.activeResearch = null;
+                            rp.timerId = null;
+                        }
+                        if (!rp.resourcesPaid) rp.resourcesPaid = {};
+                        const r = RESEARCH[id];
+                        if (r) for (let res of Object.keys(r.resources)) {
+                            if (rp.resourcesPaid[res] === undefined) rp.resourcesPaid[res] = 0;
+                        }
+                        researchProgress[id] = rp;
+                    }
+                    initResearchProgress(); // fehlende Einträge ergänzen
+                    if (data
                         .currentWeather) currentWeather = data.currentWeather;
                     applyResearchBonuses(); for (let i = 0; i < fields.length && i < data.fields.length;
                         i++) { fields[i].owned = data.fields[i].owned;
