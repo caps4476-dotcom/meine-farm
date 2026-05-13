@@ -2075,7 +2075,7 @@
             }
         }
         // ==================== GAME VERSION ====================
-        const CURRENT_GAME_VERSION = "4.9";
+        const CURRENT_GAME_VERSION = "5.0";
         // ==================== RELEASE NOTES ====================
         const RELEASE_NOTES = [
             { version: "4.5", date: "Mai 2026", title: "🐄 Auto-Sammler & Auto-Füttern kombiniert",
@@ -2163,8 +2163,16 @@
                 rewardGold: 250, rewardXP: 40, type: "craft" },
             { id: "craft_8", name: "🔨 Meisterkoch", description: "Stelle 8 verarbeitete Produkte her", target: 8,
                 rewardGold: 500, rewardXP: 80, type: "craft" },
-            { id: "craft_15", name: "🏭 Fabrikbesitzer", description: "Stelle 15 verarbeitete Produkte her", target: 15,
-                rewardGold: 800, rewardXP: 120, type: "craft" }
+            { id: "craft_15",   name: "🏭 Fabrikbesitzer",    description: "Stelle 15 verarbeitete Produkte her",  target: 15, rewardGold: 800,  rewardXP: 120, type: "craft"   },
+            { id: "craft_25",   name: "🏭 Industrie-Boss",    description: "Stelle 25 verarbeitete Produkte her",  target: 25, rewardGold: 1200, rewardXP: 180, type: "craft"   },
+            { id: "harvest_80", name: "🌾 Ernte-Legende",     description: "Ernte 80 Pflanzen",                   target: 80, rewardGold: 900,  rewardXP: 130, type: "harvest" },
+            { id: "sell_80",    name: "💰 Handels-König",     description: "Verkaufe 80 Produkte",                target: 80, rewardGold: 1000, rewardXP: 140, type: "sell"    },
+            { id: "plant_40",   name: "🌱 Farmer des Tages",  description: "Pflanze 40 Pflanzen",                 target: 40, rewardGold: 550,  rewardXP: 75,  type: "plant"   },
+            { id: "animal_35",  name: "🐄 Stall-Legende",    description: "Sammle 35 tierische Produkte",         target: 35, rewardGold: 900,  rewardXP: 140, type: "animal"  },
+            { id: "sell_100",   name: "💰 Marktkönig",        description: "Verkaufe 100 Produkte",               target: 100,rewardGold: 1400, rewardXP: 200, type: "sell"    },
+            { id: "harvest_30", name: "🌾 Fleißige Hände",    description: "Ernte 30 Pflanzen in Folge",         target: 30, rewardGold: 380,  rewardXP: 55,  type: "harvest" },
+            { id: "plant_30",   name: "🌱 Aussaat-Profi",     description: "Pflanze 30 Pflanzen",                 target: 30, rewardGold: 450,  rewardXP: 65,  type: "plant"   },
+            { id: "animal_8",   name: "🐄 Guter Hirte",       description: "Sammle 8 tierische Produkte",         target: 8,  rewardGold: 300,  rewardXP: 50,  type: "animal"  }
         ];
         const WEEKLY_QUEST_POOL = [
             { id: "w_harvest_100", name: "⭐ Meisterfarmer", description: "Ernte 100 Pflanzen", target: 100,
@@ -2186,8 +2194,8 @@
         ];
 
         function pickDailyQuests() {
-            return [...DAILY_QUEST_POOL].sort(() => Math.random() - 0.5).slice(0, 5).map(q => ({ ...q, progress: 0,
-                completed: false }));
+            return [...DAILY_QUEST_POOL].sort(() => Math.random() - 0.5).slice(0, 6).map(q => ({ ...q, progress: 0,
+                completed: false })); // 6 pro Tag
         }
 
         function pickWeeklyQuests() {
@@ -2449,7 +2457,9 @@
             woolThread: 135,
             scarf: 270,
             honeyCake: 380,
-            silkFabric: 1600
+            silkFabric: 1600,
+            yakWool: 130,
+            llamaWool: 90
         };
         const basePrices = { ...globalMarketPrices };
         // ==================== KOMPLEXE PREISDYNAMIK ====================
@@ -4749,7 +4759,7 @@
         // ==================== CLOUD-SPEICHER ====================
         function startAutoSave() { if (autoSaveInterval) clearInterval(autoSaveInterval);
             autoSaveInterval = setInterval(async () => { if (currentUser && !isPaused && !isLoadingFromCloud)
-                    await autoSaveToCloud(); }, 5 * 60 * 1000); }
+                    await autoSaveToCloud(); }, 2 * 60 * 1000); } // Alle 2 Min für Geräte-Sync
         // ==================== SESSION SYSTEM ====================
         let currentSessionToken = null;
         let sessionCheckInterval = null;
@@ -4937,9 +4947,29 @@
                         startAnimalProduction(a, i); } else { startAnimalProduction(a, i); } }
                     continue; }
                 let prodTime = data.productionTime; if (barnUpgrades && barnUpgrades.speedBoost) prodTime = Math.floor(
-                    prodTime * 0.7); if (!a.productionStartTime) { a.productionStartTime = Date.now();
-                    startAnimalProduction(a, i); } else { const elapsed = Date.now() - a.productionStartTime; if (
-                        elapsed >= prodTime) { a.isReady = true; } else { startAnimalProduction(a, i); } } }
+                    prodTime * 0.7); // Produktionsstartzeit immer sicherstellen
+                if (!a.productionStartTime) a.productionStartTime = Date.now();
+                const elapsed = Date.now() - a.productionStartTime;
+                if (elapsed >= prodTime) {
+                    // Offline-Zeit überschritten
+                    const autoOn = barnUpgrades && barnUpgrades.autoCollector;
+                    if (autoOn) {
+                        // Auto-Sammler: sofort einsammeln und neu starten
+                        const data2 = ANIMALS[a.type];
+                        if (data2) {
+                            const amt = (typeof getDoubleChance==="function" && Math.random()<getDoubleChance()) ? 2 : 1;
+                            if (addToInventory(data2.productKey, amt)) {
+                                a.isReady = false;
+                                a.productionStartTime = Date.now();
+                                addXP(4 * amt);
+                            } else { a.isReady = true; } // Lager voll
+                        }
+                    } else {
+                        a.isReady = true; // Manuell sammeln
+                    }
+                }
+                // Timer IMMER starten – auch für nächsten Zyklus
+                startAnimalProduction(a, i); }
             updateMoneyUI();
             updateLevelUI();
             updateStorageUI();
@@ -4987,6 +5017,8 @@
             console.log("✅ Cloud-Daten geladen - Gold: " + playerGold + ", XP: " + playerXP + ", Level: " + playerLevel);
             initChat();
             loadMgCooldowns();
+            // Sofort lokal speichern für saubere Geräte-Sync
+            setTimeout(function() { if (!isLoadingFromCloud) saveGameToLocal(); }, 1000);
         }
 
         function saveGameToLocal() {
@@ -5688,7 +5720,7 @@
         `; }
         // ==================== MINISPIELE ====================
         const MG_CD = {};
-        const MG_CD_MS = { wheel: 4 * 3600000, fishing: 30 * 60000, match3: 3600000, quiz: 3600000,
+        const MG_CD_MS = { wheel: 4 * 3600000, match3: 3600000, quiz: 3600000,
             weather_bet: 3 * 3600000, coin: 15 * 60000, number_guess: 30 * 60000 };
 
         function loadMgCooldowns() { const key = 'mgCD_' + (window.currentUser && window.currentUser.uid ? window
@@ -5711,8 +5743,6 @@
                 'mgContent'); if (!el) return; const games = [
                 { id: 'wheel', icon: '🎰', name: 'Glücksrad', desc: 'Drehe das Rad!', reward: 'Gold / XP / Samen',
                     cd: MG_CD_MS.wheel },
-                { id: 'fishing', icon: '🐟', name: 'Angelspiel', desc: 'Perfektes Timing!', reward: 'Gold + XP',
-                    cd: MG_CD_MS.fishing },
                 { id: 'match3', icon: '🧩', name: 'Ernte-Puzzle', desc: 'Verbinde 3 gleiche Symbole!',
                     reward: '15💰 + 3 XP pro Match', cd: MG_CD_MS.match3 },
                 { id: 'quiz', icon: '🐕', name: 'Farm-Quiz', desc: 'Beantworte Farm-Fragen!', reward: 'Gold + XP',
@@ -5738,7 +5768,7 @@
             el.innerHTML = html; if (window._mgTimer) clearInterval(window._mgTimer);
             window._mgTimer = setInterval(function() { window.renderMinigames(); }, 15000); }
         window.openMg = function openMg(id) { if (mgCdLeft(id) > 0) { showToast('⏳ Noch nicht verfügbar!',
-                true); return; } if (id === 'wheel') mgWheel(); else if (id === 'fishing') mgFishing(); else if (
+                true); return; } if (id === 'wheel') mgWheel();  else if (
                 id === 'match3') mgMatch3(); else if (id === 'quiz') mgQuiz(); else if (id === 'weather_bet')
             mgWeatherBet(); else if (id === 'coin') mgCoinFlip(); else if (id === 'number_guess')
         mgNumberGuess(); }
@@ -5816,65 +5846,6 @@
                             window.renderMinigames(); } }
                     requestAnimationFrame(anim); }; }); }
 
-        function mgFishing() { var FISH = [
-            { name: 'Kleiner Fisch', emoji: '🐟', gold: 80, xp: 10, p: .40 },
-            { name: 'Lachs', emoji: '🐠', gold: 150, xp: 20, p: .30 },
-            { name: 'Thunfisch', emoji: '🐡', gold: 280, xp: 35, p: .18 },
-            { name: 'Schwertfisch', emoji: '🦈', gold: 500, xp: 60, p: .09 },
-            { name: 'Gold-Karpfen', emoji: '✨', gold: 1000, xp: 120, p: .03 } ]; var lineH = 60,
-            hookY = 75, fishX = 30 + Math.random() * 180, fishDir = 1, alive = true, cd = 15; mkMg(
-                '<h2>🐟 Angelspiel</h2>' +
-                '<p style="font-size:.8rem;color:#b0a070;">Klicke wenn der Haken über dem Fisch ist!</p>' +
-                '<div style="font-size:1rem;margin:4px 0;">⏳ <span id="fTimer">15</span>s</div>' +
-                '<div class="fish-area" id="fishArea">' +
-                '<div style="position:absolute;top:8px;left:50%;transform:translateX(-50%);font-size:1.4rem;">🎣</div>' +
-                '<div id="fLine" style="position:absolute;left:50%;width:2px;background:#999;transform:translateX(-50%);top:32px;height:60px;"></div>' +
-                '<div id="fHook" style="position:absolute;left:50%;transform:translateX(-50%);top:75px;font-size:1.1rem;">🪝</div>' +
-                '<div id="fFish" style="position:absolute;font-size:1.4rem;top:128px;">🐟</div>' +
-                '</div>' +
-                '<button class="mg-btn" id="fCast">🎣 Haken senken!</button>' +
-                '<button class="mg-btn mg-btn-red" onclick="clearInterval(window._fI);clearInterval(window._fT);window.closeMg();">✖ Aufgeben</button>' +
-                '<div id="fResult" style="min-height:26px;font-weight:bold;color:#f5a623;margin-top:8px;"></div>',
-            function() { var ff = document.getElementById('fFish'); if (ff) ff.style.left = fishX + 'px';
-                window._fI = setInterval(function() { if (!alive) return;
-                    fishX += fishDir * 4; if (fishX > 210 || fishX < 10) fishDir *= -1; var el = document
-                        .getElementById('fFish'); if (el) el.style.left = fishX + 'px'; }, 80);
-                window._fT = setInterval(function() { if (!alive) return;
-                    cd--; var t = document.getElementById('fTimer'); if (t) t.textContent = cd; if (cd <=
-                        0) { alive = false;
-                        clearInterval(window._fI);
-                        clearInterval(window._fT); var r = document.getElementById('fResult'); if (r) r
-                            .textContent = '😔 Zu langsam!';
-                        MG_CD.fishing = Date.now();
-                        window.saveMgCooldowns();
-                        window.renderMinigames(); } }, 1000); var castBtn = document.getElementById(
-                    'fCast'); if (castBtn) castBtn.onclick = function() { if (!alive) return; var hookEl =
-                        document.getElementById('fHook'); if (!hookEl) return; if (hookY < 110) { lineH = Math
-                            .min(155, lineH + 35);
-                        hookY = Math.min(165, hookY + 35); var fl = document.getElementById('fLine'); if (fl)
-                            fl.style.height = lineH + 'px';
-                        hookEl.style.top = hookY + 'px';
-                        this.textContent = '🎣 Einholen!'; } else { var hookLeft = parseFloat(hookEl.style
-                            .left || '125'); var diff = Math.abs(hookLeft - fishX); var hit = diff < 50;
-                        alive = false;
-                        clearInterval(window._fI);
-                        clearInterval(window._fT);
-                        MG_CD.fishing = Date.now();
-                        window.saveMgCooldowns(); var res = document.getElementById('fResult'); if (hit) {
-                            var rand = Math.random(),
-                            fish = FISH[0]; for (var k = 0; k < FISH.length; k++) {
-                                rand -= FISH[k].p; if (rand <= 0) { fish = FISH[k];
-                                    break; } }
-                            playerGold += fish.gold;
-                            addXP(fish.xp);
-                            updateMoneyUI();
-                            saveGameToLocal(); if (res) res.innerHTML = '🎉 ' + fish.emoji + ' ' +
-                                fish.name + ' gefangen! +' + fish.gold + '💰 +' + fish.xp +
-                                ' XP';
-                            showToast('🐟 ' + fish.name + ' gefangen! +' + fish.gold + '💰'); } else { if (
-                                res) res.textContent = '😅 Knapp daneben!'; }
-                        window.renderMinigames();
-                        this.disabled = true; } }; }); }
 
         function mgMatch3() { var SYM = ['🥕', '🌾', '🍅', '🍓', '🎃', '🍍', '☕', '🫐'],
             COLS = 6, ROWS = 5; var grid = [], sel = null,
