@@ -48,8 +48,8 @@
         /* ── BODY – Warmer Holz/Erde Hintergrund ── */
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
-            min-height: 100vh; margin: 0;
-            display: flex; justify-content: center; align-items: flex-start; padding: 12px;
+            min-height: 100vh; margin: 0; padding: 0;
+            display: block;
             background:
                 radial-gradient(ellipse at 25% 60%, rgba(120,60,10,.55) 0%, transparent 55%),
                 radial-gradient(ellipse at 75% 25%, rgba(90,45,5,.45)  0%, transparent 50%),
@@ -133,21 +133,18 @@
 
         /* ── GAME CONTAINER ── */
         .game-container {
-            max-width:880px; width:100%; margin:0 auto; position:relative; z-index:1;
+            width: 100%; min-height: 100vh;
+            position: relative; z-index: 1;
             background: linear-gradient(175deg, #fdf3e0 0%, #f5e0c0 60%, #edd4a8 100%);
-            border-radius: var(--r-xl) var(--r-xl) var(--r-lg) var(--r-lg);
-            box-shadow:
-                0 0 0 3px #d4a060,
-                0 0 0 7px #6a3a18,
-                0 0 0 10px rgba(0,0,0,.35),
-                0 20px 60px rgba(0,0,0,.5);
-            overflow:hidden;
+            border-radius: 0;
+            box-shadow: none;
+            overflow: hidden;
         }
 
         /* ── STATS BAR ── */
         .stats-bar {
             display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;
-            padding:10px 20px;
+            padding:10px 24px;
             background: linear-gradient(135deg, #2a1608 0%, #3d2010 40%, #4a2808 70%, #3a1a08 100%);
             border-bottom: 3px solid #8a5a28;
             position:relative;
@@ -196,7 +193,7 @@
         /* ── NAV ── */
         .view-switcher {
             display:flex; gap:5px; justify-content:center; flex-wrap:wrap;
-            padding:12px 14px 8px;
+            padding:12px 20px 8px;
             background: linear-gradient(180deg, #e8cc90 0%, #d8b870 100%);
             border-bottom:2px solid #b8904a;
         }
@@ -234,15 +231,15 @@
         /* ── GRID BACKGROUNDS ── */
         .farm-grid, .barn-grid, .craft-grid, .research-grid,
         .licenses-grid, .multiplayer-grid, .account-grid, .quests-grid, .handbook-grid {
-            display:grid; grid-template-columns:repeat(auto-fill, minmax(155px,1fr));
-            gap:13px; padding:18px 15px;
+            display:grid; grid-template-columns:repeat(auto-fill, minmax(170px,1fr));
+            gap:14px; padding:18px 20px;
             background:
                 repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(150,90,30,.06) 39px, rgba(150,90,30,.06) 40px),
                 repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(150,90,30,.06) 39px, rgba(150,90,30,.06) 40px),
                 linear-gradient(180deg, #e8cc90 0%, #ddb868 100%);
         }
         .multiplayer-grid, .account-grid, .quests-grid, .handbook-grid {
-            grid-template-columns:repeat(auto-fill, minmax(175px,1fr));
+            grid-template-columns:repeat(auto-fill, minmax(190px,1fr));
         }
 
         /* ── KARTEN ── */
@@ -389,7 +386,7 @@
 
         /* ── MINISPIELE HUB ── */
         .minigame-hub {
-            display:grid; grid-template-columns:repeat(auto-fill,minmax(138px,1fr));
+            display:grid; grid-template-columns:repeat(auto-fill,minmax(145px,1fr));
             gap:10px; padding:10px;
         }
         .minigame-card {
@@ -626,8 +623,8 @@
 
         /* ── RESPONSIVE ── */
         @media (max-width:600px) {
-            body { padding:0; align-items:flex-start; }
-            .game-container { border-radius:0; max-width:100%; box-shadow:none; }
+            body { padding:0; }
+            .game-container { border-radius:0; width:100%; box-shadow:none; }
             .farm-grid,.barn-grid,.craft-grid,.research-grid,
             .licenses-grid,.multiplayer-grid,.account-grid,.quests-grid,.handbook-grid {
                 grid-template-columns:repeat(auto-fill,minmax(138px,1fr));
@@ -664,7 +661,7 @@
         .market-grid { background: linear-gradient(175deg, #fdf3e0, #f5e0c0); padding: 8px 10px; }
         .market-grid-header {
             display: grid;
-            grid-template-columns: 2.2rem 1fr 3.2rem 4rem 3rem 7.5rem;
+            grid-template-columns: 2.5rem 1fr 4rem 5rem 3.5rem 9rem;
             gap: 4px; padding: 4px 6px 6px;
             font-size: .66rem; font-weight: 700; color: var(--text-mid);
             text-transform: uppercase; letter-spacing: .3px;
@@ -672,7 +669,7 @@
         }
         .market-row {
             display: grid;
-            grid-template-columns: 2.2rem 1fr 3.2rem 4rem 3rem 7.5rem;
+            grid-template-columns: 2.5rem 1fr 4rem 5rem 3.5rem 9rem;
             gap: 4px; padding: 5px 6px;
             border-bottom: 1px solid rgba(180,120,40,.1);
             align-items: center; border-radius: 6px;
