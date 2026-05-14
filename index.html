@@ -11,1685 +11,512 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js">
     </script>
     <style>
-        * {
-            box-sizing: border-box;
-            user-select: none;
+        :root {
+            --gold:       #f5a623; --gold-dark:  #c07d10; --gold-light: #ffd166;
+            --green:      #4caf50; --green-dark: #2e7d32; --green-light:#81c784;
+            --wood-dark:  #5c3317; --wood-mid:   #7a4a22; --wood-light: #a06830;
+            --wood-shine: #c8945a;
+            --text-dark:  #2c1810; --text-mid:   #5c3d20; --text-light: #ffefcf;
+            --surface:    #fdf6e3; --surface2:   #f0e0b8;
+            --shadow-sm:  0 2px 8px rgba(0,0,0,.15);
+            --shadow-md:  0 4px 16px rgba(0,0,0,.2);
+            --shadow-card:0 4px 0 rgba(0,0,0,.2), 0 8px 24px rgba(0,0,0,.15);
+            --r-sm:8px; --r-md:16px; --r-lg:24px; --r-xl:36px; --r-full:9999px;
+            --t-fast:0.12s ease; --t-mid:0.22s ease;
         }
+        *, *::before, *::after { box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(145deg, #1e5a2e 0%, #0f3b1f 100%);
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(160deg, #0d2614 0%, #1a3d1f 50%, #0f2d15 100%);
+            background-attachment: fixed;
+            margin: 0; min-height: 100vh;
+            display: flex; justify-content: center; align-items: flex-start; padding: 12px;
         }
+        /* ── LOGIN ── */
         .login-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(145deg, #1e5a2e 0%, #0f3b1f 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-            transition: opacity 0.5s;
-        }
-        .login-screen.hidden {
-            display: none;
+            position: fixed; inset: 0;
+            background: radial-gradient(ellipse at center, #1e5a2e 0%, #0d2614 100%);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 2000; transition: opacity .4s;
         }
         .login-card {
-            background: #fdf8e7;
-            border-radius: 64px;
-            padding: 40px 30px;
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
-            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.4);
+            background: linear-gradient(160deg, #fdf6e3 0%, #f0e0b8 100%);
+            border-radius: var(--r-xl); padding: 38px 30px 34px;
+            text-align: center; max-width: 400px; width: 92%;
+            box-shadow: 0 0 0 3px var(--wood-shine), 0 0 0 6px var(--wood-dark), var(--shadow-md);
+            position: relative; overflow: hidden;
         }
+        .login-card::before {
+            content:''; position:absolute; top:0; left:0; right:0; height:3px;
+            background: linear-gradient(90deg, var(--gold), var(--green), var(--gold));
+        }
+        .farm-emoji { font-size:3.2rem; margin-bottom:6px; display:block; }
         .login-card h1 {
-            font-size: 2rem;
-            color: #2c2b26;
-            margin-bottom: 10px;
+            font-size:1.7rem; font-weight:800; margin:0 0 4px;
+            background: linear-gradient(135deg, #5c3317, #a06830);
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent;
         }
-        .login-card .farm-emoji {
-            font-size: 4rem;
-            margin-bottom: 10px;
-        }
+        .login-card p { color: var(--text-mid); font-size:.88rem; margin:0 0 18px; }
         .login-input {
-            background: #3a3022;
-            border: 1px solid #f5a623;
-            border-radius: 40px;
-            padding: 12px 20px;
-            color: #ffefcf;
-            font-size: 1rem;
-            width: 100%;
-            margin: 8px 0;
-            box-sizing: border-box;
+            width:100%; padding:11px 15px; background:#fff8e8; color:#3a2010;
+            border:2px solid var(--wood-shine); border-radius:var(--r-full);
+            font-size:.92rem; margin-bottom:9px; outline:none;
+            transition: border-color var(--t-fast), box-shadow var(--t-fast);
         }
-        .login-input::placeholder {
-            color: #8a7a5a;
-        }
+        .login-input:focus { border-color:var(--gold); box-shadow:0 0 0 3px rgba(245,166,35,.2); }
         .login-btn {
-            background: #f5a623;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 40px;
-            font-weight: bold;
-            color: #2d2b1f;
-            cursor: pointer;
-            font-size: 1rem;
-            width: 100%;
-            margin-top: 15px;
-            transition: 0.1s;
+            width:100%; padding:12px; border:none; border-radius:var(--r-full);
+            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+            color:var(--text-dark); font-weight:800; font-size:.95rem; cursor:pointer;
+            box-shadow: 0 4px 0 #9a5a08, var(--shadow-sm);
+            transition: transform var(--t-fast), box-shadow var(--t-fast); margin-top:3px;
         }
-        .login-btn:active {
-            transform: translateY(2px);
-        }
+        .login-btn:hover { transform:translateY(-2px); box-shadow:0 6px 0 #9a5a08, var(--shadow-md); }
+        .login-btn:active { transform:translateY(2px); box-shadow:0 2px 0 #9a5a08; }
         .login-btn.secondary {
-            background: #3a6e8b;
-            color: white;
-            margin-top: 10px;
+            background: linear-gradient(135deg, var(--green), var(--green-dark));
+            box-shadow: 0 4px 0 #1b5e20, var(--shadow-sm); margin-top:7px;
         }
-        .login-error {
-            color: #c44;
-            margin-top: 10px;
-            font-size: 0.8rem;
-        }
-        .login-switch {
-            margin-top: 20px;
-            font-size: 0.8rem;
-            color: #6c5a44;
-        }
-        .game-wrapper.hidden {
-            display: none;
-        }
-        .online-indicator {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-right: 6px;
-        }
-        .online-true {
-            background-color: #2ea82e;
-            box-shadow: 0 0 5px #2ea82e;
-            animation: pulse-green 2s infinite;
-        }
-        .online-false {
-            background-color: #888;
-        }
-        @keyframes pulse-green {
-            0% {
-                opacity: 0.5;
-                box-shadow: 0 0 0 0 #2ea82e;
-            }
-            70% {
-                opacity: 1;
-                box-shadow: 0 0 0 3px rgba(46, 168, 46, 0);
-            }
-            100% {
-                opacity: 0.5;
-                box-shadow: 0 0 0 0 rgba(46, 168, 46, 0);
-            }
-        }
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        @keyframes pulse {
-            0% {
-                opacity: 0.7;
-            }
-            50% {
-                opacity: 1;
-            }
-            100% {
-                opacity: 0.7;
-            }
-        }
-        .leaderboard-entry {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 12px;
-            border-bottom: 1px solid #ffefcf;
-            transition: background 0.2s;
-        }
-        .leaderboard-entry.online {
-            background: rgba(46, 168, 46, 0.15);
-        }
-        .leaderboard-name {
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .leaderboard-gold {
-            color: #f5b042;
-            font-weight: bold;
-        }
-        .last-seen {
-            font-size: 0.6rem;
-            color: #aaa;
-            margin-left: 5px;
-        }
-        .login-status {
-            background: #4a6e8b;
-            border-radius: 40px;
-            padding: 6px 18px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .quick-login-btn {
-            background: #f5a623;
-            border: none;
-            border-radius: 30px;
-            padding: 4px 12px;
-            cursor: pointer;
-            font-size: 0.7rem;
-            font-weight: bold;
-        }
-        .quick-login-btn:hover {
-            background: #ffc456;
-        }
-        .not-loggedin-hint {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #f5a623;
-            color: #2d2b1f;
-            padding: 8px 20px;
-            border-radius: 40px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            z-index: 1000;
-            animation: pulse 2s infinite;
-            cursor: pointer;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-        }
-        .not-loggedin-hint.hidden {
-            display: none;
-        }
-        .admin-section {
-            background: #1a1a2e;
-            border-radius: 48px;
-            padding: 15px 20px;
-            margin-top: 15px;
-            border: 2px solid #f5a623;
-            color: #ffffff;
-        }
-        .admin-title {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #f5a623;
-            margin-bottom: 10px;
-        }
-        .admin-btn {
-            background: #c44;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 30px;
-            color: white;
-            cursor: pointer;
-            font-size: 0.7rem;
-            margin: 2px;
-        }
-        .admin-btn.warning {
-            background: #f5a623;
-            color: #ffffff;
-        }
-        .admin-btn.danger {
-            background: #c44;
-            color: white;
-        }
-        .admin-reset-btn {
-            background: #8b0000;
-            border: 2px solid #ff4444;
-            padding: 8px 16px;
-            font-weight: bold;
-        }
-        .ban-indicator {
-            color: #c44;
-            font-size: 0.6rem;
-            margin-left: 5px;
-        }
-        .quest-section {
-            background: #efe0c9;
-            border-radius: 48px;
-            padding: 15px 20px;
-            margin-top: 15px;
-        }
-        .quest-card {
-            background: #fff2e2;
-            border-radius: 30px;
-            padding: 12px 15px;
-            margin: 10px 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .quest-card.completed {
-            opacity: 0.7;
-            background: #d4ffd4;
-        }
-        .quest-info {
-            flex: 2;
-        }
-        .quest-progress {
-            width: 150px;
-            height: 8px;
-            background: #ddd;
-            border-radius: 10px;
-            overflow: hidden;
-            margin-top: 5px;
-        }
-        .quest-progress-fill {
-            height: 100%;
-            background: #6f9e3f;
-            width: 0%;
-            transition: width 0.3s;
-        }
-        .quest-reward {
-            font-weight: bold;
-            color: #f5b042;
-            min-width: 80px;
-        }
-        .quest-claim-btn {
-            background: #f5a623;
-            border: none;
-            padding: 6px 15px;
-            border-radius: 30px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .login-bonus-card {
-            background: linear-gradient(135deg, #f5a623, #f5b042);
-            border-radius: 40px;
-            padding: 10px 20px;
-            text-align: center;
-            margin-bottom: 15px;
-            color: #2d2b1f;
-            font-weight: bold;
-        }
+        .login-btn.secondary:hover { box-shadow:0 6px 0 #1b5e20, var(--shadow-md); }
+        .login-error { color:#d32f2f; font-size:.82rem; margin:5px 0; min-height:18px; }
+        .login-switch { color:var(--text-mid); font-size:.82rem; margin-top:12px; cursor:pointer; }
+        .login-switch:hover { color:var(--gold-dark); text-decoration:underline; }
+        /* ── GAME CONTAINER ── */
         .game-container {
-            max-width: 1800px;
-            width: 100%;
-            background: #fdf8e7;
-            border-radius: 64px 64px 48px 48px;
-            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.4);
-            overflow: hidden;
-            padding: 20px 25px 30px;
+            max-width:880px; width:100%; margin:0 auto;
+            background: linear-gradient(170deg, #fdf6e3 0%, #f0e0b8 100%);
+            border-radius: var(--r-xl) var(--r-xl) var(--r-lg) var(--r-lg);
+            box-shadow: 0 0 0 3px var(--wood-shine), 0 0 0 7px var(--wood-dark), var(--shadow-md);
+            overflow: hidden; position: relative; z-index: 1;
         }
+        /* ── STATS BAR ── */
         .stats-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #2c2b26;
-            padding: 12px 25px;
-            border-radius: 100px;
-            margin-bottom: 20px;
-            color: #ffecb3;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .money,
-        .storage-info,
-        .day-info,
-        .next-price-timer,
-        .event-badge,
-        .level-info,
-        .weather-info,
-        .npc-indicator {
-            background: #4a3e2e;
-            padding: 6px 18px;
-            border-radius: 40px;
+            display:flex; justify-content:space-between; align-items:center;
+            background: linear-gradient(135deg, #1a3d1f 0%, #2a5c30 50%, #1a3d1f 100%);
+            padding:10px 18px; border-bottom:3px solid var(--wood-mid);
+            color:#ffefcf; flex-wrap:wrap; gap:8px;
         }
         .money {
-            background: #f5b042;
-            color: #2d2b1f;
-            font-weight: bold;
+            display:flex; align-items:center; gap:5px;
+            background:rgba(0,0,0,.25); border-radius:var(--r-full);
+            padding:5px 12px; font-weight:700; font-size:.95rem;
+            border:1px solid rgba(245,166,35,.3);
         }
-        .money span {
-            font-size: 1.6rem;
-        }
-        .storage-info {
-            background: #6b5a3e;
-        }
-        .level-info {
-            background: #8b5a8b;
-        }
+        .level-info { display:flex; align-items:center; gap:7px; }
         .level-badge {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #ffd966;
+            background:linear-gradient(135deg, var(--gold), var(--gold-dark));
+            color:var(--text-dark); font-weight:800; font-size:.82rem;
+            padding:3px 11px; border-radius:var(--r-full);
         }
         .xp-bar-container {
-            width: 120px;
-            height: 8px;
-            background: #3a3022;
-            border-radius: 10px;
-            overflow: hidden;
-            margin-top: 4px;
+            width:90px; height:7px; background:rgba(0,0,0,.3);
+            border-radius:var(--r-full); overflow:hidden;
         }
         .xp-bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #ffd966, #f5a623);
-            width: 0%;
-            transition: width 0.3s;
+            height:100%; background:linear-gradient(90deg, var(--green-light), var(--green));
+            border-radius:var(--r-full); transition:width .4s;
         }
-        .weather-info {
-            background: #3a6e8b;
-            min-width: 140px;
-            text-align: center;
+        .storage-info, .weather-info {
+            background:rgba(0,0,0,.2); border-radius:var(--r-full);
+            padding:4px 11px; font-size:.78rem;
+            border:1px solid rgba(255,255,255,.1);
         }
-        .weather-sunny {
-            background: #f5a623;
-            color: #2d2b1f;
-        }
-        .weather-rainy {
-            background: #3a6e8b;
-        }
-        .weather-stormy {
-            background: #6b3a3a;
-        }
-        .weather-thunder {
-            background: #4a2a4a;
-            animation: pulse 1s infinite;
-        }
-        .event-badge {
-            background: #c44;
-            animation: pulse 1s infinite;
-        }
+        .weather-sunny  { background:rgba(255,193,7,.18); color:#ffd54f; }
+        .weather-rainy  { background:rgba(33,150,243,.18); color:#90caf9; }
+        .weather-stormy { background:rgba(156,39,176,.18); color:#ce93d8; }
+        .weather-thunder{ background:rgba(63,81,181,.18); color:#9fa8da; }
+        /* ── NAV ── */
         .view-switcher {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
+            display:flex; gap:5px; justify-content:center;
+            padding:12px 14px 8px; flex-wrap:wrap;
+            background:linear-gradient(180deg, #e8d5a3 0%, #dcc890 100%);
+            border-bottom:2px solid var(--wood-shine);
         }
         .view-btn {
-            background: #8b6b3d;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 60px;
-            font-weight: bold;
-            color: white;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: 0.1s;
-            box-shadow: 0 3px 0 #5a3e1f;
+            background:linear-gradient(160deg, var(--wood-light) 0%, var(--wood-mid) 100%);
+            border:none; padding:7px 13px; border-radius:var(--r-full);
+            font-weight:700; color:#ffefcf; cursor:pointer; font-size:.78rem;
+            box-shadow:0 3px 0 #4a2a10, var(--shadow-sm); white-space:nowrap;
+            transition:transform var(--t-fast), box-shadow var(--t-fast);
         }
+        .view-btn:hover { transform:translateY(-2px); box-shadow:0 5px 0 #4a2a10, var(--shadow-md); }
+        .view-btn:active { transform:translateY(1px); box-shadow:0 2px 0 #4a2a10; }
         .view-btn.active {
-            background: #f5a623;
-            color: #2d2b1f;
-        }
-        .view-btn:active {
-            transform: translateY(2px);
-            box-shadow: none;
+            background:linear-gradient(160deg, var(--gold) 0%, var(--gold-dark) 100%);
+            color:var(--text-dark); box-shadow:0 3px 0 #8a5a08;
         }
         .view-btn.locked {
-            opacity: 0.5;
-            cursor: not-allowed;
+            background:linear-gradient(160deg, #4a3a2a, #3a2a1a);
+            color:#7a6a5a; cursor:not-allowed; box-shadow:0 2px 0 #2a1a0a;
         }
-        .mass-actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin-bottom: 20px;
+        .wm-open-btn {
+            background:linear-gradient(135deg, #2a5c30, var(--green));
+            color:#ffefcf; border:2px solid var(--green-light);
+            border-radius:var(--r-full); padding:6px 13px;
+            font-size:.78rem; font-weight:700; cursor:pointer;
+            transition:transform var(--t-fast);
         }
-        .mass-btn {
-            background: #3f6b3a;
-            border: none;
-            padding: 8px 14px;
-            border-radius: 40px;
-            font-weight: bold;
-            color: white;
-            cursor: pointer;
-            font-size: 0.8rem;
-            box-shadow: 0 3px 0 #1e3a1a;
-            transition: 0.05s linear;
+        .wm-open-btn:hover { transform:translateY(-2px); }
+        /* ── GRIDS ── */
+        .farm-grid, .barn-grid, .craft-grid, .research-grid,
+        .licenses-grid, .multiplayer-grid, .account-grid,
+        .quests-grid, .handbook-grid {
+            display:grid;
+            grid-template-columns:repeat(auto-fill, minmax(155px, 1fr));
+            gap:12px; padding:16px 14px;
+            background: repeating-linear-gradient(45deg,transparent,transparent 10px,
+                rgba(180,130,70,.04) 10px,rgba(180,130,70,.04) 20px),
+                linear-gradient(180deg, #e8d5a3 0%, #dcc890 100%);
         }
-        .mass-btn:active {
-            transform: translateY(2px);
-            box-shadow: none;
+        .multiplayer-grid, .account-grid, .quests-grid, .handbook-grid {
+            grid-template-columns:repeat(auto-fill, minmax(175px, 1fr));
         }
-        .mass-btn.locked {
-            opacity: 0.5;
-            cursor: not-allowed;
-            background: #5a5a3a;
+        /* ── CARDS ── */
+        .field-slot, .barn-slot, .craft-slot, .market-slot,
+        .research-slot, .license-slot, .multiplayer-slot,
+        .account-slot, .handbook-slot {
+            background:linear-gradient(160deg, #fff8e8 0%, #f5e8c8 100%);
+            border-radius:var(--r-lg); padding:13px 11px; text-align:center;
+            box-shadow:var(--shadow-card); border:2px solid #dcc890;
+            position:relative; overflow:hidden; color:var(--text-dark);
+            transition:transform var(--t-fast), box-shadow var(--t-fast), border-color var(--t-fast);
         }
-        .harvest-all-btn {
-            background: #d49b3a;
+        .field-slot:hover, .barn-slot:hover, .craft-slot:hover,
+        .market-slot:hover, .research-slot:hover {
+            transform:translateY(-3px);
+            box-shadow:0 6px 0 rgba(0,0,0,.18), 0 12px 28px rgba(0,0,0,.18);
+            border-color:var(--gold);
         }
-        .next-day-btn {
-            background: #8b5a8b;
+        .field-slot::before, .barn-slot::before, .craft-slot::before,
+        .market-slot::before, .research-slot::before {
+            content:''; position:absolute; top:0; left:0; right:0; height:3px;
+            background:linear-gradient(90deg, var(--wood-mid), var(--gold), var(--wood-mid)); opacity:.5;
         }
-        .upgrade-storage-btn {
-            background: #2c6e6e;
+        .research-slot, .license-slot {
+            background:linear-gradient(160deg, #f8f0ff, #ead8ff); border-color:#c8a0e0;
         }
-        .export-btn {
-            background: #3a6e8b;
+        .research-slot.completed { background:linear-gradient(160deg,#e8fff0,#c8f0d8); border-color:var(--green); }
+        .research-slot.researching { background:linear-gradient(160deg,#fff8e0,#ffe8a0); border-color:var(--gold); }
+        .multiplayer-slot {
+            background:linear-gradient(160deg, #e8f0ff, #d0dff8); border-color:#90b0e0;
         }
-        .import-btn {
-            background: #6e5a3a;
+        /* ── STATUS ── */
+        .status {
+            display:inline-block; padding:3px 9px; border-radius:var(--r-full);
+            font-size:.7rem; font-weight:600; background:rgba(0,0,0,.08);
+            color:var(--text-mid); margin:2px 1px; border:1px solid rgba(0,0,0,.07);
         }
-        .reset-btn {
-            background: #c44;
+        /* ── BUTTONS ── */
+        .feed-btn, .collect-btn {
+            background:linear-gradient(135deg, var(--green), var(--green-dark));
+            color:#fff; border:none; border-radius:var(--r-full);
+            padding:5px 13px; font-size:.76rem; font-weight:700; cursor:pointer; margin:2px;
+            box-shadow:0 3px 0 #1b5e20; transition:transform var(--t-fast);
         }
-        .cleanup-btn {
-            background: #8b5a3a;
+        .feed-btn:hover, .collect-btn:hover { transform:translateY(-2px); }
+        .plant-btn, .buy-btn, .buy-animal-btn, .buy-license-btn {
+            background:linear-gradient(135deg, var(--gold), var(--gold-dark));
+            color:var(--text-dark); border:none; border-radius:var(--r-full);
+            padding:6px 14px; font-size:.78rem; font-weight:700; cursor:pointer; margin:2px;
+            box-shadow:0 3px 0 #8a5a08; transition:transform var(--t-fast);
         }
-        .mass-plant-row {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin-bottom: 10px;
+        .plant-btn:hover, .buy-btn:hover, .buy-animal-btn:hover { transform:translateY(-2px); }
+        .harvest-btn {
+            background:linear-gradient(135deg, #ff8c00, #e65c00);
+            color:#fff; border:none; border-radius:var(--r-full);
+            padding:6px 14px; font-size:.78rem; font-weight:700; cursor:pointer; margin:2px;
+            box-shadow:0 3px 0 #9a3500; transition:transform var(--t-fast);
         }
-        .mass-plant-btn {
-            background: #3f7e6b;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 40px;
-            font-weight: bold;
-            color: white;
-            cursor: pointer;
-            font-size: 0.75rem;
-            box-shadow: 0 2px 0 #1e3a1a;
+        .harvest-btn:hover { transform:translateY(-2px); }
+        .research-pay-gold-btn {
+            background:linear-gradient(135deg, var(--gold), var(--gold-dark));
+            color:var(--text-dark); border:none; border-radius:var(--r-full);
+            padding:4px 11px; font-size:.72rem; font-weight:700; cursor:pointer;
+            box-shadow:0 2px 0 #8a5a08; margin:2px; transition:transform var(--t-fast);
         }
-        .farm-grid,
-        .barn-grid,
-        .craft-grid,
-        .research-grid,
-        .licenses-grid,
-        .multiplayer-grid,
-        .account-grid,
-        .quests-grid,
-        .handbook-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            margin-bottom: 25px;
-            background: #d9c5a7;
-            padding: 25px 20px;
-            border-radius: 60px;
-            box-shadow: inset 0 0 0 3px #f7efcf, inset 0 0 0 8px #b58b5a;
+        .research-pay-gold-btn:hover { transform:translateY(-1px); }
+        .research-pay-resource-btn {
+            background:linear-gradient(135deg, #1976d2, #1255a0);
+            color:#fff; border:none; border-radius:var(--r-full);
+            padding:2px 7px; font-size:.63rem; font-weight:600; cursor:pointer;
+            box-shadow:0 2px 0 #0d3d7a; margin:1px;
         }
-        .quests-grid {
-            background: #c4b68a;
-            grid-template-columns: 1fr;
+        .research-start-btn {
+            background:linear-gradient(135deg, #7b1fa2, #5c1070);
+            color:#fff; border:none; border-radius:var(--r-full);
+            padding:6px 15px; font-size:.8rem; font-weight:700; cursor:pointer;
+            box-shadow:0 3px 0 #3a0050; margin:3px; transition:transform var(--t-fast);
         }
-        .handbook-grid {
-            background: #c4b68a;
-            grid-template-columns: 1fr;
-            max-height: 70vh;
-            overflow-y: auto;
+        .research-start-btn:hover { transform:translateY(-2px); }
+        .admin-btn {
+            background:linear-gradient(135deg, #d32f2f, #b71c1c);
+            color:#fff; border:none; border-radius:var(--r-md);
+            padding:7px 14px; font-size:.82rem; font-weight:700; cursor:pointer;
+            box-shadow:0 3px 0 #7f0000; margin:3px; transition:transform var(--t-fast);
         }
-        .barn-grid {
-            background: #c4a67a;
+        .admin-btn:hover { transform:translateY(-2px); }
+        /* ── QUEST ── */
+        .quest-card {
+            background:linear-gradient(160deg, #fff8e8, #f5e8c8);
+            border-radius:var(--r-lg); padding:13px; border:2px solid #dcc890;
+            box-shadow:var(--shadow-card); transition:transform var(--t-fast);
         }
-        .craft-grid {
-            background: #b8a88a;
+        .quest-card:hover { transform:translateY(-2px); }
+        .quest-card.completed { background:linear-gradient(160deg,#e8fff0,#c8f0d8); border-color:var(--green); }
+        .quest-progress-fill {
+            background:linear-gradient(90deg, var(--green-light), var(--green));
+            transition:width .4s; box-shadow:0 0 5px rgba(76,175,80,.35);
         }
-        .research-grid {
-            background: #a89a7a;
+        .quest-claim-btn {
+            background:linear-gradient(135deg, var(--gold), var(--gold-dark));
+            color:var(--text-dark); border:none; border-radius:var(--r-full);
+            padding:6px 14px; font-weight:700; cursor:pointer;
+            box-shadow:0 3px 0 #8a5a08; font-size:.8rem; transition:transform var(--t-fast);
         }
-        .licenses-grid {
-            background: #9a8a6a;
-        }
-        .multiplayer-grid {
-            background: #8a7a5a;
-        }
-        .account-grid {
-            background: #7a6a4a;
-        }
-        @media (max-width: 750px) {
-            .farm-grid,
-            .barn-grid,
-            .craft-grid,
-            .research-grid,
-            .licenses-grid,
-            .multiplayer-grid,
-            .account-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        .field,
-        .animal-slot,
-        .craft-slot,
-        .research-slot,
-        .license-slot,
-        .multiplayer-slot,
-        .account-slot,
-        .handbook-slot {
-            background: #6b4226;
-            border-radius: 28px;
-            padding: 12px 6px;
-            text-align: center;
-            box-shadow: inset 0 0 0 2px #c89868, 0 6px 0 #3e2a1a;
-            position: relative;
-            overflow: hidden;
-            color: white;
-        }
-        .handbook-slot {
-            text-align: left;
-            padding: 20px;
-        }
-        .handbook-section {
-            background: #4a3a2a;
-            border-radius: 20px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-        .handbook-section h3 {
-            color: #f5a623;
-            margin-top: 0;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #f5a623;
-            display: inline-block;
-        }
-        .handbook-section table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.8rem;
-        }
-        .handbook-section th,
-        .handbook-section td {
-            border: 1px solid #8a7a5a;
-            padding: 8px;
-            text-align: left;
-        }
-        .handbook-section th {
-            background: #3a2a1a;
-            color: #f5a623;
-        }
-        .handbook-section tr:nth-child(even) {
-            background: #3a3022;
-        }
-        .handbook-tip {
-            background: #2a4a2a;
-            border-left: 4px solid #6f9e3f;
-            padding: 10px 15px;
-            margin: 10px 0;
-            border-radius: 10px;
-        }
-        .handbook-warning {
-            background: #4a2a2a;
-            border-left: 4px solid #c44;
-            padding: 10px 15px;
-            margin: 10px 0;
-            border-radius: 10px;
-        }
-        .field .crop-name,
-        .animal-slot .animal-name,
-        .craft-slot .crop-name,
-        .research-slot .research-name,
-        .license-slot .license-name,
-        .field .status,
-        .animal-slot .status,
-        .craft-slot .status,
-        .multiplayer-slot .status,
-        .account-slot .status,
-        .research-slot .status,
-        .license-slot .status {
-            color: white;
-            text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
-        }
-        .field button,
-        .animal-slot button,
-        .craft-slot button,
-        .research-slot button,
-        .license-slot button {
-            color: #2d2b1f;
-            font-weight: bold;
+        .quest-claim-btn:hover { transform:translateY(-2px); }
+        /* ── PROGRESS BARS ── */
+        .progress-bar-container {
+            height:7px; background:rgba(0,0,0,.1); border-radius:var(--r-full);
+            overflow:hidden; margin:5px 0;
         }
         .progress-bar-fill {
-            background: linear-gradient(90deg, #8bc34a, #ffb74d);
+            height:100%; background:linear-gradient(90deg, var(--gold-light), var(--gold));
+            border-radius:var(--r-full); transition:width .4s;
         }
-        .mass-plant-btn:active,
-        .mass-btn:active,
-        .view-btn:active,
-        .plant-btn:active,
-        .harvest-btn:active,
-        .collect-btn:active,
-        .feed-btn:active,
-        .sell-btn:active,
-        .sell-all-btn:active,
-        .craft-btn:active,
-        .quest-claim-btn:active,
-        .accept-order-btn:active,
-        .cancel-order-btn:active,
-        .buy-license-btn:active,
-        .buy-animal-btn:active,
-        .upgrade-btn:active,
-        .rename-btn:active,
-        .research-pay-gold-btn:active,
-        .research-pay-resource-btn:active,
-        .research-start-btn:active,
-        .login-btn:active,
-        .quick-login-btn:active,
-        .admin-btn:active {
-            transform: scale(0.97);
-            transition: transform 0.05s linear;
+        /* ── LEADERBOARD ── */
+        .leaderboard-entry {
+            display:flex; align-items:center; justify-content:space-between;
+            background:linear-gradient(135deg,#fff8e8,#f0e8d0);
+            border-radius:var(--r-md); padding:9px 13px; margin:5px 0;
+            border:1px solid #dcc890; transition:transform var(--t-fast), border-color var(--t-fast);
         }
-        .product-card {
-            background: #fff2e2;
-            border-radius: 40px;
-            padding: 8px 15px;
-            text-align: center;
-            min-width: 130px;
-            transition: transform 0.05s linear;
-        }
-        .product-card:active {
-            transform: scale(0.97);
-        }
-        .price-card {
-            text-align: center;
-            background: #fff2e2;
-            padding: 5px 12px;
-            border-radius: 40px;
-            min-width: 80px;
-            transition: transform 0.05s linear;
-        }
-        .price-card:active {
-            transform: scale(0.97);
-        }
-        html {
-            touch-action: auto;
-        }
-        .account-slot {
-            background: #4a3a2a;
-        }
-        .progress-bar-container {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 6px;
-            background: rgba(0, 0, 0, 0.3);
-        }
-        .plant-buttons-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 4px;
-            margin-top: 6px;
-        }
-        .plant-btn {
-            background: #3f7e6b;
-            color: white;
-            margin: 2px;
-            display: inline-block;
-            width: 42px;
-            border-radius: 40px;
-        }
-        .harvest-btn {
-            background: #6f9e3f;
-            color: white;
-        }
-        .feed-btn {
-            background: #7c8a3a;
-            color: white;
-        }
-        .collect-btn {
-            background: #d49b3a;
-        }
-        button {
-            border: none;
-            font-weight: bold;
-            padding: 4px 8px;
-            margin-top: 4px;
-            border-radius: 40px;
-            cursor: pointer;
-            font-size: 0.7rem;
-        }
-        .buy-field-btn,
-        .buy-animal-btn,
-        .craft-btn,
-        .research-btn {
-            background: #ffaa33;
-        }
-        .upgrade-btn {
-            background: #4a6e8b;
-            color: white;
-        }
-        .rename-btn {
-            background: #8b6e4a;
-            color: white;
-            font-size: 0.6rem;
-        }
-        .sell-all-btn {
-            background: #c44;
-            color: white;
-            margin-left: 5px;
-        }
-        .craft-quantity-selector {
-            display: flex;
-            gap: 5px;
-            justify-content: center;
-            margin-top: 6px;
-        }
-        .craft-qty-btn {
-            background: #4a6e8b;
-            color: white;
-            padding: 2px 6px;
-            font-size: 0.6rem;
-            min-width: 28px;
-        }
-        .craft-qty-btn.active {
-            background: #f5a623;
-            color: #2d2b1f;
-        }
-        .resources-available {
-            font-size: 0.65rem;
-            color: #ffefcf;
-            margin-top: 4px;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 2px;
-            border-radius: 20px;
-        }
-        .market-section,
-        .orders-section,
-        .achievements-section {
-            background: #efe0c9;
-            border-radius: 48px;
-            padding: 15px 20px;
-            margin-top: 15px;
-        }
-        .price-panel {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            flex-wrap: wrap;
-            margin-bottom: 15px;
-            background: #e2d2b6;
-            padding: 10px;
-            border-radius: 60px;
-        }
-        .price-value {
-            font-size: 1.3rem;
-            font-weight: bold;
-        }
-        .price-good {
-            color: #2d6a2d;
-            background: #d4ffd4;
-            border-radius: 30px;
-        }
-        .price-bad {
-            color: #a12222;
-            background: #ffe0e0;
-            border-radius: 30px;
-        }
-        .order-card {
-            background: #ffe4b5;
-            border-radius: 50px;
-            padding: 12px 20px;
-            margin: 10px auto;
-            max-width: 500px;
-            text-align: center;
-            border-left: 8px solid #f5a623;
-        }
-        .order-timer {
-            font-family: monospace;
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #c44;
-        }
-        .accept-order-btn {
-            background: #f5a623;
-            padding: 6px 18px;
-            font-size: 0.9rem;
-        }
-        .cancel-order-btn {
-            background: #c44;
-            padding: 6px 18px;
-            font-size: 0.9rem;
-            margin-left: 10px;
-        }
-        .products-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            justify-content: center;
-            margin-top: 15px;
-        }
-        .product-buttons {
-            display: flex;
-            gap: 6px;
-            justify-content: center;
-            margin-top: 6px;
-        }
-        .sell-btn {
-            background: #2b7a3e;
-            color: white;
-            padding: 4px 12px;
-        }
-        .info-text {
-            text-align: center;
-            margin-top: 12px;
-            font-size: 0.7rem;
-            background: #fffaef;
-            width: fit-content;
-            margin: 10px auto 0;
-            padding: 4px 12px;
-            border-radius: 50px;
-        }
-        footer {
-            font-size: 0.7rem;
-            text-align: center;
-            margin-top: 20px;
-            color: #6c5a44;
-        }
-        .hidden {
-            display: none !important;
-        }
-        .achievement-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-        }
-        .achievement-item {
-            background: #fff2e2;
-            border-radius: 30px;
-            padding: 6px 12px;
-            text-align: center;
-            min-width: 120px;
-        }
-        .achievement-locked {
-            opacity: 0.5;
-            filter: grayscale(0.5);
-        }
-        .toast-message {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #2c2b26ee;
-            backdrop-filter: blur(8px);
-            color: #ffecb3;
-            padding: 8px 20px;
-            border-radius: 60px;
-            font-weight: bold;
-            z-index: 1000;
-            pointer-events: none;
-            font-size: 0.9rem;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        .event-overlay {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #2c2b26ee;
-            backdrop-filter: blur(12px);
-            color: #ffecb3;
-            padding: 20px 40px;
-            border-radius: 80px;
-            font-size: 1.5rem;
-            font-weight: bold;
-            z-index: 1001;
-            text-align: center;
-            animation: fadeOut 3s forwards;
-            pointer-events: none;
-        }
-        @keyframes fadeOut {
-            0% {
-                opacity: 1;
-            }
-            70% {
-                opacity: 1;
-            }
-            100% {
-                opacity: 0;
-                visibility: hidden;
-            }
-        }
-        .player-name-input {
-            background: #3a3022;
-            border: 1px solid #f5a623;
-            border-radius: 40px;
-            padding: 5px 12px;
-            color: #ffefcf;
-            font-size: 0.8rem;
-            width: 120px;
-            text-align: center;
-        }
-        .auth-input {
-            background: #3a3022;
-            border: 1px solid #f5a623;
-            border-radius: 40px;
-            padding: 8px 12px;
-            color: #ffefcf;
-            font-size: 0.9rem;
-            width: 200px;
-            text-align: center;
-            margin: 5px;
-        }
-        .npc-popup {
-            animation: slideIn 0.3s ease-out;
-        }
-        @media (min-width: 769px) and (max-width: 1024px) {
-            .farm-grid,
-            .barn-grid,
-            .craft-grid,
-            .research-grid,
-            .licenses-grid,
-            .multiplayer-grid,
-            .account-grid {
-                grid-template-columns: repeat(3, 1fr);
-                gap: 14px;
-                padding: 18px 15px;
-            }
-            .stats-bar>div {
-                padding: 5px 14px;
-                font-size: 0.8rem;
-            }
-            .view-btn {
-                padding: 8px 16px;
-                font-size: 0.8rem;
-            }
-            .mass-btn {
-                padding: 6px 12px;
-                font-size: 0.7rem;
-            }
-            .mass-plant-btn {
-                padding: 5px 10px;
-                font-size: 0.7rem;
-            }
-        }
-        @media (max-width: 768px) {
-            .game-container {
-                padding: 12px 15px 20px;
-            }
-            .stats-bar {
-                padding: 8px 12px;
-                gap: 6px;
-            }
-            .stats-bar>div {
-                padding: 4px 10px;
-                font-size: 0.7rem;
-            }
-            .money span {
-                font-size: 1.2rem;
-            }
-            .view-btn {
-                padding: 6px 12px;
-                font-size: 0.7rem;
-            }
-            .mass-actions {
-                gap: 6px;
-            }
-            .mass-btn {
-                padding: 5px 10px;
-                font-size: 0.65rem;
-            }
-            .mass-plant-btn {
-                padding: 4px 8px;
-                font-size: 0.65rem;
-            }
-            .farm-grid,
-            .barn-grid,
-            .craft-grid,
-            .research-grid,
-            .licenses-grid,
-            .multiplayer-grid,
-            .account-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 10px;
-                padding: 15px 12px;
-            }
-            .field,
-            .animal-slot,
-            .craft-slot,
-            .research-slot,
-            .license-slot,
-            .multiplayer-slot,
-            .account-slot {
-                padding: 8px 4px;
-            }
-            .field .crop-name,
-            .animal-slot .animal-name {
-                font-size: 0.7rem;
-            }
-            .field .status,
-            .animal-slot .status {
-                font-size: 0.6rem;
-            }
-            .plant-btn {
-                width: 32px;
-                font-size: 0.8rem;
-                padding: 2px 4px;
-            }
-            .product-card {
-                padding: 6px 10px;
-                min-width: 100px;
-            }
-            .product-card div {
-                font-size: 0.7rem;
-            }
-            .product-card div[style*="font-size:1.8rem"] {
-                font-size: 1.3rem !important;
-            }
-            .price-card {
-                padding: 3px 8px;
-                min-width: 65px;
-            }
-            .price-card div[style*="font-size:1.5rem"] {
-                font-size: 1.1rem !important;
-            }
-            .price-value {
-                font-size: 1rem;
-            }
-            .quest-card {
-                padding: 8px 10px;
-                flex-direction: column;
-                text-align: center;
-            }
-            .quest-info {
-                width: 100%;
-            }
-            .quest-progress {
-                width: 100%;
-            }
-            .login-card {
-                padding: 25px 20px;
-                width: 95%;
-            }
-            .login-card h1 {
-                font-size: 1.5rem;
-            }
-            .login-card .farm-emoji {
-                font-size: 2.5rem;
-            }
-            .login-input {
-                padding: 10px 15px;
-                font-size: 0.9rem;
-            }
-            .order-card {
-                padding: 10px 12px;
-            }
-            .order-card div[style*="font-size:1.3rem"] {
-                font-size: 1rem !important;
-            }
-            .order-timer {
-                font-size: 0.9rem;
-            }
-            .trade-offer {
-                font-size: 0.7rem;
-            }
-            .admin-section {
-                padding: 10px 12px;
-            }
-            .admin-title {
-                font-size: 1rem;
-            }
-            .admin-btn {
-                padding: 4px 8px;
-                font-size: 0.6rem;
-            }
-            .craft-quantity-selector {
-                gap: 3px;
-            }
-            .craft-qty-btn {
-                padding: 2px 4px;
-                font-size: 0.55rem;
-                min-width: 22px;
-            }
-            .info-text {
-                font-size: 0.6rem;
-            }
-            footer {
-                font-size: 0.6rem;
-            }
-            .toast-message {
-                font-size: 0.7rem;
-                padding: 6px 15px;
-            }
-        }
-        @media (max-width: 480px) {
-            .stats-bar {
-                flex-direction: column;
-                align-items: stretch;
-                text-align: center;
-            }
-            .stats-bar>div {
-                text-align: center;
-                justify-content: center;
-            }
-            .login-status {
-                justify-content: center;
-            }
-            .view-switcher {
-                gap: 6px;
-            }
-            .view-btn {
-                padding: 5px 8px;
-                font-size: 0.65rem;
-            }
-            .mass-plant-row {
-                gap: 4px;
-            }
-            .mass-plant-btn {
-                font-size: 0.6rem;
-                padding: 3px 6px;
-            }
-            .product-card {
-                min-width: 85px;
-            }
-            .price-card {
-                min-width: 55px;
-            }
-            .plant-btn {
-                width: 28px;
-                font-size: 0.7rem;
-            }
-            .view-btn,
-            .mass-btn,
-            .mass-plant-btn,
-            .plant-btn,
-            .harvest-btn,
-            .collect-btn,
-            .feed-btn,
-            .sell-btn,
-            .sell-all-btn,
-            .craft-btn,
-            .quest-claim-btn {
-                min-height: 36px;
-            }
-            .plant-buttons-container {
-                gap: 6px;
-            }
-        }
-        /* ===== MINISPIELE ===== */
+        .leaderboard-entry:hover { transform:translateX(4px); border-color:var(--gold); }
+        .leaderboard-entry.online { border-color:var(--green); background:linear-gradient(135deg,#f0fff0,#e0f5e0); }
+        .online-indicator { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:4px; }
+        .online-true  { background:var(--green); box-shadow:0 0 5px var(--green); }
+        .online-false { background:#9e9e9e; }
+        .leaderboard-gold { font-weight:700; color:var(--gold-dark); font-size:.82rem; }
+        /* ── MINISPIELE ── */
         .minigame-hub {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
-            gap: 12px;
-            padding: 10px;
+            display:grid; grid-template-columns:repeat(auto-fill, minmax(138px,1fr));
+            gap:10px; padding:10px;
         }
         .minigame-card {
-            background: linear-gradient(135deg, #3a5a2a, #2c4a20);
-            border: 2px solid #6f9e3f;
-            border-radius: 16px;
-            padding: 16px;
-            text-align: center;
-            cursor: pointer;
-            transition: transform .2s, box-shadow .2s;
+            background:linear-gradient(160deg, #1a3d1f, #2a5c30);
+            border:2px solid #4a8a50; border-radius:var(--r-lg);
+            padding:14px 10px; text-align:center; cursor:pointer;
+            box-shadow:var(--shadow-card);
+            transition:transform var(--t-mid), box-shadow var(--t-mid), border-color var(--t-mid);
         }
         .minigame-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(111, 158, 63, .4);
+            transform:translateY(-4px); box-shadow:0 8px 20px rgba(76,175,80,.25);
+            border-color:var(--green-light);
         }
-        .mg-icon {
-            font-size: 2.5rem;
-            margin-bottom: 6px;
-        }
-        .mg-name {
-            font-weight: bold;
-            font-size: .95rem;
-            color: #ffefcf;
-        }
-        .mg-desc {
-            font-size: .7rem;
-            color: #b0c890;
-            margin-top: 4px;
-        }
-        .mg-reward {
-            font-size: .75rem;
-            color: #f5a623;
-            margin-top: 6px;
-        }
-        .mg-cooldown {
-            font-size: .7rem;
-            color: #e07070;
-            margin-top: 4px;
-        }
-        .mg-ready {
-            font-size: .75rem;
-            color: #6f9e3f;
-            margin-top: 4px;
-        }
+        .mg-icon { font-size:2.2rem; display:block; margin-bottom:5px; }
+        .mg-name { font-weight:700; font-size:.86rem; color:#ffefcf; }
+        .mg-desc { font-size:.66rem; color:#90c890; margin-top:3px; }
+        .mg-reward { font-size:.7rem; color:var(--gold-light); margin-top:4px; }
+        .mg-cooldown { font-size:.68rem; color:#ff8080; margin-top:3px; }
+        .mg-ready { font-size:.7rem; color:#80ff80; margin-top:3px; }
+        /* ── MINISPIEL MODAL ── */
         .mg-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, .85);
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
+            position:fixed; inset:0; background:rgba(0,0,0,.82);
+            z-index:9999; display:flex; align-items:center; justify-content:center; padding:14px;
+            backdrop-filter:blur(4px);
         }
         .mg-box {
-            background: #2c2b26;
-            border: 2px solid #f5a623;
-            border-radius: 20px;
-            padding: 20px;
-            max-width: 400px;
-            width: 100%;
-            text-align: center;
-            color: #ffefcf;
-            max-height: 90vh;
-            overflow-y: auto;
+            background:linear-gradient(160deg,#1a2a3a,#0d1a28);
+            border:2px solid var(--gold); border-radius:var(--r-xl);
+            padding:22px 18px; max-width:380px; width:100%; text-align:center; color:#ffefcf;
+            max-height:90vh; overflow-y:auto;
+            box-shadow:0 0 35px rgba(245,166,35,.15), var(--shadow-md);
         }
-        .mg-box h2 {
-            color: #f5a623;
-            margin-bottom: 10px;
-        }
+        .mg-box h2 { color:var(--gold); margin-bottom:9px; }
         .mg-btn {
-            background: #f5a623;
-            color: #2d2b1f;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 30px;
-            font-weight: bold;
-            font-size: .95rem;
-            cursor: pointer;
-            margin: 5px;
+            background:linear-gradient(135deg, var(--gold), var(--gold-dark));
+            color:var(--text-dark); border:none; border-radius:var(--r-full);
+            padding:9px 20px; font-weight:700; font-size:.88rem; cursor:pointer;
+            margin:4px; box-shadow:0 3px 0 #8a5a08; transition:transform var(--t-fast);
         }
-        .mg-btn:hover {
-            background: #e09010;
+        .mg-btn:hover { transform:translateY(-2px); }
+        .mg-btn-red   { background:linear-gradient(135deg,#e53935,#b71c1c); color:#fff; box-shadow:0 3px 0 #7f0000; }
+        .mg-btn-red:hover { box-shadow:0 5px 0 #7f0000; }
+        .mg-btn-green { background:linear-gradient(135deg,var(--green),var(--green-dark)); color:#fff; box-shadow:0 3px 0 #1b5e20; }
+        .mg-btn-green:hover { box-shadow:0 5px 0 #1b5e20; }
+        .mg-btn-blue  { background:linear-gradient(135deg,#1976d2,#1255a0); color:#fff; box-shadow:0 3px 0 #0d3d7a; }
+        /* ── BATTLESHIP ── */
+        .bs-container { max-width:480px; margin:0 auto; padding:12px; color:#ffefcf; }
+        .bs-title { text-align:center; color:#90caf9; font-size:1.25rem; font-weight:800; margin-bottom:7px; }
+        .bs-status { text-align:center; background:rgba(255,255,255,.08); border-radius:var(--r-md);
+            padding:7px 13px; margin:7px 0; font-size:.85rem; }
+        .bs-status.your-turn { background:rgba(76,175,80,.2); color:#a5d6a7; }
+        .bs-status.opponent-turn { background:rgba(211,47,47,.15); color:#ef9a9a; }
+        .bs-status.won  { background:rgba(76,175,80,.28); color:#a5d6a7; font-weight:700; }
+        .bs-status.lost { background:rgba(211,47,47,.2); color:#ef9a9a; font-weight:700; }
+        .bs-grid { display:grid; grid-template-columns:repeat(10,1fr); gap:2px; width:210px; }
+        .bs-cell { width:19px; height:19px; border-radius:3px; background:#1a3a5a;
+            border:1px solid #2a4a6a; cursor:pointer; display:flex; align-items:center;
+            justify-content:center; font-size:.58rem; transition:background var(--t-fast); }
+        .bs-cell.ship { background:#2a5a3a; border-color:#4a8a5a; }
+        .bs-cell.hit { background:#c0392b; }
+        .bs-cell.miss { background:#1a4a6a; }
+        .bs-cell.enemy-hit { background:#c0392b; cursor:default; }
+        .bs-cell.enemy-miss { background:#1a5a7a; cursor:default; }
+        .bs-cell.enemy-unknown:hover { background:#2a5a8a; }
+        .bs-btn { background:linear-gradient(135deg,#1976d2,#1255a0); color:#fff; border:none;
+            border-radius:var(--r-full); padding:7px 16px; font-weight:700; cursor:pointer;
+            margin:3px; font-size:.85rem; box-shadow:0 3px 0 #0d3d7a; transition:transform var(--t-fast); }
+        .bs-btn:hover { transform:translateY(-2px); }
+        .bs-btn-red   { background:linear-gradient(135deg,#d32f2f,#b71c1c); box-shadow:0 3px 0 #7f0000; }
+        .bs-btn-green { background:linear-gradient(135deg,var(--green),var(--green-dark)); box-shadow:0 3px 0 #1b5e20; }
+        .bs-lobby-card { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
+            border-radius:var(--r-md); padding:11px; margin:7px 0;
+            display:flex; justify-content:space-between; align-items:center; }
+        .bs-ship-btn { background:rgba(255,255,255,.1); color:#ffefcf; border:1px solid rgba(255,255,255,.2);
+            border-radius:var(--r-sm); padding:4px 9px; font-size:.76rem; cursor:pointer; margin:2px; }
+        .bs-ship-btn.selected { background:rgba(245,166,35,.3); border-color:var(--gold); }
+        .bs-ship-btn.placed   { background:rgba(76,175,80,.2); border-color:var(--green); cursor:default; }
+        .bs-orient-btn { background:rgba(255,255,255,.08); color:#ffefcf; border:1px solid rgba(255,255,255,.15);
+            border-radius:var(--r-sm); padding:4px 11px; font-size:.76rem; cursor:pointer; margin:2px; }
+        .bs-orient-btn.active { background:rgba(245,166,35,.3); border-color:var(--gold); color:var(--gold-light); }
+        .bs-boards { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:8px 0; }
+        .bs-board-wrap { text-align:center; }
+        .bs-board-label { font-size:.75rem; color:#b0a070; margin-bottom:3px; font-weight:700; }
+        .bs-place-ships { display:flex; flex-wrap:wrap; gap:4px; justify-content:center; margin:7px 0; }
+        /* ── MP OVERLAYS ── */
+        .mp-game-view { position:fixed; inset:0;
+            background:linear-gradient(160deg,#0d1a2a,#1a2a3a); z-index:250; overflow-y:auto; }
+        .ttt-board { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; max-width:260px; margin:13px auto; }
+        .ttt-cell { width:80px; height:80px; background:rgba(255,255,255,.07);
+            border:2px solid rgba(255,255,255,.14); border-radius:var(--r-lg); cursor:pointer;
+            font-size:2.3rem; display:flex; align-items:center; justify-content:center;
+            font-weight:800; transition:background var(--t-fast), transform var(--t-fast); }
+        .ttt-cell:hover { background:rgba(255,255,255,.12); transform:scale(1.04); }
+        .ttt-cell.win-cell { background:rgba(76,175,80,.2); border-color:var(--green); }
+        .rps-choices { display:flex; gap:13px; justify-content:center; flex-wrap:wrap; }
+        .rps-btn { width:82px; height:82px; background:rgba(255,255,255,.08);
+            border:3px solid rgba(255,255,255,.18); border-radius:var(--r-xl); font-size:2.3rem;
+            cursor:pointer; display:flex; align-items:center; justify-content:center;
+            transition:transform var(--t-fast), background var(--t-fast); }
+        .rps-btn:hover { transform:scale(1.1); background:rgba(255,255,255,.15); }
+        .rps-btn.chosen { background:rgba(76,175,80,.2); border-color:var(--green); }
+        .quiz-duel-opt { background:rgba(255,255,255,.07); border:2px solid rgba(255,255,255,.14);
+            border-radius:var(--r-md); padding:9px 13px; margin:4px 0; cursor:pointer;
+            color:#ffefcf; font-size:.85rem; width:100%; text-align:left; transition:background var(--t-fast); }
+        .quiz-duel-opt:hover { background:rgba(255,255,255,.13); }
+        .quiz-duel-opt.correct { background:rgba(76,175,80,.24); border-color:var(--green); }
+        .quiz-duel-opt.wrong   { background:rgba(211,47,47,.24); border-color:#d32f2f; }
+        /* ── MINIGAME SPECIFIC ── */
+        .m3-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:3px; margin:7px auto; max-width:282px; }
+        .m3-cell { width:41px; height:41px; border-radius:var(--r-sm);
+            background:rgba(255,255,255,.08); border:2px solid rgba(255,255,255,.14);
+            font-size:1.35rem; display:flex; align-items:center; justify-content:center;
+            cursor:pointer; transition:transform .14s, border-color .14s; user-select:none; }
+        .m3-cell.sel { border-color:var(--gold); transform:scale(1.1); background:rgba(245,166,35,.2); }
+        .quiz-opt { background:rgba(255,255,255,.08); border:2px solid rgba(255,255,255,.14);
+            border-radius:var(--r-md); padding:9px 13px; margin:4px 0; cursor:pointer;
+            text-align:left; color:#ffefcf; font-size:.85rem; width:100%; transition:background var(--t-fast); }
+        .quiz-opt:hover { background:rgba(255,255,255,.14); }
+        .quiz-opt.correct { background:rgba(76,175,80,.28); border-color:var(--green); }
+        .quiz-opt.wrong   { background:rgba(211,47,47,.28); border-color:#d32f2f; }
+        .bet-opt { background:rgba(255,255,255,.08); border:2px solid rgba(255,255,255,.14);
+            border-radius:var(--r-md); padding:13px; margin:5px; cursor:pointer; font-size:1.35rem;
+            transition:transform .18s, background .18s; display:inline-block; min-width:74px; text-align:center; }
+        .bet-opt:hover { transform:scale(1.07); background:rgba(255,255,255,.14); }
+        .bet-opt.winner { background:rgba(76,175,80,.28); border-color:var(--green); transform:scale(1.11); }
+        .bet-opt.loser  { opacity:.6; }
+        .wheel-wrap { position:relative; display:inline-block; margin:9px auto; }
+        .wheel-ptr  { position:absolute; top:-15px; left:50%; transform:translateX(-50%); font-size:1.5rem; }
+        .reaction-light { width:116px; height:116px; border-radius:50%; margin:14px auto;
+            transition:background .1s; cursor:pointer; border:5px solid rgba(255,255,255,.2);
+            display:flex; align-items:center; justify-content:center; font-size:2.4rem; }
+        .memory-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; max-width:290px; margin:9px auto; }
+        .memory-card { width:62px; height:62px; border-radius:var(--r-md);
+            background:rgba(255,255,255,.08); border:2px solid rgba(255,255,255,.14); cursor:pointer;
+            font-size:1.75rem; display:flex; align-items:center; justify-content:center;
+            transition:transform .18s, background .18s; user-select:none; }
+        .memory-card.flipped { background:rgba(245,166,35,.2); border-color:var(--gold); }
+        .memory-card.matched { background:rgba(76,175,80,.2); border-color:var(--green); }
+        .sprint-field { display:grid; grid-template-columns:repeat(5,1fr); gap:5px; max-width:310px; margin:9px auto; }
+        .sprint-plant { width:50px; height:50px; border-radius:var(--r-md);
+            background:rgba(255,255,255,.1); border:2px solid rgba(255,255,255,.18); cursor:pointer;
+            font-size:1.75rem; display:flex; align-items:center; justify-content:center; transition:transform .1s; }
+        .sprint-plant:active { transform:scale(.85); }
+        .sprint-plant.harvested { background:rgba(76,175,80,.14); opacity:.5; cursor:default; }
+        .slot-reel { display:flex; gap:9px; justify-content:center; margin:13px 0; }
+        .slot-drum { width:70px; height:70px; background:rgba(255,255,255,.08);
+            border:3px solid var(--gold); border-radius:var(--r-md); font-size:2.1rem;
+            display:flex; align-items:center; justify-content:center; }
+        .slot-drum.spinning { animation:slotSpin .15s linear infinite; }
+        @keyframes slotSpin { 0%{transform:translateY(-4px)}50%{transform:translateY(4px)}100%{transform:translateY(-4px)} }
+        @keyframes spin { 0%{transform:rotate(0deg)}100%{transform:rotate(720deg)} }
+        /* ── ADMIN ── */
+        .admin-section {
+            background:linear-gradient(160deg,#1a0808,#2a1010);
+            border-top:3px solid #d32f2f; padding:18px; grid-column:1/-1; color:#ffcccc;
         }
-        .mg-btn-red {
-            background: #c44;
-            color: #fff;
+        .admin-title { color:#ff6b6b; font-weight:800; font-size:1.05rem; margin-bottom:10px; }
+        /* ── NPC ── */
+        .npc-indicator {
+            background:linear-gradient(135deg,#7b1fa2,#4a0080);
+            border:2px solid #ce93d8; border-radius:var(--r-full);
+            padding:4px 11px; font-size:.75rem; font-weight:600; color:#e1bee7; cursor:pointer;
+            animation:npcPulse 2s ease-in-out infinite;
         }
-        .mg-btn-green {
-            background: #3a8c3a;
-            color: #fff;
+        @keyframes npcPulse { 0%,100%{box-shadow:0 0 6px rgba(123,31,162,.35)} 50%{box-shadow:0 0 16px rgba(123,31,162,.65)} }
+        /* ── TOAST ── */
+        .toast-msg {
+            position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
+            background:linear-gradient(135deg,#2c1810,#1a0c08);
+            color:#ffefcf; padding:9px 20px; border-radius:var(--r-full);
+            border:2px solid var(--gold); font-weight:600; font-size:.85rem;
+            z-index:10000; box-shadow:0 4px 18px rgba(0,0,0,.45);
+            animation:toastIn .22s ease;
         }
-        .mg-btn-blue {
-            background: #4a6e8b;
-            color: #fff;
-        }
-        .wheel-wrap {
-            position: relative;
-            display: inline-block;
-            margin: 10px auto;
-        }
-        .wheel-ptr {
-            position: absolute;
-            top: -16px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 1.6rem;
-        }
-        .fish-area {
-            background: linear-gradient(to bottom, #87CEEB 42%, #1a6b9a 42%);
-            border-radius: 12px;
-            height: 210px;
-            position: relative;
-            overflow: hidden;
-            margin: 10px 0;
-            cursor: pointer;
-        }
-        .m3-grid {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 3px;
-            margin: 8px auto;
-            max-width: 290px;
-        }
-        .m3-cell {
-            width: 42px;
-            height: 42px;
-            border-radius: 7px;
-            background: #3a4a2a;
-            border: 2px solid #5a7a3a;
-            font-size: 1.4rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: transform .15s, border-color .15s;
-            user-select: none;
-        }
-        .m3-cell.sel {
-            border-color: #f5a623;
-            transform: scale(1.1);
-            background: #5a6a3a;
-        }
-        .quiz-opt {
-            background: #3a4a2a;
-            border: 2px solid #5a7a3a;
-            border-radius: 12px;
-            padding: 10px 14px;
-            margin: 5px 0;
-            cursor: pointer;
-            text-align: left;
-            color: #ffefcf;
-            font-size: .9rem;
-            width: 100%;
-        }
-        .quiz-opt:hover {
-            background: #4a6a3a;
-        }
-        .quiz-opt.correct {
-            background: #2a6a2a;
-            border-color: #6f9e3f;
-        }
-        .quiz-opt.wrong {
-            background: #6a2a2a;
-            border-color: #c44;
-        }
-        .bet-opt {
-            background: #3a4a6a;
-            border: 2px solid #4a6a9a;
-            border-radius: 14px;
-            padding: 14px;
-            margin: 6px;
-            cursor: pointer;
-            font-size: 1.4rem;
-            transition: transform .2s, background .2s;
-            display: inline-block;
-            min-width: 76px;
-        }
-        .bet-opt:hover {
-            transform: scale(1.08);
-            background: #4a5a8a;
-        }
-        .bet-opt.winner {
-            background: #2a6a2a;
-            border-color: #6f9e3f;
-            transform: scale(1.12);
-        }
-        .bet-opt.loser {
-            background: #6a2a2a;
-            border-color: #c44;
-            opacity: .6;
-        }
-        /* ===== ACKER-FILTER ===== */
-        .acker-filter-bar {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            padding: 8px 10px 2px;
-            justify-content: center;
-        }
+        @keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(8px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+        /* ── ACKER FILTER ── */
+        .acker-filter-bar { display:flex; gap:7px; flex-wrap:wrap; padding:9px 14px 3px; justify-content:center; }
         .acker-filter-btn {
-            background: #3f6b3a;
-            color: #ffefcf;
-            border: 2px solid #5a9a50;
-            border-radius: 20px;
-            padding: 6px 16px;
-            font-size: .85rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background .2s, border-color .2s;
+            background:linear-gradient(135deg, var(--wood-light), var(--wood-mid));
+            color:#ffefcf; border:2px solid var(--wood-shine);
+            border-radius:var(--r-full); padding:5px 14px;
+            font-size:.78rem; font-weight:700; cursor:pointer; transition:transform var(--t-fast);
         }
         .acker-filter-btn.active {
-            background: #f5a623;
-            color: #2d2b1f;
-            border-color: #f5a623;
+            background:linear-gradient(135deg, var(--gold), var(--gold-dark));
+            color:var(--text-dark); border-color:var(--gold);
         }
-        .acker-filter-btn:hover {
-            background: #4a8a44;
+        .acker-filter-btn:hover { transform:translateY(-2px); }
+        /* ── ACHIEVEMENT ── */
+        .achievement-slot { background:linear-gradient(160deg,#fff8e8,#f5e8c8);
+            border-radius:var(--r-lg); padding:13px 11px; border:2px solid #dcc890;
+            box-shadow:var(--shadow-card); }
+        .achievement-slot.unlocked { background:linear-gradient(160deg,#fff8d4,#ffe08a); border-color:var(--gold); }
+        /* ── LOGIN STATUS ── */
+        .login-status { font-size:.76rem; color:#a0c0a0; text-align:center; padding:3px 0; }
+        .not-loggedin-hint {
+            background:rgba(245,166,35,.1); border:1px solid var(--gold); border-radius:var(--r-md);
+            padding:7px 13px; font-size:.8rem; color:var(--gold-light); text-align:center; margin:5px 0;
         }
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg)
+        .quick-login-btn {
+            background:linear-gradient(135deg, var(--gold), var(--gold-dark));
+            color:var(--text-dark); border:none; border-radius:var(--r-full);
+            padding:5px 13px; font-weight:700; cursor:pointer; font-size:.78rem; margin:2px;
+        }
+        /* ── RESPONSIVE ── */
+        @media (max-width:600px) {
+            body { padding:0; align-items:flex-start; }
+            .game-container { border-radius:0 0 var(--r-xl) var(--r-xl); max-width:100%; box-shadow:none; }
+            .farm-grid, .barn-grid, .craft-grid, .research-grid,
+            .licenses-grid, .multiplayer-grid, .account-grid, .quests-grid, .handbook-grid {
+                grid-template-columns:repeat(auto-fill, minmax(138px,1fr));
+                padding:11px 10px; gap:9px;
             }
-            100% {
-                transform: rotate(720deg)
-            }
+            .stats-bar { padding:7px 12px; }
+            .view-btn { padding:6px 10px; font-size:.72rem; }
+            .ttt-cell { width:70px; height:70px; font-size:2rem; }
         }
-        /* ===== SCHIFFE VERSENKEN ===== */
-        .bs-container {
-            max-width: 500px;
-            margin: 0 auto;
-            padding: 10px;
-            color: #ffefcf;
-        }
-        .bs-title {
-            text-align: center;
-            color: #4a8abf;
-            font-size: 1.3rem;
-            font-weight: bold;
-            margin-bottom: 8px;
-        }
-        .bs-status {
-            text-align: center;
-            background: #2a3a4a;
-            border-radius: 12px;
-            padding: 8px 14px;
-            margin: 8px 0;
-            font-size: .9rem;
-            color: #ffefcf;
-        }
-        .bs-status.your-turn {
-            background: #2a5a2a;
-            color: #90ee90;
-        }
-        .bs-status.opponent-turn {
-            background: #5a2a2a;
-            color: #ff9090;
-        }
-        .bs-status.won {
-            background: #1a5a1a;
-            color: #90ff90;
-            font-weight: bold;
-        }
-        .bs-status.lost {
-            background: #5a1a1a;
-            color: #ff9090;
-            font-weight: bold;
-        }
-        .bs-boards {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin: 10px 0;
-        }
-        .bs-board-wrap {
-            text-align: center;
-        }
-        .bs-board-label {
-            font-size: .8rem;
-            color: #b0a070;
-            margin-bottom: 4px;
-            font-weight: bold;
-        }
-        .bs-grid {
-            display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            gap: 2px;
-            width: 220px;
-        }
-        .bs-cell {
-            width: 20px;
-            height: 20px;
-            border-radius: 3px;
-            background: #1a3a5a;
-            border: 1px solid #2a4a6a;
-            cursor: pointer;
-            transition: background .15s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: .6rem;
-        }
-        .bs-cell.ship {
-            background: #4a6a3a;
-            border-color: #6a9a5a;
-        }
-        .bs-cell.hit {
-            background: #c0392b;
-            border-color: #e74c3c;
-        }
-        .bs-cell.miss {
-            background: #2a4a6a;
-            border-color: #3a5a7a;
-        }
-        .bs-cell.sunk {
-            background: #7a0000;
-            border-color: #cc0000;
-        }
-        .bs-cell.enemy-hit {
-            background: #c0392b;
-            border-color: #e74c3c;
-            cursor: default;
-        }
-        .bs-cell.enemy-miss {
-            background: #2a5a7a;
-            border-color: #3a7a9a;
-            cursor: default;
-        }
-        .bs-cell.enemy-unknown {
-            cursor: crosshair;
-        }
-        .bs-cell.enemy-unknown:hover {
-            background: #3a6a8a;
-        }
-        .bs-place-ships {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            justify-content: center;
-            margin: 8px 0;
-        }
-        .bs-ship-btn {
-            background: #3a5a3a;
-            color: #ffefcf;
-            border: 2px solid #5a8a5a;
-            border-radius: 8px;
-            padding: 5px 10px;
-            font-size: .8rem;
-            cursor: pointer;
-        }
-        .bs-ship-btn.selected {
-            background: #f5a623;
-            color: #2d2b1f;
-            border-color: #f5a623;
-        }
-        .bs-ship-btn.placed {
-            background: #2a4a2a;
-            color: #6a9a6a;
-            border-color: #3a6a3a;
-            cursor: default;
-        }
-        .bs-btn {
-            background: #4a8abf;
-            color: white;
-            border: none;
-            border-radius: 20px;
-            padding: 8px 20px;
-            font-weight: bold;
-            cursor: pointer;
-            margin: 4px;
-            font-size: .9rem;
-        }
-        .bs-btn:hover {
-            background: #5a9acf;
-        }
-        .bs-btn-red {
-            background: #c44;
-        }
-        .bs-btn-red:hover {
-            background: #e55;
-        }
-        .bs-btn-green {
-            background: #3a8c3a;
-        }
-        .bs-lobby-card {
-            background: #1a2a3a;
-            border: 2px solid #3a5a7a;
-            border-radius: 14px;
-            padding: 12px;
-            margin: 8px 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .bs-lobby-card .bs-btn {
-            padding: 6px 14px;
-            font-size: .8rem;
-        }
-        .bs-orient-btn {
-            background: #3a4a5a;
-            color: #ffefcf;
-            border: 1px solid #5a7a9a;
-            border-radius: 6px;
-            padding: 4px 10px;
-            font-size: .75rem;
-            cursor: pointer;
-        }
-        .bs-orient-btn.active {
-            background: #f5a623;
-            color: #2d2b1f;
-        }
-
-        /* ===== NEUE MINISPIELE ===== */
-        .reaction-light { width:120px; height:120px; border-radius:50%; margin:16px auto;
-            transition:background 0.1s; cursor:pointer; border:6px solid #333;
-            display:flex; align-items:center; justify-content:center; font-size:2.5rem; }
-        .memory-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px;
-            max-width:300px; margin:10px auto; }
-        .memory-card { width:64px; height:64px; border-radius:10px; background:#3a4a2a;
-            border:2px solid #5a7a3a; cursor:pointer; font-size:1.8rem;
-            display:flex; align-items:center; justify-content:center;
-            transition:transform 0.2s, background 0.2s; user-select:none; }
-        .memory-card.flipped { background:#5a6a3a; border-color:#f5a623; }
-        .memory-card.matched { background:#2a5a2a; border-color:#6f9e3f; }
-        .sprint-field { display:grid; grid-template-columns:repeat(5,1fr); gap:6px;
-            max-width:320px; margin:10px auto; }
-        .sprint-plant { width:52px; height:52px; border-radius:10px; background:#3a4a2a;
-            border:2px solid #5a7a3a; cursor:pointer; font-size:1.8rem;
-            display:flex; align-items:center; justify-content:center;
-            transition:transform 0.1s; }
-        .sprint-plant:active { transform:scale(0.85); }
-        .sprint-plant.harvested { background:#2a5a2a; opacity:0.4; cursor:default; }
-        .slot-reel { display:flex; gap:10px; justify-content:center; margin:14px 0; }
-        .slot-drum { width:72px; height:72px; background:#2a2a2a; border:3px solid #f5a623;
-            border-radius:12px; font-size:2.2rem; display:flex; align-items:center;
-            justify-content:center; transition:all 0.3s; }
-        .slot-drum.spinning { animation:slotSpin 0.15s linear infinite; }
-        @keyframes slotSpin { 0%{transform:translateY(-4px)}50%{transform:translateY(4px)}100%{transform:translateY(-4px)} }
-        /* Multiplayer Games */
-        .mp-game-view { position:fixed; top:0; left:0; right:0; bottom:0;
-            background:#0d1a2a; z-index:250; overflow-y:auto; }
-        .ttt-board { display:grid; grid-template-columns:repeat(3,1fr);
-            gap:6px; max-width:260px; margin:14px auto; }
-        .ttt-cell { width:78px; height:78px; background:#1a2a3a; border:3px solid #3a5a7a;
-            border-radius:14px; cursor:pointer; font-size:2.4rem;
-            display:flex; align-items:center; justify-content:center;
-            transition:background 0.15s, transform 0.1s; }
-        .ttt-cell:hover:empty { background:#2a3a4a; transform:scale(1.05); }
-        .ttt-cell.win-cell { background:#2a5a2a; border-color:#6f9e3f; }
-        .rps-choices { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
-        .rps-btn { width:80px; height:80px; background:#2a3a4a; border:3px solid #4a6a8a;
-            border-radius:16px; font-size:2.4rem; cursor:pointer;
-            transition:transform 0.15s, background 0.15s; display:flex;
-            align-items:center; justify-content:center; }
-        .rps-btn:hover { transform:scale(1.1); background:#3a4a5a; }
-        .rps-btn.chosen { background:#3a5a3a; border-color:#6f9e3f; }
-        .quiz-duel-opt { background:#2a3a4a; border:2px solid #4a6a8a; border-radius:12px;
-            padding:10px 14px; margin:5px 0; cursor:pointer; color:#ffefcf;
-            font-size:.88rem; width:100%; text-align:left; transition:background 0.15s; }
-        .quiz-duel-opt:hover { background:#3a4a5a; }
-        .quiz-duel-opt.correct { background:#2a5a2a; border-color:#6f9e3f; }
-        .quiz-duel-opt.wrong { background:#5a2a2a; border-color:#c44; }
-
-    </style>
+</style>
 </head>
 <body>
     <div id="admin-panel" style="position: fixed; top: 0; right: 10px; z-index: 10000; display: none;">
@@ -1721,7 +548,10 @@
     </div>
     <div id="gameWrapper" class="game-wrapper hidden">
         <div class="game-container" id="gameContainer">
-            <div class="stats-bar">
+            <div style="background:linear-gradient(135deg,#1a3d1f,#2a5c30);padding:8px 20px 4px;text-align:center;border-bottom:2px solid #7a4a22;">
+            <span style="font-size:1.1rem;font-weight:800;color:#ffd166;letter-spacing:1px;text-shadow:0 2px 4px rgba(0,0,0,.4);">&#127807; Farm Premium &#127807;</span>
+        </div>
+        <div class="stats-bar" id="statsBar">
                 <div>🌾 Meine Farm Deluxe</div>
                 <div class="money">💰 <span id="moneyAmount">500</span> Gold</div>
                 <div class="storage-info">🏚️ Lager: <span id="storageUsed">0</span>/<span id="storageMax">50</span></div>
@@ -1766,7 +596,10 @@
                 <button id="helperToggleBtn" class="mass-btn" style="background:#8b6e3a;">🧑‍🌾 Erntehelfer</button>
                 <span id="helperInfo" style="color:#ffefcf; font-size:0.85rem;"></span>
             </div>
-            <div id="farmView" class="farm-grid"></div>
+            <div style="padding:8px 18px 0;background:linear-gradient(180deg,#e8d5a3,#dcc890);">
+            <span style="font-size:.75rem;font-weight:700;color:#7a4a22;text-transform:uppercase;letter-spacing:.5px;">🌾 Deine Felder</span>
+        </div>
+        <div id="farmView" class="farm-grid"></div>
             <div id="barnView" class="barn-grid hidden"></div>
             <div id="craftView" class="craft-grid hidden"></div>
             <div id="researchView" class="research-grid hidden"></div>
@@ -2142,7 +975,7 @@
             }
         }
         // ==================== GAME VERSION ====================
-        const CURRENT_GAME_VERSION = "5.1";
+        const CURRENT_GAME_VERSION = "5.2";
         // ==================== RELEASE NOTES ====================
         const RELEASE_NOTES = [
             { version: "4.5", date: "Mai 2026", title: "🐄 Auto-Sammler & Auto-Füttern kombiniert",
