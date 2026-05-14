@@ -3264,59 +3264,145 @@
 
         function renderMarket() {
             if (!marketContainer) return;
-            marketContainer.innerHTML = "";
-            const baseProducts = [...Object.keys(CROPS), "egg", "milk", "truffle", "flour", "cheese", "bread", "wool",
-                "goatCheese", "fertilizer", "alpacaWool", "honey", "duckEgg", "ostrichEgg", "llamaWool", "camelMilk",
-                "yakWool", "reindeerFur", "peacockFeather", "silk", "dragonScale", "butter", "yogurt", "woolThread",
-                "scarf", "honeyCake", "silkFabric"
+
+            // Alle verfügbaren Produkte ermitteln
+            const baseProducts = [...Object.keys(CROPS), 'egg','milk','truffle','flour','cheese','bread','wool',
+                'goatCheese','fertilizer','alpacaWool','honey','duckEgg','ostrichEgg','llamaWool','camelMilk',
+                'yakWool','reindeerFur','peacockFeather','silk','dragonScale','butter','yogurt','woolThread',
+                'scarf','honeyCake','silkFabric'];
+            const inventoryKeys = Object.keys(inventory||{}).filter(k=>(inventory[k]||0)>0);
+            const allProducts = Array.from(new Set([...baseProducts,...inventoryKeys]));
+
+            const names = {carrot:'Karotte',wheat:'Weizen',tomato:'Tomate',strawberry:'Erdbeere',
+                pumpkin:'Kürbis',pineapple:'Ananas',coffee:'Kaffee',blueberry:'Blaubeere',
+                raspberry:'Himbeere',grape:'Traube',peach:'Pfirsich',lemon:'Zitrone',apple:'Apfel',
+                banana:'Banane',mango:'Mango',cherry:'Kirsche',pear:'Birne',pomegranate:'Granatapfel',
+                kiwi:'Kiwi',dragonfruit:'Drachenfrucht',starfruit:'Sternfrucht',saffron:'Safran',vanilla:'Vanille',
+                egg:'Ei',milk:'Milch',truffle:'Trüffel',flour:'Mehl',cheese:'Käse',bread:'Brot',wool:'Wolle',
+                goatCheese:'Ziegenkäse',fertilizer:'Dünger',alpacaWool:'Alpakawolle',honey:'Honig',
+                duckEgg:'Entenei',ostrichEgg:'Straußenei',llamaWool:'Lamawolle',camelMilk:'Kamelmilch',
+                yakWool:'Yakwolle',reindeerFur:'Rentierfell',peacockFeather:'Pfauenfeder',silk:'Seide',
+                dragonScale:'Drachenschuppe',butter:'Butter',yogurt:'Joghurt',woolThread:'Wollfaden',
+                scarf:'Schal',honeyCake:'Honigkuchen',silkFabric:'Seidentuch'};
+            const emojis = {carrot:'🥕',wheat:'🌾',tomato:'🍅',strawberry:'🍓',pumpkin:'🎃',pineapple:'🍍',
+                coffee:'☕',blueberry:'🫐',raspberry:'🍓',grape:'🍇',peach:'🍑',lemon:'🍋',apple:'🍎',
+                banana:'🍌',mango:'🥭',cherry:'🍒',pear:'🍐',pomegranate:'🍎',kiwi:'🥝',dragonfruit:'🐉',
+                starfruit:'⭐',saffron:'🌸',vanilla:'🌿',egg:'🥚',milk:'🥛',truffle:'🍄',flour:'🌾',
+                cheese:'🧀',bread:'🍞',wool:'🧶',goatCheese:'🧀',fertilizer:'💩',alpacaWool:'🧣',
+                honey:'🍯',duckEgg:'🥚',ostrichEgg:'🥚',llamaWool:'🧣',camelMilk:'🥛',yakWool:'🧣',
+                reindeerFur:'🧣',peacockFeather:'📿',silk:'👘',dragonScale:'⚡',butter:'🧈',yogurt:'🥣',
+                woolThread:'🧵',scarf:'🧣',honeyCake:'🍰',silkFabric:'👘'};
+
+            const productLevels = {egg:6,milk:6,truffle:6,flour:8,cheese:8,bread:8,wool:10,goatCheese:12,
+                fertilizer:14,alpacaWool:16,honey:18,duckEgg:20,ostrichEgg:22,llamaWool:25,camelMilk:28,
+                yakWool:30,reindeerFur:33,peacockFeather:35,silk:38,dragonScale:40,butter:8,yogurt:8,
+                woolThread:10,scarf:10,honeyCake:18,silkFabric:38};
+
+            // Kategorien
+            const categories = [
+                {id:'all',  label:'🧺 Alle'},
+                {id:'crops',label:'🌾 Pflanzen'},
+                {id:'animal',label:'🐄 Tierprodukte'},
+                {id:'craft', label:'⚙️ Verarbeitet'},
             ];
-            const inventoryKeys = Object.keys(inventory || {}).filter(k => (inventory[k] || 0) > 0);
-            const allProducts = Array.from(new Set([...baseProducts, ...inventoryKeys]));
-            const names = { carrot: "Karotte", wheat: "Weizen", tomato: "Tomate", strawberry: "Erdbeere",
-                pumpkin: "Kürbis", pineapple: "Ananas", coffee: "Kaffee", blueberry: "Blaubeere",
-                raspberry: "Himbeere", grape: "Traube", peach: "Pfirsich", lemon: "Zitrone", apple: "Apfel",
-                banana: "Banane", mango: "Mango", cherry: "Kirsche", pear: "Birne", pomegranate: "Granatapfel",
-                kiwi: "Kiwi", dragonfruit: "Drachenfrucht", starfruit: "Sternfrucht", saffron: "Safran",
-                vanilla: "Vanille", egg: "Ei", milk: "Milch", truffle: "Trüffel", flour: "Mehl", cheese: "Käse",
-                bread: "Brot", wool: "Wolle", goatCheese: "Ziegenkäse", fertilizer: "Dünger",
-                alpacaWool: "Alpakawolle", honey: "Honig", duckEgg: "Entenei", ostrichEgg: "Straußenei",
-                llamaWool: "Lamawolle", camelMilk: "Kamelmilch", yakWool: "Yakwolle", reindeerFur: "Rentierfell",
-                peacockFeather: "Pfauenfeder", silk: "Seide", dragonScale: "Drachenschuppe", butter: "Butter",
-                yogurt: "Joghurt", woolThread: "Wollfaden", scarf: "Schal", honeyCake: "Honigkuchen",
-                silkFabric: "Seidentuch" };
-            const emojis = { carrot: "🥕", wheat: "🌾", tomato: "🍅", strawberry: "🍓", pumpkin: "🎃",
-                pineapple: "🍍", coffee: "☕", blueberry: "🫐", raspberry: "🍓", grape: "🍇", peach: "🍑",
-                lemon: "🍋", apple: "🍎", banana: "🍌", mango: "🥭", cherry: "🍒", pear: "🍐",
-                pomegranate: "🍎", kiwi: "🥝", dragonfruit: "🐉", starfruit: "⭐", saffron: "🌸", vanilla: "🌿",
-                egg: "🥚", milk: "🥛", truffle: "🍄", flour: "🌾", cheese: "🧀", bread: "🍞", wool: "🧶",
-                goatCheese: "🧀", fertilizer: "💩", alpacaWool: "🧣", honey: "🍯", duckEgg: "🥚",
-                ostrichEgg: "🥚", llamaWool: "🧣", camelMilk: "🥛", yakWool: "🧣", reindeerFur: "🧣",
-                peacockFeather: "📿", silk: "👘", dragonScale: "⚡", butter: "🧈", yogurt: "🥣",
-                woolThread: "🧵", scarf: "🧣", honeyCake: "🍰", silkFabric: "👘" };
-            for (let prod of allProducts) { const amount = inventory[prod] || 0; let isUnlocked = false; if (
-                    CROPS[prod]) { const crop = CROPS[prod]; if (playerLevel >= crop.levelRequired && (!crop
-                        .licenseRequired || ownedLicenses.includes(crop.licenseRequired)))
-                    isUnlocked = true; } else { const productLevels = { egg: 6, milk: 6, truffle: 6,
-                        flour: 8, cheese: 8, bread: 8, wool: 10, goatCheese: 12, fertilizer: 14,
-                        alpacaWool: 16, honey: 18, duckEgg: 20, ostrichEgg: 22, llamaWool: 25,
-                        camelMilk: 28, yakWool: 30, reindeerFur: 33, peacockFeather: 35, silk: 38,
-                        dragonScale: 40, butter: 8, yogurt: 8, woolThread: 10, scarf: 10,
-                    honeyCake: 18, silkFabric: 38 }; const levelRequired = productLevels[prod] || 1; if (
-                        playerLevel >= levelRequired) isUnlocked = true; } if (!isUnlocked && amount <= 0)
-                    continue; if (amount > 0) { let price = globalMarketPrices[prod] || basePrices[prod] || 10;
-                    const card = document.createElement("div");
-                    card.className = "product-card";
-                    card.innerHTML =
-                        `<div style="font-size:1.8rem;">${emojis[prod] || "📦"}</div><div><strong>${names[prod] || prod}</strong></div><div>📦 ${amount} Stück</div><div>💰 ${price} Gold/Stk</div><div class="product-buttons"><button class="sell-btn" data-product="${prod}">Verkaufen (1x)</button><button class="sell-all-btn" data-product="${prod}">💰 ALLE (${amount})</button></div>`;
-                    marketContainer.appendChild(card); } }
-            if (marketContainer.children.length === 0) marketContainer.innerHTML =
-                "<div style='padding:15px;'>🌾 Leeres Lager. Ernte oder verarbeite etwas! 🌾</div>";
-            document.querySelectorAll(".sell-btn").forEach(btn => btn.addEventListener("click", () => sellProduct(
-                btn.dataset.product)));
-            document.querySelectorAll(".sell-all-btn").forEach(btn => btn.addEventListener("click", () =>
-                sellAllProduct(btn.dataset.product)));
+            const cropKeys = new Set(Object.keys(CROPS));
+            const animalKeys = new Set(['egg','milk','truffle','wool','alpacaWool','honey','duckEgg',
+                'ostrichEgg','llamaWool','camelMilk','yakWool','reindeerFur','peacockFeather','silk',
+                'dragonScale','goatCheese','fertilizer']);
+            const craftKeys = new Set(['flour','cheese','bread','butter','yogurt','woolThread','scarf',
+                'honeyCake','silkFabric']);
+
+            function getCat(prod) {
+                if (cropKeys.has(prod)) return 'crops';
+                if (animalKeys.has(prod)) return 'animal';
+                if (craftKeys.has(prod)) return 'craft';
+                return 'crops';
+            }
+
+            // Aktive Kategorie aus data-attr
+            const currentCat = marketContainer._activeTab || 'all';
+
+            // Produkte filtern: nur die im Lager
+            const inStockProducts = allProducts.filter(prod => {
+                const amount = (inventory[prod]||0);
+                if (amount <= 0) return false;
+                // Freischaltstatus prüfen
+                if (CROPS[prod]) {
+                    const crop = CROPS[prod];
+                    return playerLevel >= crop.levelRequired && (!crop.licenseRequired || ownedLicenses.includes(crop.licenseRequired));
+                }
+                return playerLevel >= (productLevels[prod]||1);
+            });
+
+            // HTML aufbauen
+            let html = '';
+
+            // Kategorie-Tabs
+            html += '<div class="market-tabs">';
+            categories.forEach(cat => {
+                const isActive = cat.id === currentCat ? ' active' : '';
+                const count = cat.id === 'all' ? inStockProducts.length
+                    : inStockProducts.filter(p => getCat(p) === cat.id).length;
+                if (cat.id !== 'all' && count === 0) return;
+                html += `<button class="market-tab${isActive}" onclick="window.setMarketTab('${cat.id}')">${cat.label}${count>0?' ('+count+')':''}</button>`;
+            });
+            html += '</div>';
+
+            // Gefilterte Produkte
+            const filtered = currentCat === 'all' ? inStockProducts
+                : inStockProducts.filter(p => getCat(p) === currentCat);
+
+            if (filtered.length === 0) {
+                html += '<div class="market-grid"><div class="market-empty">🧺 Nichts im Lager. Ernte oder verarbeite etwas!</div></div>';
+            } else {
+                html += '<div class="market-grid">';
+                html += `<div class="market-grid-header">
+                    <div></div>
+                    <div>Produkt</div>
+                    <div style="text-align:center">Bestand</div>
+                    <div style="text-align:center">Preis</div>
+                    <div style="text-align:center">Trend</div>
+                    <div></div>
+                </div>`;
+                filtered.forEach(prod => {
+                    const amount = inventory[prod]||0;
+                    if (amount <= 0) return;
+                    const baseP = (CROPS[prod]?.basePrice) || globalMarketPrices[prod] || 10;
+                    const price = globalMarketPrices[prod] || basePrices[prod] || baseP;
+                    const pct = (price / baseP) * 100;
+                    const priceClass = pct>=110?'price-good':pct<=90?'price-bad':'';
+                    const trend = pct>=110?'📈':pct<=90?'📉':'➖';
+                    html += `<div class="market-row">
+                        <div class="market-row-emoji">${emojis[prod]||'📦'}</div>
+                        <div class="market-row-name">${names[prod]||prod}</div>
+                        <div class="market-row-qty">${amount}</div>
+                        <div class="market-row-price ${priceClass}">${price}💰</div>
+                        <div class="market-row-trend">${trend}</div>
+                        <div class="market-row-btns">
+                            <button class="sell-btn-sm" data-product="${prod}">1x</button>
+                            <button class="sell-btn-all" data-product="${prod}">Alle (${amount})</button>
+                        </div>
+                    </div>`;
+                });
+                html += '</div>';
+            }
+
+            marketContainer.innerHTML = html;
+
+            // Event Listener
+            marketContainer.querySelectorAll('.sell-btn-sm').forEach(btn =>
+                btn.addEventListener('click', () => sellProduct(btn.dataset.product)));
+            marketContainer.querySelectorAll('.sell-btn-all').forEach(btn =>
+                btn.addEventListener('click', () => sellAllProduct(btn.dataset.product)));
         }
-        // ==================== FORSCHUNG ====================
+
+        window.setMarketTab = function(cat) {
+            if (!marketContainer) return;
+            marketContainer._activeTab = cat;
+            renderMarket();
+        };
+
+                // ==================== FORSCHUNG ====================
         function initResearchProgress() { for (let id of Object.keys(RESEARCH)) { if (!researchProgress[id]) {
                     researchProgress[id] = { goldPaid: 0, resourcesPaid: {}, activeResearch: null, timerId: null }; for (
                         let res of Object.keys(RESEARCH[id].resources)) researchProgress[id].resourcesPaid[res] =
