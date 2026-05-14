@@ -1637,6 +1637,58 @@
             background: #f5a623;
             color: #2d2b1f;
         }
+
+        /* ===== NEUE MINISPIELE ===== */
+        .reaction-light { width:120px; height:120px; border-radius:50%; margin:16px auto;
+            transition:background 0.1s; cursor:pointer; border:6px solid #333;
+            display:flex; align-items:center; justify-content:center; font-size:2.5rem; }
+        .memory-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px;
+            max-width:300px; margin:10px auto; }
+        .memory-card { width:64px; height:64px; border-radius:10px; background:#3a4a2a;
+            border:2px solid #5a7a3a; cursor:pointer; font-size:1.8rem;
+            display:flex; align-items:center; justify-content:center;
+            transition:transform 0.2s, background 0.2s; user-select:none; }
+        .memory-card.flipped { background:#5a6a3a; border-color:#f5a623; }
+        .memory-card.matched { background:#2a5a2a; border-color:#6f9e3f; }
+        .sprint-field { display:grid; grid-template-columns:repeat(5,1fr); gap:6px;
+            max-width:320px; margin:10px auto; }
+        .sprint-plant { width:52px; height:52px; border-radius:10px; background:#3a4a2a;
+            border:2px solid #5a7a3a; cursor:pointer; font-size:1.8rem;
+            display:flex; align-items:center; justify-content:center;
+            transition:transform 0.1s; }
+        .sprint-plant:active { transform:scale(0.85); }
+        .sprint-plant.harvested { background:#2a5a2a; opacity:0.4; cursor:default; }
+        .slot-reel { display:flex; gap:10px; justify-content:center; margin:14px 0; }
+        .slot-drum { width:72px; height:72px; background:#2a2a2a; border:3px solid #f5a623;
+            border-radius:12px; font-size:2.2rem; display:flex; align-items:center;
+            justify-content:center; transition:all 0.3s; }
+        .slot-drum.spinning { animation:slotSpin 0.15s linear infinite; }
+        @keyframes slotSpin { 0%{transform:translateY(-4px)}50%{transform:translateY(4px)}100%{transform:translateY(-4px)} }
+        /* Multiplayer Games */
+        .mp-game-view { position:fixed; top:0; left:0; right:0; bottom:0;
+            background:#0d1a2a; z-index:250; overflow-y:auto; }
+        .ttt-board { display:grid; grid-template-columns:repeat(3,1fr);
+            gap:6px; max-width:260px; margin:14px auto; }
+        .ttt-cell { width:78px; height:78px; background:#1a2a3a; border:3px solid #3a5a7a;
+            border-radius:14px; cursor:pointer; font-size:2.4rem;
+            display:flex; align-items:center; justify-content:center;
+            transition:background 0.15s, transform 0.1s; }
+        .ttt-cell:hover:empty { background:#2a3a4a; transform:scale(1.05); }
+        .ttt-cell.win-cell { background:#2a5a2a; border-color:#6f9e3f; }
+        .rps-choices { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+        .rps-btn { width:80px; height:80px; background:#2a3a4a; border:3px solid #4a6a8a;
+            border-radius:16px; font-size:2.4rem; cursor:pointer;
+            transition:transform 0.15s, background 0.15s; display:flex;
+            align-items:center; justify-content:center; }
+        .rps-btn:hover { transform:scale(1.1); background:#3a4a5a; }
+        .rps-btn.chosen { background:#3a5a3a; border-color:#6f9e3f; }
+        .quiz-duel-opt { background:#2a3a4a; border:2px solid #4a6a8a; border-radius:12px;
+            padding:10px 14px; margin:5px 0; cursor:pointer; color:#ffefcf;
+            font-size:.88rem; width:100%; text-align:left; transition:background 0.15s; }
+        .quiz-duel-opt:hover { background:#3a4a5a; }
+        .quiz-duel-opt.correct { background:#2a5a2a; border-color:#6f9e3f; }
+        .quiz-duel-opt.wrong { background:#5a2a2a; border-color:#c44; }
+
     </style>
 </head>
 <body>
@@ -1720,13 +1772,15 @@
             <div id="researchView" class="research-grid hidden"></div>
             <div id="licensesView" class="licenses-grid hidden"></div>
             <div id="multiplayerView" class="multiplayer-grid hidden">
-                <div class="multiplayer-slot" style="grid-column:1/-1; padding-bottom:8px; display:flex; gap:10px; flex-wrap:wrap;">
-                    <button onclick="window.toggleMinigames()" style="flex:1;min-width:140px;background:linear-gradient(135deg,#3a5a2a,#5a8a3a);color:#ffefcf;border:2px solid #6f9e3f;border-radius:16px;padding:14px;font-size:1rem;font-weight:bold;cursor:pointer;">
-                        🎮 Minispiele öffnen
-                    </button>
-                    <button onclick="window.openBattleship()" style="flex:1;min-width:140px;background:linear-gradient(135deg,#1a3a5a,#2a5a8a);color:#ffefcf;border:2px solid #4a8abf;border-radius:16px;padding:14px;font-size:1rem;font-weight:bold;cursor:pointer;">
-                        🚢 Schiffe versenken
-                    </button>
+                <div class="multiplayer-slot" style="grid-column:1/-1; padding-bottom:8px;">
+                    <div style="font-weight:bold;color:#f5a623;margin-bottom:8px;text-align:center;">🎮 Spiele</div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+                        <button onclick="window.toggleMinigames()" style="flex:1;min-width:130px;background:linear-gradient(135deg,#3a5a2a,#5a8a3a);color:#ffefcf;border:2px solid #6f9e3f;border-radius:14px;padding:10px;font-size:.9rem;font-weight:bold;cursor:pointer;">🎮 Minispiele</button>
+                        <button onclick="window.openBattleship()" style="flex:1;min-width:130px;background:linear-gradient(135deg,#1a3a5a,#2a5a8a);color:#ffefcf;border:2px solid #4a8abf;border-radius:14px;padding:10px;font-size:.9rem;font-weight:bold;cursor:pointer;">🚢 Schiffe versenken</button>
+                        <button onclick="window.openTicTacToe()" style="flex:1;min-width:130px;background:linear-gradient(135deg,#4a2a5a,#7a3a8a);color:#ffefcf;border:2px solid #9a5abf;border-radius:14px;padding:10px;font-size:.9rem;font-weight:bold;cursor:pointer;">⭕ Tic-Tac-Toe</button>
+                        <button onclick="window.openRPS()" style="flex:1;min-width:130px;background:linear-gradient(135deg,#5a3a1a,#8a5a2a);color:#ffefcf;border:2px solid #bf8a4a;border-radius:14px;padding:10px;font-size:.9rem;font-weight:bold;cursor:pointer;">✂️ Schere-Stein-Papier</button>
+                        <button onclick="window.openQuizDuel()" style="flex:1;min-width:130px;background:linear-gradient(135deg,#1a4a3a,#2a7a5a);color:#ffefcf;border:2px solid #4abf8a;border-radius:14px;padding:10px;font-size:.9rem;font-weight:bold;cursor:pointer;">❓ Quiz-Duell</button>
+                    </div>
                 </div>
                 <div class="multiplayer-slot" style="grid-column:1/-1;">
                     <div class="status" style="background:#3a5a3a;">👤 Spielername</div>
@@ -1767,7 +1821,20 @@
                 </div>
                 <div id="mgContent" style="padding:8px;"></div>
             </div>
-            <!-- Schiffe versenken Overlay -->
+            <!-- Tic-Tac-Toe Overlay -->
+    <div id="tttView" class="mp-game-view" style="display:none;">
+        <div id="tttContent"></div>
+    </div>
+    <!-- Schere-Stein-Papier Overlay -->
+    <div id="rpsView" class="mp-game-view" style="display:none;">
+        <div id="rpsContent"></div>
+    </div>
+    <!-- Quiz-Duell Overlay -->
+    <div id="qdView" class="mp-game-view" style="display:none;">
+        <div id="qdContent"></div>
+    </div>
+
+    <!-- Schiffe versenken Overlay -->
             <div id="battleshipView" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#0d1a2a; z-index:200; overflow-y:auto;">
                 <div id="battleshipContent"></div>
             </div>
@@ -2075,7 +2142,7 @@
             }
         }
         // ==================== GAME VERSION ====================
-        const CURRENT_GAME_VERSION = "5.0";
+        const CURRENT_GAME_VERSION = "5.1";
         // ==================== RELEASE NOTES ====================
         const RELEASE_NOTES = [
             { version: "4.5", date: "Mai 2026", title: "🐄 Auto-Sammler & Auto-Füttern kombiniert",
@@ -5721,7 +5788,8 @@
         // ==================== MINISPIELE ====================
         const MG_CD = {};
         const MG_CD_MS = { wheel: 4 * 3600000, match3: 3600000, quiz: 3600000,
-            weather_bet: 3 * 3600000, coin: 15 * 60000, number_guess: 30 * 60000 };
+            weather_bet: 3 * 3600000, coin: 15 * 60000, number_guess: 30 * 60000,
+            reaction: 10 * 60000, memory: 45 * 60000, sprint: 20 * 60000, slots: 30 * 60000 };
 
         function loadMgCooldowns() { const key = 'mgCD_' + (window.currentUser && window.currentUser.uid ? window
                 .currentUser.uid : 'g'); try { const s = localStorage.getItem(key); if (s) Object.assign(MG_CD, JSON
@@ -6068,6 +6136,202 @@
                                     MG_CD.number_guess = Date.now();
                                     window.saveMgCooldowns();
                                     window.renderMinigames(); } } }; }); }); }
+    
+    // ── 🚦 REAKTIONSTEST ─────────────────────────────────────────────────────
+    function mgReaction() {
+        var state='wait', startT=0;
+        mkMg('<h2>🚦 Reaktionstest</h2>'
+           + '<p style="font-size:.8rem;color:#b0a070;">Klicke die Ampel sobald sie GRÜN wird!</p>'
+           + '<div class="reaction-light" id="rtLight" style="background:#c0392b;">🔴</div>'
+           + '<div id="rtMsg" style="text-align:center;font-size:.95rem;color:#f5a623;min-height:24px;"></div>'
+           + '<button class="mg-btn mg-btn-red" onclick="clearTimeout(window._rtTimer);window.closeMg();">✖ Schließen</button>',
+        function() {
+            var light = document.getElementById('rtLight');
+            var msg   = document.getElementById('rtMsg');
+            if(!light) return;
+            light.style.background='#e67e22'; light.textContent='🟡';
+            msg.textContent='Warte...';
+            var delay = 2000 + Math.random()*4000;
+            window._rtTimer = setTimeout(function() {
+                state='go'; startT=Date.now();
+                light.style.background='#27ae60'; light.textContent='🟢';
+                msg.textContent='JETZT!';
+                light.onclick=function(){
+                    if(state!=='go')return;
+                    state='done';
+                    var rt = Date.now()-startT;
+                    var gold = rt<300?400:rt<500?300:rt<700?200:rt<1000?100:50;
+                    var xp   = rt<300?40:rt<500?30:rt<700?20:10;
+                    playerGold+=gold; addXP(xp); updateMoneyUI(); saveGameToLocal();
+                    MG_CD.reaction=Date.now(); window.saveMgCooldowns();
+                    light.style.background='#2980b9'; light.textContent='⏱️';
+                    msg.innerHTML='<b>'+rt+' ms!</b> +'+gold+'💰 +'+xp+' XP';
+                    showToast('🚦 '+rt+'ms! +'+gold+'💰'); window.renderMinigames();
+                };
+            }, delay);
+            // Zu früh klicken
+            light.onclick=function(){
+                if(state!=='go'){
+                    clearTimeout(window._rtTimer); state='done';
+                    light.style.background='#c0392b'; light.textContent='❌';
+                    msg.textContent='Zu früh! Kein Preis.';
+                    MG_CD.reaction=Date.now(); window.saveMgCooldowns(); window.renderMinigames();
+                }
+            };
+        });
+    }
+
+    // ── 🃏 GEDÄCHTNIS-MEMORY ──────────────────────────────────────────────────
+    function mgMemory() {
+        var emojis=['🥕','🌾','🍅','🐄','🥛','🍯','🥚','🧀'];
+        var cards=[...emojis,...emojis].sort(()=>Math.random()-.5);
+        var flipped=[],matched=0,moves=0,locked=false;
+        function render(){
+            var grid=document.getElementById('memGrid'); if(!grid)return;
+            grid.innerHTML='';
+            cards.forEach(function(em,i){
+                var d=document.createElement('div'); d.className='memory-card';
+                var isFlipped=flipped.indexOf(i)>-1;
+                var isMatched=false;
+                document.querySelectorAll('.memory-card.matched').forEach(function(el){if(parseInt(el.dataset.i)===i)isMatched=true;});
+                if(isFlipped||isMatched){d.textContent=em;d.classList.add(isMatched?'matched':'flipped');}
+                d.dataset.i=i; d.dataset.em=em;
+                if(!isMatched)d.onclick=function(){window.memClick(parseInt(this.dataset.i),this.dataset.em);};
+                grid.appendChild(d);
+            });
+        }
+        window.memClick=function(i,em){
+            if(locked||flipped.indexOf(i)>-1)return;
+            var cells=document.querySelectorAll('.memory-card');
+            cells[i].textContent=em; cells[i].classList.add('flipped');
+            flipped.push(i);
+            if(flipped.length===2){
+                locked=true; moves++;
+                var moEl=document.getElementById('memMoves'); if(moEl)moEl.textContent=moves;
+                var a=flipped[0],b=flipped[1];
+                if(cards[a]===cards[b]){
+                    matched+=2;
+                    setTimeout(function(){
+                        cells[a].classList.replace('flipped','matched');
+                        cells[b].classList.replace('flipped','matched');
+                        flipped=[]; locked=false;
+                        if(matched===16){
+                            var gold=moves<=16?600:moves<=20?400:moves<=26?200:100;
+                            playerGold+=gold; addXP(50); updateMoneyUI(); saveGameToLocal();
+                            MG_CD.memory=Date.now(); window.saveMgCooldowns();
+                            var res=document.getElementById('memRes'); if(res)res.innerHTML='🎉 Fertig in '+moves+' Zügen! +'+gold+'💰';
+                            showToast('🃏 Memory: +'+gold+'💰'); window.renderMinigames();
+                        }
+                    },400);
+                }else{
+                    setTimeout(function(){
+                        cells[a].textContent=''; cells[a].classList.remove('flipped');
+                        cells[b].textContent=''; cells[b].classList.remove('flipped');
+                        flipped=[]; locked=false;
+                    },800);
+                }
+            }
+        };
+        mkMg('<h2>🃏 Gedächtnis</h2>'
+           + '<p style="font-size:.8rem;color:#b0a070;">Finde alle 8 Paare! Weniger Züge = mehr Gold.</p>'
+           + '<div style="font-size:.85rem;text-align:center;margin:4px 0;">Züge: <b id="memMoves">0</b></div>'
+           + '<div class="memory-grid" id="memGrid"></div>'
+           + '<div id="memRes" style="text-align:center;color:#f5a623;min-height:22px;font-size:.9rem;margin-top:6px;"></div>'
+           + '<button class="mg-btn mg-btn-red" onclick="window.closeMg();">✖ Aufgeben</button>',
+        function(){ render(); });
+    }
+
+    // ── 🌾 ERNTE-SPRINT ───────────────────────────────────────────────────────
+    function mgSprint() {
+        var plants=['🥕','🌾','🍅','🍓','🎃','🍍','☕','🫐','🍇','🥑'];
+        var grid=Array.from({length:20},function(){return plants[Math.floor(Math.random()*plants.length)];});
+        var harvested=0,timeLeft=12,alive=true;
+        mkMg('<h2>🌾 Ernte-Sprint</h2>'
+           + '<p style="font-size:.8rem;color:#b0a070;">Ernte so viele Pflanzen wie möglich in 12 Sekunden!</p>'
+           + '<div style="text-align:center;font-size:1rem;margin:4px 0;">⏳ <span id="spTime">12</span>s &nbsp; 🌾 <span id="spHarv">0</span></div>'
+           + '<div class="sprint-field" id="spGrid"></div>'
+           + '<div id="spRes" style="text-align:center;color:#f5a623;min-height:22px;font-size:.9rem;margin-top:6px;"></div>'
+           + '<button class="mg-btn mg-btn-red" onclick="clearInterval(window._spTimer);window.closeMg();">✖ Aufgeben</button>',
+        function(){
+            function renderGrid(){
+                var g=document.getElementById('spGrid'); if(!g)return; g.innerHTML='';
+                grid.forEach(function(em,i){
+                    var d=document.createElement('div');
+                    d.className='sprint-plant'+(em===''?' harvested':'');
+                    d.textContent=em||'✅';
+                    if(em&&alive){d.onclick=function(){
+                        if(!alive||grid[i]==='')return;
+                        grid[i]=''; harvested++;
+                        var h=document.getElementById('spHarv'); if(h)h.textContent=harvested;
+                        this.textContent='✅'; this.classList.add('harvested'); this.onclick=null;
+                    };}
+                    g.appendChild(d);
+                });
+            }
+            renderGrid();
+            window._spTimer=setInterval(function(){
+                timeLeft--;
+                var t=document.getElementById('spTime'); if(t)t.textContent=timeLeft;
+                if(timeLeft<=0){
+                    alive=false; clearInterval(window._spTimer);
+                    var gold=harvested*5; var xp=harvested*3;
+                    playerGold+=gold; addXP(xp); updateMoneyUI(); saveGameToLocal();
+                    MG_CD.sprint=Date.now(); window.saveMgCooldowns();
+                    var res=document.getElementById('spRes'); if(res)res.innerHTML='🎉 '+harvested+' Pflanzen! +'+gold+'💰 +'+xp+' XP';
+                    showToast('🌾 Sprint: +'+gold+'💰'); window.renderMinigames();
+                }
+            },1000);
+        });
+    }
+
+    // ── 🎰 SLOT MACHINE ───────────────────────────────────────────────────────
+    function mgSlots() {
+        var symbols=['🥕','🌾','🍅','🐄','🥛','🍯','💰','⭐'];
+        var spinning=false;
+        mkMg('<h2>🎰 Slot Machine</h2>'
+           + '<p style="font-size:.8rem;color:#b0a070;">3 gleiche = Jackpot! 2 gleiche = kleiner Gewinn.</p>'
+           + '<div class="slot-reel"><div class="slot-drum" id="sl0">🌾</div><div class="slot-drum" id="sl1">🥕</div><div class="slot-drum" id="sl2">🍅</div></div>'
+           + '<div id="slRes" style="text-align:center;color:#f5a623;min-height:28px;font-size:.95rem;margin:8px 0;"></div>'
+           + '<button class="mg-btn" id="slSpin" onclick="window.slotSpin()">🎰 Drehen (50💰)</button>'
+           + '<button class="mg-btn mg-btn-red" onclick="window.closeMg()">✖ Schließen</button>');
+        window.slotSpin=function(){
+            if(spinning)return;
+            if(playerGold<50){showToast('Nicht genug Gold!',true);return;}
+            playerGold-=50; updateMoneyUI();
+            spinning=true;
+            var drums=[document.getElementById('sl0'),document.getElementById('sl1'),document.getElementById('sl2')];
+            drums.forEach(function(d){if(d)d.classList.add('spinning');});
+            var results=[];
+            var delays=[800,1100,1400];
+            drums.forEach(function(d,i){
+                setTimeout(function(){
+                    var sym=symbols[Math.floor(Math.random()*symbols.length)];
+                    results.push(sym); if(d){d.textContent=sym;d.classList.remove('spinning');}
+                    if(results.length===3){
+                        spinning=false;
+                        var res=document.getElementById('slRes');
+                        var gold=0,msg='';
+                        if(results[0]===results[1]&&results[1]===results[2]){
+                            if(results[0]==='⭐'){gold=1000;msg='🌟 SUPER-JACKPOT! +1000💰';}
+                            else if(results[0]==='💰'){gold=500;msg='💰 JACKPOT! +500💰';}
+                            else{gold=200;msg='🎉 Drei gleiche! +200💰';}
+                        }else if(results[0]===results[1]||results[1]===results[2]||results[0]===results[2]){
+                            gold=80;msg='✨ Zwei gleiche! +80💰';
+                        }else{
+                            msg='😔 Kein Treffer.';
+                        }
+                        if(gold>0){playerGold+=gold;updateMoneyUI();}
+                        saveGameToLocal();
+                        MG_CD.slots=Date.now(); window.saveMgCooldowns();
+                        if(res)res.textContent=msg;
+                        if(gold>0)showToast('🎰 '+msg); window.renderMinigames();
+                    }
+                },delays[i]);
+            });
+        };
+    }
+
+
         window.mgSelectW = function(k) { document.querySelectorAll('.bet-opt').forEach(function(b) { b.style
                 .background = '';
                 b.style.borderColor = ''; }); var el = document.getElementById('bw_' + k); if (el) { el.style
@@ -6104,6 +6368,481 @@
                 b.className = 'bet-opt ' + (k === next ? 'winner' : 'loser');
                 b.onclick = null; }); var gb = document.querySelector('.mg-btn-green'); if (gb) gb.disabled = true;
             window.renderMinigames(); };
+    
+    // ==================== MULTIPLAYER-MINISPIELE ====================
+    // Firebase-Pfade: ttt/{gameId}, rps/{gameId}, qd/{gameId}
+    // Hilfsfunktion für alle MP-Spiele
+    function mpView(id){ return document.getElementById(id+'Content'); }
+    function mpClose(id){
+        var el=document.getElementById(id+'View');
+        if(el)el.style.display='none';
+        if(window['_'+id+'Listener']){ window['_'+id+'Listener'](); window['_'+id+'Listener']=null; }
+        clearInterval(window['_'+id+'LobbyTimer']);
+    }
+    function mpOpen(id){
+        if(!firebaseInitialized||!database||!currentUser){showToast('Bitte einloggen!',true);return;}
+        ['ttt','rps','qd','battleship'].forEach(function(g){
+            if(g!==id){var el=document.getElementById(g+'View');if(el)el.style.display='none';}
+        });
+        var el=document.getElementById(id+'View');
+        if(el)el.style.display='block';
+    }
+    function mpName(){
+        var inp=document.getElementById('playerNameInput');
+        return (inp&&inp.value.trim())||playerName||'Gast';
+    }
+    function mpCard(content){
+        return '<div style="max-width:420px;margin:0 auto;padding:14px;color:#ffefcf;">' + content + '</div>';
+    }
+    function mpBtn(txt,onclick,color){
+        color=color||'#4a8abf';
+        return '<button onclick="'+onclick+'" style="background:'+color+';color:#fff;border:none;border-radius:20px;padding:8px 18px;font-weight:bold;cursor:pointer;margin:4px;font-size:.9rem;">'+txt+'</button>';
+    }
+    function mpStatus(txt,type){
+        var bg=type==='good'?'#2a5a2a':type==='bad'?'#5a2a2a':'#2a3a4a';
+        return '<div style="background:'+bg+';border-radius:12px;padding:8px 14px;margin:8px 0;text-align:center;font-size:.88rem;">'+txt+'</div>';
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ⭕ TIC-TAC-TOE
+    // ═══════════════════════════════════════════════════════════════
+    var tttGameId=null,tttRole=null,tttListener=null,tttData=null,tttRewarded=false;
+
+    window.openTicTacToe=function(){ mpOpen('ttt'); tttRenderLobby(); };
+    window.closeTicTacToe=function(){
+        mpClose('ttt');
+        if(tttGameId&&tttData&&tttData.status!=='finished')
+            try{database.ref('ttt/'+tttGameId+'/status').set('abandoned');}catch(e){}
+        tttGameId=null;tttRole=null;tttData=null;tttRewarded=false;
+    };
+
+    async function tttRenderLobby(){
+        var el=mpView('ttt');if(!el)return;
+        clearInterval(window._tttLobbyTimer);
+        el.innerHTML=mpCard('<h2 style="color:#9a5abf;text-align:center;">⭕ Tic-Tac-Toe</h2>'
+            +mpStatus('⏳ Lade Lobby...')
+            +mpBtn('✖ Zurück','window.closeTicTacToe()','#c44'));
+        try{
+            var snap=await database.ref('ttt').orderByChild('status').equalTo('waiting').once('value');
+            var games=snap.val()||{};
+            var now=Date.now(),rows='',myGame=null;
+            for(var gid in games){
+                var g=games[gid];
+                if(now-(g.createdAt||0)>600000){database.ref('ttt/'+gid).remove();continue;}
+                if(g.host===currentUser.uid){myGame=gid;continue;}
+                rows+='<div style="display:flex;justify-content:space-between;align-items:center;background:#1a2a3a;border-radius:12px;padding:10px;margin:6px 0;">'
+                    +'<span>👤 <b>'+(g.hostName||'Unbekannt')+'</b></span>'
+                    +mpBtn('Beitreten','window.tttJoin(\''+gid+'\')','#27ae60')+'</div>';
+            }
+            if(!rows)rows='<div style="color:#b0a070;text-align:center;padding:12px;">Keine offenen Spiele – erstelle eines!</div>';
+            el.innerHTML=mpCard('<h2 style="color:#9a5abf;text-align:center;">⭕ Tic-Tac-Toe</h2>'
+                +'<div style="text-align:center;font-size:.8rem;color:#b0a070;margin-bottom:8px;">Sieger: +200💰 +50 XP</div>'
+                +(myGame?mpStatus('⏳ Dein Spiel wartet... '+mpBtn('Abbrechen','window.tttCancelLobby(\''+myGame+'\')','#c44'))
+                    :mpBtn('➕ Neues Spiel','window.tttCreate()','#27ae60'))
+                +'<div style="font-weight:bold;color:#9a5abf;margin:10px 0 5px;">Offene Spiele:</div>'
+                +rows
+                +mpBtn('✖ Zurück','window.closeTicTacToe()','#c44'));
+        }catch(e){el.innerHTML=mpCard(mpStatus('Fehler: '+e.message,'bad')+mpBtn('🔄 Neu laden','tttRenderLobby()'));}
+        window._tttLobbyTimer=setInterval(function(){if(mpView('ttt'))tttRenderLobby();else clearInterval(window._tttLobbyTimer);},5000);
+    }
+
+    window.tttCancelLobby=async function(gid){clearInterval(window._tttLobbyTimer);await database.ref('ttt/'+gid).remove();tttRenderLobby();};
+
+    window.tttCreate=async function(){
+        clearInterval(window._tttLobbyTimer);
+        var gid=currentUser.uid+'_ttt_'+Date.now();
+        tttGameId=gid;tttRole='X';tttRewarded=false;
+        await database.ref('ttt/'+gid).set({
+            host:currentUser.uid,hostName:mpName(),guest:null,guestName:null,
+            status:'waiting',board:Array(9).fill(''),turn:'X',winner:null,createdAt:Date.now()
+        });
+        tttListenGame();
+        var el=mpView('ttt');if(el)el.innerHTML=mpCard('<h2 style="color:#9a5abf;text-align:center;">⭕ Tic-Tac-Toe</h2>'+mpStatus('⏳ Warte auf Gegner...')+mpBtn('✖ Aufgeben','window.closeTicTacToe()','#c44'));
+    };
+
+    window.tttJoin=async function(gid){
+        clearInterval(window._tttLobbyTimer);
+        tttGameId=gid;tttRole='O';tttRewarded=false;
+        await database.ref('ttt/'+gid).update({guest:currentUser.uid,guestName:mpName(),status:'playing'});
+        tttListenGame();
+    };
+
+    function tttListenGame(){
+        if(tttListener){tttListener();tttListener=null;}
+        if(!tttGameId)return;
+        var ref=database.ref('ttt/'+tttGameId);
+        function handler(snap){
+            var g=snap.val();if(!g){showToast('Spiel beendet.',false);window.closeTicTacToe();return;}
+            tttData=g;
+            if(g.status==='abandoned'){showToast('Gegner hat aufgegeben!',false);window.closeTicTacToe();return;}
+            if(g.status==='playing'||g.status==='waiting'){tttRenderBoard(g);}
+            else if(g.status==='finished'){tttRenderEnd(g);}
+        }
+        ref.on('value',handler);
+        tttListener=function(){ref.off('value',handler);};
+    }
+
+    function tttCheckWinner(board){
+        var lines=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+        for(var l of lines){var[a,b,cc]=l;if(board[a]&&board[a]===board[b]&&board[a]===board[cc])return{winner:board[a],line:l};}
+        return board.every(function(cell){return cell!=='';})?{winner:'draw',line:[]}:null;
+    }
+
+    function tttRenderBoard(g){
+        var el=mpView('ttt');if(!el)return;
+        var myTurn=g.turn===tttRole;
+        var board=g.board||Array(9).fill('');
+        var result=tttCheckWinner(board);
+        var winLine=result&&result.line?result.line:[];
+        var oppName=tttRole==='X'?(g.guestName||'Gegner'):(g.hostName||'Gegner');
+        var cells='';
+        board.forEach(function(v,i){
+            var winCls=winLine.indexOf(i)>-1?' win-cell':'';
+            var canClick=!v&&myTurn&&g.status==='playing'&&!result?' onclick="window.tttMove('+i+')"':'';
+            cells+='<div class="ttt-cell'+winCls+'"'+canClick+' style="'+(v==='X'?'color:#e74c3c;':v==='O'?'color:#3498db;':'')+' font-weight:bold;">'+v+'</div>';
+        });
+        var statusTxt=g.status==='waiting'?'⏳ Warte auf Gegner...':(myTurn?'⚔️ Dein Zug ('+tttRole+')':'⏳ '+oppName+' ist dran...');
+        el.innerHTML=mpCard('<h2 style="color:#9a5abf;text-align:center;">⭕ Tic-Tac-Toe</h2>'
+            +mpStatus(statusTxt,myTurn?'good':'')
+            +'<div style="text-align:center;font-size:.82rem;color:#b0a070;margin:4px 0;">Du: <b>'+tttRole+'</b> &nbsp; Gegner: <b>'+(tttRole==='X'?'O':'X')+'</b></div>'
+            +'<div class="ttt-board">'+cells+'</div>'
+            +mpBtn('🏳️ Aufgeben','window.closeTicTacToe()','#c44'));
+    }
+
+    window.tttMove=async function(i){
+        if(!tttData||tttData.turn!==tttRole||tttData.status!=='playing')return;
+        var board=[...tttData.board];
+        if(board[i])return;
+        board[i]=tttRole;
+        var result=tttCheckWinner(board);
+        var upd={board:board,turn:tttRole==='X'?'O':'X'};
+        if(result){upd.status='finished';upd.winner=result.winner;}
+        await database.ref('ttt/'+tttGameId).update(upd);
+    };
+
+    function tttRenderEnd(g){
+        if(tttRewarded)return;tttRewarded=true;
+        if(tttListener){tttListener();tttListener=null;}
+        var won=g.winner===tttRole,draw=g.winner==='draw';
+        var gold=won?200:draw?50:0; var xp=won?50:draw?15:5;
+        playerGold+=gold;addXP(xp);updateMoneyUI();saveGameToLocal();
+        var el=mpView('ttt');if(!el)return;
+        el.innerHTML=mpCard('<h2 style="color:#9a5abf;text-align:center;">⭕ Tic-Tac-Toe</h2>'
+            +mpStatus(won?'🏆 Du hast gewonnen!':draw?'🤝 Unentschieden!':'😔 Du hast verloren.',won?'good':draw?'':'bad')
+            +'<div style="text-align:center;margin:10px 0;"><b style="color:#f5a623;">+'+gold+'💰 +'+xp+' XP</b></div>'
+            +mpBtn('🔄 Neu','window.openTicTacToe()','#27ae60')+mpBtn('✖ Zurück','window.closeTicTacToe()','#c44'));
+        showToast(won?'⭕ Gewonnen! +200💰':draw?'🤝 Unentschieden! +50💰':'😔 Verloren.');
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ✂️ SCHERE-STEIN-PAPIER
+    // ═══════════════════════════════════════════════════════════════
+    var rpsGameId=null,rpsRole=null,rpsListener=null,rpsData=null,rpsRewarded=false;
+    var RPS_NAMES={rock:'🪨 Stein',paper:'📄 Papier',scissors:'✂️ Schere'};
+
+    window.openRPS=function(){mpOpen('rps');rpsRenderLobby();};
+    window.closeRPS=function(){
+        mpClose('rps');
+        if(rpsGameId&&rpsData&&rpsData.status!=='finished')
+            try{database.ref('rps/'+rpsGameId+'/status').set('abandoned');}catch(e){}
+        rpsGameId=null;rpsRole=null;rpsData=null;rpsRewarded=false;
+    };
+
+    async function rpsRenderLobby(){
+        var el=mpView('rps');if(!el)return;
+        clearInterval(window._rpsLobbyTimer);
+        try{
+            var snap=await database.ref('rps').orderByChild('status').equalTo('waiting').once('value');
+            var games=snap.val()||{};
+            var now=Date.now(),rows='',myGame=null;
+            for(var gid in games){
+                var g=games[gid];
+                if(now-(g.createdAt||0)>600000){database.ref('rps/'+gid).remove();continue;}
+                if(g.host===currentUser.uid){myGame=gid;continue;}
+                rows+='<div style="display:flex;justify-content:space-between;align-items:center;background:#1a2a1a;border-radius:12px;padding:10px;margin:6px 0;">'
+                    +'<span>👤 <b>'+(g.hostName||'Unbekannt')+'</b></span>'
+                    +mpBtn('Beitreten','window.rpsJoin(\''+gid+'\')','#27ae60')+'</div>';
+            }
+            if(!rows)rows='<div style="color:#b0a070;text-align:center;padding:12px;">Keine offenen Spiele</div>';
+            el.innerHTML=mpCard('<h2 style="color:#bf8a4a;text-align:center;">✂️ Schere-Stein-Papier</h2>'
+                +'<div style="text-align:center;font-size:.8rem;color:#b0a070;margin-bottom:8px;">Best of 3! Sieger: +150💰 +30 XP</div>'
+                +(myGame?mpStatus('⏳ Dein Spiel wartet... '+mpBtn('Abbrechen','window.rpsCancelLobby(\''+myGame+'\')','#c44'))
+                    :mpBtn('➕ Neues Spiel','window.rpsCreate()','#27ae60'))
+                +'<div style="font-weight:bold;color:#bf8a4a;margin:10px 0 5px;">Offene Spiele:</div>'
+                +rows+mpBtn('✖ Zurück','window.closeRPS()','#c44'));
+        }catch(e){el.innerHTML=mpCard(mpStatus('Fehler: '+e.message,'bad'));}
+        window._rpsLobbyTimer=setInterval(function(){if(mpView('rps'))rpsRenderLobby();else clearInterval(window._rpsLobbyTimer);},5000);
+    }
+
+    window.rpsCancelLobby=async function(gid){clearInterval(window._rpsLobbyTimer);await database.ref('rps/'+gid).remove();rpsRenderLobby();};
+
+    window.rpsCreate=async function(){
+        clearInterval(window._rpsLobbyTimer);
+        var gid=currentUser.uid+'_rps_'+Date.now();
+        rpsGameId=gid;rpsRole='host';rpsRewarded=false;
+        await database.ref('rps/'+gid).set({
+            host:currentUser.uid,hostName:mpName(),guest:null,guestName:null,
+            status:'waiting',hostScore:0,guestScore:0,round:1,
+            hostChoice:null,guestChoice:null,createdAt:Date.now()
+        });
+        rpsListenGame();
+        var el=mpView('rps');if(el)el.innerHTML=mpCard('<h2 style="color:#bf8a4a;text-align:center;">✂️ Schere-Stein-Papier</h2>'+mpStatus('⏳ Warte auf Gegner...')+mpBtn('✖ Aufgeben','window.closeRPS()','#c44'));
+    };
+
+    window.rpsJoin=async function(gid){
+        clearInterval(window._rpsLobbyTimer);
+        rpsGameId=gid;rpsRole='guest';rpsRewarded=false;
+        await database.ref('rps/'+gid).update({guest:currentUser.uid,guestName:mpName(),status:'playing'});
+        rpsListenGame();
+    };
+
+    function rpsListenGame(){
+        if(rpsListener){rpsListener();rpsListener=null;}
+        var ref=database.ref('rps/'+rpsGameId);
+        function handler(snap){
+            var g=snap.val();if(!g)return;
+            rpsData=g;
+            if(g.status==='abandoned'){showToast('Gegner hat aufgegeben!',false);window.closeRPS();return;}
+            if(g.status==='finished'){rpsRenderEnd(g);}
+            else rpsRenderGame(g);
+        }
+        ref.on('value',handler);
+        rpsListener=function(){ref.off('value',handler);};
+    }
+
+    function rpsRenderGame(g){
+        var el=mpView('rps');if(!el)return;
+        var myChoice=rpsRole==='host'?g.hostChoice:g.guestChoice;
+        var oppChoice=rpsRole==='host'?g.guestChoice:g.hostChoice;
+        var myScore=rpsRole==='host'?g.hostScore:g.guestScore;
+        var oppScore=rpsRole==='host'?g.guestScore:g.hostScore;
+        var oppName=rpsRole==='host'?(g.guestName||'Gegner'):(g.hostName||'Gegner');
+        var waiting=g.status==='waiting';
+        var bothChosen=g.hostChoice&&g.guestChoice;
+        var roundResult='';
+        if(bothChosen&&g.lastRoundResult){roundResult=mpStatus(g.lastRoundResult);}
+        el.innerHTML=mpCard('<h2 style="color:#bf8a4a;text-align:center;">✂️ Schere-Stein-Papier</h2>'
+            +(waiting?mpStatus('⏳ Warte auf Gegner...'):'')
+            +'<div style="text-align:center;font-size:.9rem;margin:6px 0;">Runde <b>'+g.round+'/3</b> &nbsp; Du: <b>'+myScore+'</b> | '+oppName+': <b>'+oppScore+'</b></div>'
+            +(myChoice?mpStatus('✅ Du hast gewählt: '+RPS_NAMES[myChoice]+(oppChoice?'':' – Warte auf '+oppName+'...'),'good')
+                :(!waiting?'<div class="rps-choices">'
+                    +'<div class="rps-btn" onclick="window.rpsChoose(\'rock\')">🪨</div>'
+                    +'<div class="rps-btn" onclick="window.rpsChoose(\'scissors\')">✂️</div>'
+                    +'<div class="rps-btn" onclick="window.rpsChoose(\'paper\')">📄</div>'
+                    +'</div>':''))
+            +roundResult
+            +mpBtn('🏳️ Aufgeben','window.closeRPS()','#c44'));
+    }
+
+    window.rpsChoose=async function(choice){
+        if(!rpsData||rpsData.status!=='playing')return;
+        var myKey=rpsRole==='host'?'hostChoice':'guestChoice';
+        var upd={}; upd[myKey]=choice;
+        await database.ref('rps/'+rpsGameId).update(upd);
+        // Wenn beide gewählt: Runde auswerten (nur Host macht es)
+        var snap=await database.ref('rps/'+rpsGameId).once('value');
+        var g=snap.val(); if(!g)return;
+        if(g.hostChoice&&g.guestChoice&&rpsRole==='host'){
+            var wins={rock:'scissors',paper:'rock',scissors:'paper'};
+            var hc=g.hostChoice,gc=g.guestChoice;
+            var hs=g.hostScore,gs=g.guestScore,result='';
+            if(hc===gc){result='🤝 Unentschieden! '+RPS_NAMES[hc]+' vs '+RPS_NAMES[gc];}
+            else if(wins[hc]===gc){hs++;result='🏆 '+g.hostName+' gewinnt! '+RPS_NAMES[hc]+' schlägt '+RPS_NAMES[gc];}
+            else{gs++;result='🏆 '+g.guestName+' gewinnt! '+RPS_NAMES[gc]+' schlägt '+RPS_NAMES[hc];}
+            var newRound=g.round+1;
+            var upd2={hostScore:hs,guestScore:gs,hostChoice:null,guestChoice:null,round:newRound,lastRoundResult:result};
+            if(hs>=2||gs>=2||newRound>3){upd2.status='finished';upd2.winner=hs>gs?'host':gs>hs?'guest':'draw';}
+            await database.ref('rps/'+rpsGameId).update(upd2);
+        }
+    };
+
+    function rpsRenderEnd(g){
+        if(rpsRewarded)return;rpsRewarded=true;
+        if(rpsListener){rpsListener();rpsListener=null;}
+        var won=g.winner===rpsRole,draw=g.winner==='draw';
+        var gold=won?150:draw?40:0; var xp=won?30:draw?10:5;
+        playerGold+=gold;addXP(xp);updateMoneyUI();saveGameToLocal();
+        var el=mpView('rps');if(!el)return;
+        el.innerHTML=mpCard('<h2 style="color:#bf8a4a;text-align:center;">✂️ Schere-Stein-Papier</h2>'
+            +mpStatus(won?'🏆 Du hast gewonnen!':draw?'🤝 Unentschieden!':'😔 Du hast verloren.',won?'good':draw?'':'bad')
+            +'<div style="text-align:center;margin:8px 0;"><b style="color:#f5a623;">+'+gold+'💰 +'+xp+' XP</b></div>'
+            +mpBtn('🔄 Neu','window.openRPS()','#27ae60')+mpBtn('✖ Zurück','window.closeRPS()','#c44'));
+        showToast(won?'✂️ Gewonnen! +150💰':draw?'🤝 Unentschieden!':'😔 Verloren.');
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ❓ QUIZ-DUELL
+    // ═══════════════════════════════════════════════════════════════
+    var qdGameId=null,qdRole=null,qdListener=null,qdData=null,qdRewarded=false;
+
+    window.openQuizDuel=function(){mpOpen('qd');qdRenderLobby();};
+    window.closeQuizDuel=function(){
+        mpClose('qd');
+        if(qdGameId&&qdData&&qdData.status!=='finished')
+            try{database.ref('qd/'+qdGameId+'/status').set('abandoned');}catch(e){}
+        qdGameId=null;qdRole=null;qdData=null;qdRewarded=false;
+    };
+
+    // Gemeinsamer Quiz-Pool (beide bekommen exakt gleiche Fragen)
+    var QD_QUESTIONS=[
+        {q:'Was produziert eine Biene?',opts:['Milch','Wolle','Honig','Ei'],ok:2},
+        {q:'Welche Pflanze wächst am schnellsten?',opts:['Kürbis','Weizen','Karotte','Tomate'],ok:2},
+        {q:'Was stellt die Werkstatt her?',opts:['Tiere','Pflanzen','Verarbeitetes','Gold'],ok:2},
+        {q:'Welches Tier produziert Trüffel?',opts:['Huhn','Schaf','Schwein','Kuh'],ok:2},
+        {q:'Was bringt Forschung?',opts:['Neue Tiere','Dauerhafte Boni','Gold','Quests'],ok:1},
+        {q:'Was schaltet die Zitrus-Lizenz frei?',opts:['Traube','Ananas','Kiwi','Zitrone'],ok:3},
+        {q:'Wann ist ein Tier "bereit"?',opts:['Nach dem Füttern','Nach Produktion','Nach Kauf','Immer'],ok:1},
+        {q:'Was zeigt der Wochenmarkt?',opts:['Alle Produkte','Nur Tiere','Eigene Waren','Preise'],ok:2},
+        {q:'Was macht der Auto-Sammler?',opts:['Pflanzt','Sammelt Tierprodukte','Verkauft','Forscht'],ok:1},
+        {q:'Welches Tier produziert Seide?',opts:['Schaf','Lama','Seidenraupe','Pfau'],ok:2},
+    ];
+
+    async function qdRenderLobby(){
+        var el=mpView('qd');if(!el)return;
+        clearInterval(window._qdLobbyTimer);
+        try{
+            var snap=await database.ref('qd').orderByChild('status').equalTo('waiting').once('value');
+            var games=snap.val()||{};
+            var now=Date.now(),rows='',myGame=null;
+            for(var gid in games){
+                var g=games[gid];
+                if(now-(g.createdAt||0)>600000){database.ref('qd/'+gid).remove();continue;}
+                if(g.host===currentUser.uid){myGame=gid;continue;}
+                rows+='<div style="display:flex;justify-content:space-between;align-items:center;background:#1a2a2a;border-radius:12px;padding:10px;margin:6px 0;">'
+                    +'<span>👤 <b>'+(g.hostName||'Unbekannt')+'</b></span>'
+                    +mpBtn('Beitreten','window.qdJoin(\''+gid+'\')','#27ae60')+'</div>';
+            }
+            if(!rows)rows='<div style="color:#b0a070;text-align:center;padding:12px;">Keine offenen Spiele</div>';
+            el.innerHTML=mpCard('<h2 style="color:#4abf8a;text-align:center;">❓ Quiz-Duell</h2>'
+                +'<div style="text-align:center;font-size:.8rem;color:#b0a070;margin-bottom:8px;">5 Fragen! Sieger: +250💰 +60 XP</div>'
+                +(myGame?mpStatus('⏳ Dein Spiel wartet... '+mpBtn('Abbrechen','window.qdCancelLobby(\''+myGame+'\')','#c44'))
+                    :mpBtn('➕ Neues Spiel','window.qdCreate()','#27ae60'))
+                +'<div style="font-weight:bold;color:#4abf8a;margin:10px 0 5px;">Offene Spiele:</div>'
+                +rows+mpBtn('✖ Zurück','window.closeQuizDuel()','#c44'));
+        }catch(e){el.innerHTML=mpCard(mpStatus('Fehler: '+e.message,'bad'));}
+        window._qdLobbyTimer=setInterval(function(){if(mpView('qd'))qdRenderLobby();else clearInterval(window._qdLobbyTimer);},5000);
+    }
+
+    window.qdCancelLobby=async function(gid){clearInterval(window._qdLobbyTimer);await database.ref('qd/'+gid).remove();qdRenderLobby();};
+
+    window.qdCreate=async function(){
+        clearInterval(window._qdLobbyTimer);
+        var gid=currentUser.uid+'_qd_'+Date.now();
+        qdGameId=gid;qdRole='host';qdRewarded=false;
+        // Fragenreihenfolge festlegen (damit beide die gleichen bekommen)
+        var qOrder=QD_QUESTIONS.map(function(_,i){return i;}).sort(function(){return Math.random()-.5;}).slice(0,5);
+        await database.ref('qd/'+gid).set({
+            host:currentUser.uid,hostName:mpName(),guest:null,guestName:null,
+            status:'waiting',questionOrder:qOrder,currentQ:0,
+            hostAnswers:[],guestAnswers:[],hostScore:0,guestScore:0,createdAt:Date.now()
+        });
+        qdListenGame();
+        var el=mpView('qd');if(el)el.innerHTML=mpCard('<h2 style="color:#4abf8a;text-align:center;">❓ Quiz-Duell</h2>'+mpStatus('⏳ Warte auf Gegner...')+mpBtn('✖ Aufgeben','window.closeQuizDuel()','#c44'));
+    };
+
+    window.qdJoin=async function(gid){
+        clearInterval(window._qdLobbyTimer);
+        qdGameId=gid;qdRole='guest';qdRewarded=false;
+        await database.ref('qd/'+gid).update({guest:currentUser.uid,guestName:mpName(),status:'playing'});
+        qdListenGame();
+    };
+
+    function qdListenGame(){
+        if(qdListener){qdListener();qdListener=null;}
+        var ref=database.ref('qd/'+qdGameId);
+        function handler(snap){
+            var g=snap.val();if(!g)return;
+            qdData=g;
+            if(g.status==='abandoned'){showToast('Gegner hat aufgegeben!',false);window.closeQuizDuel();return;}
+            if(g.status==='finished'){qdRenderEnd(g);}
+            else qdRenderQuestion(g);
+        }
+        ref.on('value',handler);
+        qdListener=function(){ref.off('value',handler);};
+    }
+
+    function qdRenderQuestion(g){
+        var el=mpView('qd');if(!el)return;
+        var waiting=g.status==='waiting';
+        if(waiting){el.innerHTML=mpCard('<h2 style="color:#4abf8a;text-align:center;">❓ Quiz-Duell</h2>'+mpStatus('⏳ Warte auf Gegner...')+mpBtn('✖ Aufgeben','window.closeQuizDuel()','#c44'));return;}
+        var myAnswers=qdRole==='host'?(g.hostAnswers||[]):(g.guestAnswers||[]);
+        var qOrder=g.questionOrder||[];
+        var qi=myAnswers.length; // Nächste zu beantwortende Frage
+        var oppName=qdRole==='host'?(g.guestName||'Gegner'):(g.hostName||'Gegner');
+        var myScore=qdRole==='host'?g.hostScore:g.guestScore;
+        var oppScore=qdRole==='host'?g.guestScore:g.hostScore;
+        if(qi>=qOrder.length){
+            el.innerHTML=mpCard('<h2 style="color:#4abf8a;text-align:center;">❓ Quiz-Duell</h2>'
+                +mpStatus('✅ Du hast alle Fragen beantwortet! Warte auf '+oppName+'...')
+                +'<div style="text-align:center;font-size:.9rem;margin:6px 0;">Dein Score: <b>'+myScore+'/'+qOrder.length+'</b></div>'
+                +mpBtn('✖ Aufgeben','window.closeQuizDuel()','#c44'));
+            return;
+        }
+        var q=QD_QUESTIONS[qOrder[qi]];
+        var optBtns=q.opts.map(function(o,i){
+            return '<button class="quiz-duel-opt" onclick="window.qdAnswer('+i+')">'+o+'</button>';
+        }).join('');
+        el.innerHTML=mpCard('<h2 style="color:#4abf8a;text-align:center;">❓ Quiz-Duell</h2>'
+            +'<div style="text-align:center;font-size:.82rem;color:#b0a070;margin:4px 0;">Frage '+(qi+1)+'/'+qOrder.length+' &nbsp; Du: <b>'+myScore+'</b> | '+oppName+': <b>'+oppScore+'</b></div>'
+            +'<div style="background:#1a2a2a;border-radius:12px;padding:12px;margin:10px 0;font-size:.95rem;font-weight:bold;">'+q.q+'</div>'
+            +optBtns
+            +'<div id="qdFeedback" style="min-height:24px;text-align:center;color:#f5a623;margin-top:8px;font-size:.9rem;"></div>'
+            +mpBtn('✖ Aufgeben','window.closeQuizDuel()','#c44'));
+    }
+
+    window.qdAnswer=async function(chosen){
+        if(!qdData||qdData.status!=='playing')return;
+        var myAnswers=qdRole==='host'?(qdData.hostAnswers||[]):(qdData.guestAnswers||[]);
+        var qi=myAnswers.length;
+        var qOrder=qdData.questionOrder||[];
+        if(qi>=qOrder.length)return;
+        var q=QD_QUESTIONS[qOrder[qi]];
+        var correct=chosen===q.ok;
+        var fb=document.getElementById('qdFeedback');
+        if(fb)fb.innerHTML=correct?'<span style="color:#6f9e3f;">✅ Richtig!</span>':'<span style="color:#e74c3c;">❌ Falsch! Richtig: '+q.opts[q.ok]+'</span>';
+        // Buttons deaktivieren
+        document.querySelectorAll('.quiz-duel-opt').forEach(function(b,i){
+            b.disabled=true;
+            if(i===q.ok)b.classList.add('correct');
+            else if(i===chosen)b.classList.add('wrong');
+        });
+        var newAnswers=[...myAnswers,chosen];
+        var myScoreKey=qdRole==='host'?'hostScore':'guestScore';
+        var myAnsKey  =qdRole==='host'?'hostAnswers':'guestAnswers';
+        var oppAnswers=qdRole==='host'?(qdData.guestAnswers||[]):(qdData.hostAnswers||[]);
+        var newScore=(qdRole==='host'?qdData.hostScore:qdData.guestScore)+(correct?1:0);
+        var upd={[myAnsKey]:newAnswers,[myScoreKey]:newScore};
+        // Prüfen ob Spiel fertig: beide haben alle Fragen beantwortet
+        if(newAnswers.length>=qOrder.length&&oppAnswers.length>=qOrder.length){
+            upd.status='finished';
+            var hs=qdRole==='host'?newScore:qdData.hostScore;
+            var gs=qdRole==='guest'?newScore:qdData.guestScore;
+            upd.winner=hs>gs?'host':gs>hs?'guest':'draw';
+        }
+        await database.ref('qd/'+qdGameId).update(upd);
+        if(newAnswers.length<qOrder.length){
+            setTimeout(function(){if(qdData&&qdData.status==='playing')qdRenderQuestion(qdData);},1200);
+        }
+    };
+
+    function qdRenderEnd(g){
+        if(qdRewarded)return;qdRewarded=true;
+        if(qdListener){qdListener();qdListener=null;}
+        var won=g.winner===qdRole,draw=g.winner==='draw';
+        var gold=won?250:draw?70:0; var xp=won?60:draw?20:10;
+        playerGold+=gold;addXP(xp);updateMoneyUI();saveGameToLocal();
+        var myScore=qdRole==='host'?g.hostScore:g.guestScore;
+        var oppScore=qdRole==='host'?g.guestScore:g.hostScore;
+        var el=mpView('qd');if(!el)return;
+        el.innerHTML=mpCard('<h2 style="color:#4abf8a;text-align:center;">❓ Quiz-Duell</h2>'
+            +mpStatus(won?'🏆 Du hast gewonnen!':draw?'🤝 Unentschieden!':'😔 Du hast verloren.',won?'good':draw?'':'bad')
+            +'<div style="text-align:center;margin:8px 0;">Score: <b>'+myScore+'</b> vs <b>'+oppScore+'</b><br>'
+            +'<b style="color:#f5a623;">+'+gold+'💰 +'+xp+' XP</b></div>'
+            +mpBtn('🔄 Neu','window.openQuizDuel()','#27ae60')+mpBtn('✖ Zurück','window.closeQuizDuel()','#c44'));
+        showToast(won?'❓ Gewonnen! +250💰':draw?'🤝 Unentschieden!':'😔 Verloren.');
+    }
+
+    
         // ==================== SCHIFFE VERSENKEN ====================
         const BS_SHIPS = [{ name: 'Schlachtschiff', size: 5, symbol: '🚢' }, { name: 'Kreuzer', size: 4,
             symbol: '🛳' }, { name: 'Zerstörer A', size: 3, symbol: '⛴' }, { name: 'Zerstörer B', size: 3,
