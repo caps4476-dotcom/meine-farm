@@ -637,6 +637,102 @@
             .view-btn { padding:6px 10px; font-size:.72rem; }
             .ttt-cell { width:70px; height:70px; font-size:2rem; }
         }
+
+        /* ===== WOCHENMARKT KOMPAKT ===== */
+        .market-section { padding: 0; }
+        .market-title {
+            background: linear-gradient(135deg, #3d2010, #5a3018);
+            color: var(--gold-light); font-size: 1.05rem; font-weight: 800;
+            padding: 10px 16px; border-bottom: 2px solid #8a5a28;
+        }
+        .market-tabs {
+            display: flex; gap: 4px; padding: 8px 12px 0; flex-wrap: wrap;
+            background: linear-gradient(180deg, #e8cc90, #d8b870);
+            border-bottom: 2px solid #b8904a;
+        }
+        .market-tab {
+            background: linear-gradient(160deg, #c89050, #9a6828);
+            color: #fff8e8; border: none; border-radius: 8px 8px 0 0;
+            padding: 5px 12px; font-size: .74rem; font-weight: 700; cursor: pointer;
+            transition: background var(--t-fast);
+        }
+        .market-tab.active {
+            background: linear-gradient(160deg, #fdf3e0, #f5e0c0);
+            color: var(--text-dark);
+        }
+        .market-tab:hover:not(.active) { background: linear-gradient(160deg,#d8a060,#aa7838); }
+        .market-grid { background: linear-gradient(175deg, #fdf3e0, #f5e0c0); padding: 8px 10px; }
+        .market-grid-header {
+            display: grid;
+            grid-template-columns: 2.2rem 1fr 3.2rem 4rem 3rem 7.5rem;
+            gap: 4px; padding: 4px 6px 6px;
+            font-size: .66rem; font-weight: 700; color: var(--text-mid);
+            text-transform: uppercase; letter-spacing: .3px;
+            border-bottom: 2px solid #d4a860;
+        }
+        .market-row {
+            display: grid;
+            grid-template-columns: 2.2rem 1fr 3.2rem 4rem 3rem 7.5rem;
+            gap: 4px; padding: 5px 6px;
+            border-bottom: 1px solid rgba(180,120,40,.1);
+            align-items: center; border-radius: 6px;
+            transition: background var(--t-fast);
+        }
+        .market-row:hover { background: rgba(200,140,50,.1); }
+        .market-row:last-child { border-bottom: none; }
+        .market-row-emoji { font-size: 1.4rem; text-align: center; line-height: 1; }
+        .market-row-name  { font-weight: 600; font-size: .8rem; color: var(--text-dark); }
+        .market-row-qty   { font-size: .76rem; font-weight: 700; text-align: center;
+            color: var(--text-mid); background: rgba(200,140,50,.15);
+            border-radius: 20px; padding: 1px 0; }
+        .market-row-price { font-size: .78rem; font-weight: 700; text-align: center; color: var(--wood-mid); }
+        .market-row-price.price-good { color: #2e7a2e; }
+        .market-row-price.price-bad  { color: #9a2020; }
+        .market-row-trend { font-size: .76rem; text-align: center; }
+        .market-row-btns  { display: flex; gap: 3px; justify-content: flex-end; }
+        .sell-btn-sm {
+            background: linear-gradient(135deg, #c89050, #9a6828);
+            color: #fff8e8; border: none; border-radius: 5px;
+            padding: 3px 7px; font-size: .67rem; font-weight: 700; cursor: pointer;
+            box-shadow: 0 2px 0 #6a3808; transition: transform var(--t-fast);
+        }
+        .sell-btn-sm:hover { transform: translateY(-1px); }
+        .sell-btn-all {
+            background: linear-gradient(135deg, #f0b840, var(--gold-dark));
+            color: #3a1e00; border: none; border-radius: 5px;
+            padding: 3px 7px; font-size: .67rem; font-weight: 700; cursor: pointer;
+            box-shadow: 0 2px 0 #9a6000; transition: transform var(--t-fast);
+            white-space: nowrap;
+        }
+        .sell-btn-all:hover { transform: translateY(-1px); }
+        .market-empty {
+            text-align: center; padding: 28px 16px; color: var(--text-mid); font-size: .85rem;
+        }
+        .price-panel {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(72px,1fr));
+            gap: 5px; padding: 8px 10px;
+            background: linear-gradient(175deg, #fdf3e0, #f5e0c0);
+            border-bottom: 1px solid rgba(180,120,40,.2);
+        }
+        .price-card {
+            background: rgba(200,140,50,.1); border: 1px solid rgba(180,120,40,.2);
+            border-radius: 9px; padding: 5px 3px; text-align: center;
+        }
+        .price-value { font-size: .73rem; font-weight: 700; color: var(--wood-mid); }
+        .price-value.price-good { color: #2e7a2e; }
+        .price-value.price-bad  { color: #9a2020; }
+        .order-card {
+            background: linear-gradient(160deg, #fdf3e0, #f5e0c0);
+            border: 2px solid var(--gold); border-radius: var(--r-lg);
+            padding: 12px; margin: 8px 10px;
+            box-shadow: 0 0 10px rgba(245,166,35,.12);
+        }
+        @media (max-width: 480px) {
+            .market-grid-header,
+            .market-row { grid-template-columns: 2rem 1fr 2.8rem 3.5rem 6.5rem; }
+            .market-row-trend,
+            .market-grid-header > *:nth-child(5) { display: none; }
+        }
 </style>
 </head>
 <body>
