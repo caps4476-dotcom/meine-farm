@@ -770,6 +770,148 @@
             box-shadow: 0 3px 0 #904000; transition: transform var(--t-fast);
         }
         .harvest-btn:hover { transform: translateY(-2px); }
+
+        /* ===== ACKER-FILTER & MASSEN-PFLANZEN BEREICH ===== */
+        .acker-filter-bar {
+            display: flex; gap: 10px; flex-wrap: wrap;
+            padding: 14px 18px 6px; justify-content: center;
+            background: linear-gradient(180deg, #e8cc90, #ddb868);
+            border-bottom: 2px solid #c8a050;
+        }
+        .acker-filter-btn {
+            background: linear-gradient(160deg, #7a5228, #5a3a18);
+            color: #ffe8b0; border: 2px solid #c8903a;
+            border-radius: 20px; padding: 10px 20px;
+            font-size: .88rem; font-weight: 700; cursor: pointer;
+            box-shadow: 0 4px 0 #3a1e08, 0 6px 12px rgba(80,40,0,.2);
+            transition: transform var(--t-fast), box-shadow var(--t-fast), background var(--t-fast);
+            min-height: 44px;
+        }
+        .acker-filter-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 0 #3a1e08; }
+        .acker-filter-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #3a1e08; }
+        .acker-filter-btn.active {
+            background: linear-gradient(160deg, #f5c040, #d09010);
+            color: #2a1000; border-color: var(--gold);
+            box-shadow: 0 4px 0 #8a6000, 0 0 14px rgba(245,166,35,.3);
+        }
+
+        /* Massen-Pflanzen Buttons (Alle Karotte, Alle Weizen etc.) */
+        .mass-plant-btn {
+            display: inline-flex; align-items: center; gap: 7px;
+            padding: 11px 18px; min-height: 48px;
+            border-radius: 22px; border: 2px solid rgba(255,255,255,.3);
+            font-size: .88rem; font-weight: 700; cursor: pointer;
+            box-shadow: 0 4px 0 rgba(0,0,0,.25), 0 6px 14px rgba(0,0,0,.15);
+            transition: transform var(--t-fast), box-shadow var(--t-fast);
+            white-space: nowrap;
+        }
+        .mass-plant-btn:hover { transform: translateY(-3px); box-shadow: 0 7px 0 rgba(0,0,0,.22), 0 10px 20px rgba(0,0,0,.18); }
+        .mass-plant-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,.25); }
+        /* Acker-Tab Variante */
+        .mass-plant-btn.tab-btn {
+            padding: 9px 16px; min-height: 42px;
+            border-radius: 18px;
+        }
+
+        /* Buttons unterhalb (Alle ernten, Lager, Bestenliste etc.) */
+        .action-row-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 11px 18px; min-height: 48px;
+            background: linear-gradient(135deg, #7a5228, #5a3a18);
+            color: #ffe8b0; border: 2px solid #c8903a;
+            border-radius: 22px; font-size: .88rem; font-weight: 700;
+            cursor: pointer; white-space: nowrap;
+            box-shadow: 0 4px 0 #3a1e08, 0 6px 12px rgba(80,40,0,.18);
+            transition: transform var(--t-fast), box-shadow var(--t-fast);
+        }
+        .action-row-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 0 #3a1e08; }
+        .action-row-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #3a1e08; }
+
+        /* Container für massPlantBtnRow */
+        #massPlantBtnRow {
+            display: flex; gap: 10px; flex-wrap: wrap;
+            justify-content: center; width: 100%;
+            padding: 8px 14px;
+            background: linear-gradient(175deg, #fdf3e0, #f0e0b8);
+        }
+
+        /* Erntehelfer-Leiste unten */
+        #erntehelferBar, .erntehelfer-bar {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 16px; flex-wrap: wrap;
+            background: linear-gradient(135deg, #3d2010, #2a1408);
+            border-top: 2px solid #8a5a28;
+            color: #ffefcf; font-size: .82rem;
+        }
+
+        /* ===== MASS-ACTIONS & AKTIONSBUTTONS ===== */
+        .mass-plant-row {
+            background: linear-gradient(175deg, #fdf3e0, #f0e0b8);
+            border-bottom: 1px solid rgba(180,120,40,.15);
+        }
+        .mass-actions {
+            display: flex; gap: 10px; flex-wrap: wrap;
+            padding: 12px 18px; justify-content: flex-start;
+            background: linear-gradient(175deg, #fdf3e0, #f0e0b8);
+            border-top: 1px solid rgba(180,120,40,.15);
+        }
+        .mass-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 11px 20px; min-height: 48px;
+            border-radius: 22px; border: 2px solid rgba(200,140,50,.4);
+            font-size: .88rem; font-weight: 700; cursor: pointer;
+            box-shadow: 0 4px 0 rgba(80,40,0,.25), 0 6px 14px rgba(80,40,0,.12);
+            transition: transform var(--t-fast), box-shadow var(--t-fast);
+            white-space: nowrap;
+        }
+        .mass-btn:hover  { transform: translateY(-3px); box-shadow: 0 7px 0 rgba(80,40,0,.22), 0 10px 18px rgba(80,40,0,.16); }
+        .mass-btn:active { transform: translateY(2px);  box-shadow: 0 2px 0 rgba(80,40,0,.25); }
+
+        .harvest-all-btn {
+            background: linear-gradient(135deg, #6aaa28, #4a8018);
+            color: #f0ffe8; border-color: #8ad048;
+            box-shadow: 0 4px 0 #2a5808, 0 6px 14px rgba(40,100,10,.2);
+        }
+        .harvest-all-btn:hover { box-shadow: 0 7px 0 #2a5808; }
+
+        .upgrade-storage-btn {
+            background: linear-gradient(135deg, #c89040, #9a6820);
+            color: #fff8e0; border-color: #e0b060;
+            box-shadow: 0 4px 0 #6a3808, 0 6px 14px rgba(120,70,10,.2);
+        }
+        .upgrade-storage-btn:hover { box-shadow: 0 7px 0 #6a3808; }
+
+        .cleanup-btn {
+            background: linear-gradient(135deg, #5878c8, #3858a8);
+            color: #e8f0ff; border-color: #80a0e0;
+            box-shadow: 0 4px 0 #183880;
+        }
+        .cleanup-btn:hover { box-shadow: 0 7px 0 #183880; }
+
+        .reset-btn {
+            background: linear-gradient(135deg, #c84040, #a02020);
+            color: #ffe8e8; border-color: #e08080;
+            box-shadow: 0 4px 0 #701010;
+        }
+        .reset-btn:hover { box-shadow: 0 7px 0 #701010; }
+
+        /* Erntehelfer-Leiste */
+        #helperToggleWrap {
+            background: linear-gradient(135deg, #2a1608, #3d2010) !important;
+            border-top: 2px solid #8a5a28 !important;
+            padding: 10px 18px !important;
+        }
+        #helperToggleWrap button {
+            background: linear-gradient(135deg, #c89040, #9a6820);
+            color: #fff8e0; border: 2px solid #e0b060;
+            border-radius: 22px; padding: 10px 18px; min-height: 44px;
+            font-size: .88rem; font-weight: 700; cursor: pointer;
+            box-shadow: 0 4px 0 #6a3808; transition: transform var(--t-fast);
+        }
+        #helperToggleWrap button:hover { transform: translateY(-2px); }
+        #helperToggleWrap span, #helperToggleWrap label {
+            color: #ffefcf; font-size: .85rem; font-weight: 600;
+        }
 </style>
 </head>
 <body>
@@ -2435,9 +2577,8 @@
             if (acker3Owned) ackerOptions.push({ label: "Acker 3", val: 3 });
             ackerOptions.forEach(opt => {
                 const tab = document.createElement("button");
-                tab.className = "mass-plant-btn";
-                tab.style.background = selectedPlantAcker === opt.val ? "#f5a623" : "#3f6b3a";
-                tab.style.color = selectedPlantAcker === opt.val ? "#2d2b1f" : "white";
+                tab.className = "mass-plant-btn tab-btn";
+                tab.classList.toggle("active", selectedPlantAcker === opt.val);
                 tab.innerHTML = opt.label;
                 tab.onclick = () => { selectedPlantAcker = opt.val;
                     ackerFilter = opt.val;
@@ -2451,7 +2592,7 @@
                 "pomegranate", "kiwi", "dragonfruit", "starfruit", "saffron", "vanilla"
             ];
             const btnRow = document.createElement("div");
-            btnRow.style.cssText = "display:flex; gap:6px; flex-wrap:wrap; justify-content:center; width:100%;";
+            btnRow.style.cssText = "display:flex; gap:10px; flex-wrap:wrap; justify-content:center; width:100%; padding:8px 14px;";
             btnRow.id = "massPlantBtnRow";
             for (let cropId of cropOrder) {
                 const crop = CROPS[cropId];
@@ -2462,6 +2603,22 @@
                 const btn = document.createElement("button");
                 btn.className = "mass-plant-btn";
                 btn.dataset.cropId = cropId;
+                // Warme Farben je nach Frucht-Typ
+                const warmColors = {
+                    carrot:'#e8782a,#c05018', wheat:'#d4a020,#a07010', tomato:'#d03020,#a01810',
+                    strawberry:'#d02840,#9a1030', pumpkin:'#d06820,#a04810', pineapple:'#c8a020,#987010',
+                    coffee:'#8a5028,#5a3018', blueberry:'#5040b0,#382888', raspberry:'#b82040,#881030',
+                    grape:'#6840a0,#482878', peach:'#e07840,#b85020', lemon:'#d0c020,#988810',
+                    apple:'#c03020,#901810', banana:'#d0c020,#988810', mango:'#e08820,#b06010',
+                    cherry:'#b01830,#800818', pear:'#88a020,#587010', pomegranate:'#c02040,#881028',
+                    kiwi:'#589020,#386010', dragonfruit:'#d040a0,#9a1870', starfruit:'#c8a820,#987810',
+                    saffron:'#d08020,#9a5810', vanilla:'#88a848,#587030',
+                };
+                const [c1,c2] = (warmColors[cropId]||'#a07030,#705020').split(',');
+                btn.style.background = `linear-gradient(135deg,${c1},${c2})`;
+                btn.style.color = '#fff8e8';
+                btn.style.textShadow = '0 1px 2px rgba(0,0,0,.3)';
+                btn.style.borderColor = 'rgba(255,255,255,.25)';
                 const ackerLabel = selectedPlantAcker === 0 ? "" : ` A${selectedPlantAcker}`;
                 btn.innerHTML = `${crop.emoji} Alle${ackerLabel} ${crop.name} (${amount})`;
                 btn.onclick = () => massPlant(cropId, selectedPlantAcker);
