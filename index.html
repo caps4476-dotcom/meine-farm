@@ -4066,6 +4066,23 @@
                     renderAdvancedPricePanel();
                     initChat(); } else document.getElementById("multiplayerView").innerHTML =
                     `<div class="multiplayer-slot" style="grid-column:1/-1;"><div class="status">⚠️ Firebase nicht konfiguriert!</div></div>`; }
+            // Farm-only Bereiche: nur bei Farm-View sichtbar
+            const isFarm = view === "farm";
+            ["massPlantRow","massPlantBtnRow","helperToggleWrap"].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.toggle("hidden", !isFarm);
+            });
+            // mass-actions Buttons (Alle ernten, Lager etc.) ebenfalls
+            document.querySelectorAll(".mass-actions").forEach(el => {
+                el.classList.toggle("hidden", !isFarm);
+            });
+            // Acker-Filter-Bar (Alle Äcker / Acker 1 etc.)
+            document.querySelectorAll(".acker-filter-bar").forEach(el => {
+                el.classList.toggle("hidden", !isFarm);
+            });
+            // Markt-Bereich (Wochenmarkt + Preisanzeige)
+            const marketSection = document.querySelector(".market-section");
+            if (marketSection) marketSection.classList.toggle("hidden", !isFarm);
         }
         // ==================== EXPORT/IMPORT ====================
         function exportGame() { const saveData = { gold: playerGold, inventory, day: currentDay,
@@ -5130,7 +5147,8 @@
         const MG_CD = {};
         const MG_CD_MS = { wheel: 4 * 3600000, match3: 3600000, quiz: 3600000,
             weather_bet: 3 * 3600000, coin: 15 * 60000, number_guess: 30 * 60000,
-            reaction: 10 * 60000, memory: 45 * 60000, sprint: 20 * 60000, slots: 30 * 60000 };
+            reaction: 10 * 60000, memory: 45 * 60000, sprint: 20 * 60000, slots: 30 * 60000,
+            typing: 15 * 60000, higher_lower: 20 * 60000, color_mix: 25 * 60000 };
 
         function loadMgCooldowns() { const key = 'mgCD_' + (window.currentUser && window.currentUser.uid ? window
                 .currentUser.uid : 'g'); try { const s = localStorage.getItem(key); if (s) Object.assign(MG_CD, JSON
@@ -5161,7 +5179,14 @@
                 { id: 'coin', icon: '🪙', name: 'Münzwurf', desc: 'Kopf oder Zahl – 100💰 Einsatz!',
                     reward: '2x Einsatz', cd: MG_CD_MS.coin },
                 { id: 'number_guess', icon: '🔢', name: 'Zahlenraten',
-                    desc: 'Zahl 1-10 in 3 Versuchen!', reward: '300💰 + 30 XP', cd: MG_CD_MS.number_guess }
+                    desc: 'Zahl 1-10 in 3 Versuchen!', reward: '300💰 + 30 XP', cd: MG_CD_MS.number_guess },
+            { id: 'reaction',     icon: '🚦', name: 'Reaktionstest',     desc: 'Klick wenn Ampel grün wird!',        reward: 'bis 400💰',    cd: MG_CD_MS.reaction },
+            { id: 'memory',       icon: '🃏', name: 'Gedächtnis',        desc: 'Finde alle Kartenpaare!',            reward: 'bis 600💰',    cd: MG_CD_MS.memory },
+            { id: 'sprint',       icon: '🌾', name: 'Ernte-Sprint',      desc: 'Ernte so viele wie möglich in 12s!', reward: '5💰 pro Ernte', cd: MG_CD_MS.sprint },
+            { id: 'slots',        icon: '🎰', name: 'Slot Machine',      desc: 'Drei gleiche Farm-Symbole!',         reward: 'bis 1000💰',   cd: MG_CD_MS.slots },
+            { id: 'typing',       icon: '⌨️', name: 'Tipp-Rennen',      desc: 'Tippe Wörter schnell & korrekt!',    reward: 'bis 500💰',    cd: MG_CD_MS.typing },
+            { id: 'higher_lower', icon: '🃏', name: 'Höher/Niedriger',   desc: 'Ist die nächste Zahl höher?',        reward: '50💰 pro Runde',cd: MG_CD_MS.higher_lower },
+            { id: 'color_mix',    icon: '🎨', name: 'Farbmix-Quiz',     desc: 'Welche Farben ergeben welche Farbe?', reward: 'bis 400💰',    cd: MG_CD_MS.color_mix }
             ]; let html = '<div style="padding:8px 0 4px; text-align:center;">' +
                 '<h2 style="color:#f5a623; margin:0;">🎮 Minispiele</h2>' +
                 '<p style="color:#b0a070; font-size:.8rem; margin:4px 0 10px;">Spiele täglich für extra Belohnungen!</p>' +
@@ -5180,7 +5205,14 @@
                 true); return; } if (id === 'wheel') mgWheel();  else if (
                 id === 'match3') mgMatch3(); else if (id === 'quiz') mgQuiz(); else if (id === 'weather_bet')
             mgWeatherBet(); else if (id === 'coin') mgCoinFlip(); else if (id === 'number_guess')
-        mgNumberGuess(); }
+        mgNumberGuess();
+        else if (id === 'reaction')    mgReaction();
+        else if (id === 'memory')      mgMemory();
+        else if (id === 'sprint')      mgSprint();
+        else if (id === 'slots')       mgSlots();
+        else if (id === 'typing')      mgTyping();
+        else if (id === 'higher_lower') mgHigherLower();
+        else if (id === 'color_mix')   mgColorMix(); }
         window.closeMg = function closeMg() { var m = document.getElementById('mgModal'); if (m) m.remove(); }
         window.mkMg = function mkMg(inner, callback) { window.closeMg(); var d = document.createElement('div');
             d.className = 'mg-modal';
@@ -6510,6 +6542,164 @@
     }
 
     
+    
+    // ── ⌨️ TIPP-RENNEN ─────────────────────────────────────────────────────────
+    function mgTyping() {
+        var words = ['Karotte','Weizen','Tomate','Erdbeere','Kürbis','Ananas','Kaffee','Blaubeere',
+            'Himbeere','Traube','Pfirsich','Zitrone','Apfel','Banane','Mango','Kirsche',
+            'Honig','Milch','Butter','Käse','Brot','Wolle','Seide','Trüffel','Farm','Ernte'];
+        var picked = [];
+        while(picked.length < 5) {
+            var w = words[Math.floor(Math.random()*words.length)];
+            if(!picked.includes(w)) picked.push(w);
+        }
+        var current = 0, correct = 0, startTime = Date.now();
+        function showWord() {
+            var el = document.getElementById('typWord');
+            var inp = document.getElementById('typInput');
+            if(!el || !inp) return;
+            if(current >= picked.length) {
+                var elapsed = ((Date.now()-startTime)/1000).toFixed(1);
+                var gold = correct>=5?500:correct>=4?350:correct>=3?220:correct>=2?120:50;
+                var xp = correct*15;
+                playerGold+=gold; addXP(xp); updateMoneyUI(); saveGameToLocal();
+                MG_CD.typing=Date.now(); window.saveMgCooldowns();
+                el.innerHTML='🎉 Fertig!';
+                inp.style.display='none';
+                var res=document.getElementById('typRes');
+                if(res)res.innerHTML=correct+'/'+picked.length+' richtig in '+elapsed+'s<br><b style="color:#f5a623;">+'+gold+'💰 +'+xp+' XP</b>';
+                showToast('⌨️ Tipp-Rennen: +'+gold+'💰'); window.renderMinigames(); return;
+            }
+            el.textContent = picked[current];
+            inp.value=''; inp.focus();
+            var prog = document.getElementById('typProg');
+            if(prog) prog.textContent = (current+1)+'/'+picked.length;
+        }
+        mkMg('<h2>⌨️ Tipp-Rennen</h2>'
+            +'<p style="font-size:.8rem;color:#c8a878;">Tippe das angezeigte Wort so schnell wie möglich!</p>'
+            +'<div style="font-size:.8rem;color:#c8a878;margin:4px 0;">Wort <span id="typProg">1/5</span></div>'
+            +'<div id="typWord" style="font-size:2rem;font-weight:800;color:#ffd166;margin:14px 0;letter-spacing:2px;text-shadow:0 0 12px rgba(255,200,80,.4);"></div>'
+            +'<input id="typInput" type="text" autocomplete="off" autocorrect="off" spellcheck="false" style="width:90%;padding:12px;border-radius:var(--r-full);border:2px solid var(--gold-dark);background:#1a1008;color:#ffefcf;font-size:1.1rem;text-align:center;outline:none;">'
+            +'<div id="typRes" style="min-height:28px;text-align:center;margin-top:10px;font-size:.9rem;"></div>'
+            +'<button class="mg-btn mg-btn-red" style="margin-top:8px;" onclick="MG_CD.typing=Date.now();window.saveMgCooldowns();window.closeMg();window.renderMinigames();">✖ Aufgeben</button>',
+        function() {
+            showWord();
+            document.getElementById('typInput').addEventListener('input', function() {
+                var val = this.value.trim();
+                if(val.toLowerCase() === picked[current].toLowerCase()) {
+                    correct++; current++; showWord();
+                }
+            });
+        });
+    }
+
+    // ── 🃏 HÖHER ODER NIEDRIGER ────────────────────────────────────────────────
+    function mgHigherLower() {
+        var current = Math.floor(Math.random()*100)+1;
+        var streak = 0, maxRounds = 10, done = false;
+        function render() {
+            var el=document.getElementById('hlCard'); if(!el)return;
+            el.textContent = current;
+            document.getElementById('hlStreak').textContent = streak+'/'+maxRounds;
+        }
+        function choose(higher) {
+            if(done) return;
+            var next = Math.floor(Math.random()*100)+1;
+            // Gleiche Zahl neu würfeln
+            while(next === current) next = Math.floor(Math.random()*100)+1;
+            var correct = higher ? (next > current) : (next < current);
+            current = next; streak++;
+            var fb = document.getElementById('hlFeedback');
+            if(fb) { fb.textContent = correct?'✅ Richtig! Nächste: '+next:'❌ Falsch! Es war '+next;
+                fb.style.color = correct?'#90f090':'#f09090'; }
+            if(!correct || streak >= maxRounds) {
+                done = true;
+                var gold = streak*50; var xp = streak*8;
+                playerGold+=gold; addXP(xp); updateMoneyUI(); saveGameToLocal();
+                MG_CD.higher_lower=Date.now(); window.saveMgCooldowns();
+                var res=document.getElementById('hlRes');
+                if(res)res.innerHTML='<b style="color:#f5a623;">'+streak+' Runden → +'+gold+'💰 +'+xp+' XP</b>';
+                document.querySelectorAll('.hl-btn').forEach(function(b){b.disabled=true;});
+                showToast('🃏 Höher/Niedriger: +'+gold+'💰'); window.renderMinigames(); return;
+            }
+            render();
+        }
+        mkMg('<h2>🃏 Höher oder Niedriger?</h2>'
+            +'<p style="font-size:.8rem;color:#c8a878;">Ist die nächste Zahl höher oder niedriger? 50💰 pro Runde!</p>'
+            +'<div id="hlStreak" style="font-size:.82rem;color:#c8a878;margin:4px 0;">0/10</div>'
+            +'<div id="hlCard" style="font-size:4rem;font-weight:800;color:#ffd166;margin:16px 0;text-shadow:0 0 20px rgba(255,200,80,.5);"></div>'
+            +'<div id="hlFeedback" style="min-height:24px;font-size:.9rem;margin:6px 0;"></div>'
+            +'<div style="display:flex;gap:10px;justify-content:center;margin:10px 0;">'
+            +'<button class="mg-btn mg-btn-green hl-btn" onclick="window.hlChoose(true)">📈 Höher</button>'
+            +'<button class="mg-btn mg-btn-red hl-btn" onclick="window.hlChoose(false)">📉 Niedriger</button>'
+            +'</div>'
+            +'<div id="hlRes" style="min-height:24px;text-align:center;font-size:.9rem;"></div>'
+            +'<button class="mg-btn mg-btn-red" style="margin-top:6px;" onclick="MG_CD.higher_lower=Date.now();window.saveMgCooldowns();window.closeMg();window.renderMinigames();">✖ Aufgeben</button>',
+        function() { window.hlChoose = choose; render(); });
+    }
+
+    // ── 🎨 FARBMIX-QUIZ ───────────────────────────────────────────────────────
+    function mgColorMix() {
+        var questions = [
+            {q:'🔴 Rot + 🔵 Blau = ?', opts:['🟠 Orange','🟢 Grün','🟣 Lila','⚫ Schwarz'], ok:2, gold:100},
+            {q:'🔴 Rot + 🟡 Gelb = ?', opts:['🟠 Orange','🟢 Grün','🟣 Lila','🩷 Pink'], ok:0, gold:100},
+            {q:'🔵 Blau + 🟡 Gelb = ?', opts:['🟠 Orange','🟢 Grün','🟣 Lila','⚪ Weiß'], ok:1, gold:100},
+            {q:'🔴 Rot + ⚪ Weiß = ?', opts:['🟠 Orange','🩷 Rosa','🟣 Lila','🟡 Gelb'], ok:1, gold:80},
+            {q:'🔴 Rot + ⚫ Schwarz = ?', opts:['🟤 Dunkelrot','🟠 Orange','🟣 Lila','🩷 Pink'], ok:0, gold:120},
+            {q:'🔵 Blau + ⚪ Weiß = ?', opts:['🟣 Lila','🩵 Hellblau','🟢 Grün','🟡 Gelb'], ok:1, gold:80},
+            {q:'🟡 Gelb + ⚫ Schwarz = ?', opts:['🟠 Orange','🟢 Dunkelgrün','🫒 Olivgrün','🟤 Braun'], ok:2, gold:120},
+            {q:'🟢 Grün + 🔵 Blau = ?', opts:['🩵 Türkis','🟣 Lila','🟠 Orange','⚫ Schwarz'], ok:0, gold:100},
+            {q:'🔴 Rot + 🟢 Grün = ?', opts:['🟠 Orange','🟡 Gelb','🟤 Braun','⚫ Schwarz'], ok:2, gold:130},
+            {q:'Alle Farben gemischt = ?', opts:['⚫ Schwarz','⚪ Weiß','🟤 Grau','🟣 Lila'], ok:2, gold:150},
+        ];
+        var score=0, idx=0, maxQ=5, done=false;
+        var picked=[];
+        while(picked.length<maxQ){var q=questions[Math.floor(Math.random()*questions.length)];if(!picked.includes(q))picked.push(q);}
+        function showQ() {
+            if(idx>=maxQ||done){finish();return;}
+            var q=picked[idx];
+            var el=document.getElementById('cmQuestion'); if(!el)return;
+            el.textContent=q.q;
+            var opts=document.getElementById('cmOpts'); if(!opts)return;
+            opts.innerHTML=q.opts.map(function(o,i){
+                return '<button class="quiz-opt" data-i="'+i+'" data-ok="'+q.ok+'" data-gold="'+q.gold+'" onclick="window.cmAnswer(this)">'+o+'</button>';
+            }).join('');
+            document.getElementById('cmProg').textContent=(idx+1)+'/'+maxQ;
+        }
+        function finish() {
+            done=true;
+            var gold=score; var xp=Math.floor(score/10)*5;
+            playerGold+=gold; addXP(xp); updateMoneyUI(); saveGameToLocal();
+            MG_CD.color_mix=Date.now(); window.saveMgCooldowns();
+            var res=document.getElementById('cmRes');
+            if(res)res.innerHTML='<b style="color:#f5a623;">+'+gold+'💰 +'+xp+' XP</b>';
+            showToast('🎨 Farbmix: +'+gold+'💰'); window.renderMinigames();
+        }
+        window.cmAnswer=function(btn){
+            if(done)return;
+            var chosen=parseInt(btn.dataset.i), ok=parseInt(btn.dataset.ok), gold=parseInt(btn.dataset.gold);
+            document.querySelectorAll('.quiz-opt').forEach(function(b,i){
+                b.disabled=true;
+                if(i===ok)b.classList.add('correct');
+                else if(i===chosen)b.classList.add('wrong');
+            });
+            if(chosen===ok){score+=gold; var fb=document.getElementById('cmFb');if(fb){fb.textContent='✅ Richtig! +'+gold+'💰';fb.style.color='#90f090';}}
+            else{var fb=document.getElementById('cmFb');if(fb){fb.textContent='❌ Falsch!';fb.style.color='#f09090';}}
+            idx++;
+            setTimeout(function(){showQ();},900);
+        };
+        mkMg('<h2>🎨 Farbmix-Quiz</h2>'
+            +'<p style="font-size:.8rem;color:#c8a878;">Welche Farbe entsteht beim Mischen?</p>'
+            +'<div style="font-size:.78rem;color:#c8a878;margin:4px 0;">Frage <span id="cmProg">1/5</span></div>'
+            +'<div id="cmQuestion" style="font-size:1.3rem;font-weight:700;color:#ffd166;margin:14px 0;text-align:center;"></div>'
+            +'<div id="cmOpts" style="width:100%;"></div>'
+            +'<div id="cmFb" style="min-height:22px;text-align:center;font-size:.9rem;margin:6px 0;"></div>'
+            +'<div id="cmRes" style="min-height:22px;text-align:center;font-size:.92rem;"></div>'
+            +'<button class="mg-btn mg-btn-red" style="margin-top:6px;" onclick="MG_CD.color_mix=Date.now();window.saveMgCooldowns();window.closeMg();window.renderMinigames();">✖ Aufgeben</button>',
+        function(){showQ();});
+    }
+
+
         // ==================== SCHIFFE VERSENKEN ====================
         const BS_SHIPS = [{ name: 'Schlachtschiff', size: 5, symbol: '🚢' }, { name: 'Kreuzer', size: 4,
             symbol: '🛳' }, { name: 'Zerstörer A', size: 3, symbol: '⛴' }, { name: 'Zerstörer B', size: 3,
