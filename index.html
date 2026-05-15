@@ -145,8 +145,8 @@
         .stats-bar {
             display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;
             padding:10px 24px;
-            background: linear-gradient(135deg, #2a1608 0%, #3d2010 40%, #4a2808 70%, #3a1a08 100%);
-            border-bottom: 3px solid #8a5a28;
+            background: linear-gradient(135deg, #3d1e08 0%, #5a2e10 40%, #6a3810 70%, #4a2008 100%);
+            border-bottom: 3px solid #c8843a;
             position:relative;
         }
         .stats-bar::after {
@@ -156,21 +156,22 @@
         }
         .money {
             display:flex; align-items:center; gap:6px;
-            background: rgba(0,0,0,.3); border-radius:var(--r-full);
-            padding:5px 14px; font-weight:700; font-size:.95rem;
-            border:1px solid rgba(245,166,35,.35); color:#ffefcf;
+            background: rgba(0,0,0,.35); border-radius:var(--r-full);
+            padding:6px 16px; font-weight:800; font-size:1rem;
+            border:2px solid rgba(245,166,35,.6); color:#ffe8a0;
+            text-shadow: 0 1px 3px rgba(0,0,0,.5);
         }
         .level-info { display:flex; align-items:center; gap:8px; }
         .level-badge {
-            background: linear-gradient(135deg, #f0b040, var(--gold-dark));
-            color:#3a1e00; font-weight:800; font-size:.82rem;
-            padding:4px 12px; border-radius:var(--r-full);
-            box-shadow: 0 2px 6px rgba(0,0,0,.3);
+            background: linear-gradient(135deg, #ffd060, #f0a020);
+            color:#2a1000; font-weight:800; font-size:.84rem;
+            padding:5px 14px; border-radius:var(--r-full);
+            box-shadow: 0 2px 8px rgba(0,0,0,.4), 0 0 0 1px rgba(255,200,80,.4);
         }
         .xp-bar-container {
-            width:90px; height:8px;
-            background:rgba(0,0,0,.35); border-radius:var(--r-full);
-            overflow:hidden; border:1px solid rgba(255,255,255,.08);
+            width:100px; height:9px;
+            background:rgba(0,0,0,.4); border-radius:var(--r-full);
+            overflow:hidden; border:1px solid rgba(255,200,100,.25);
         }
         .xp-bar-fill {
             height:100%; border-radius:var(--r-full);
@@ -178,9 +179,10 @@
             transition:width .5s; box-shadow:0 0 6px rgba(100,180,50,.4);
         }
         .storage-info {
-            background:rgba(0,0,0,.25); border-radius:var(--r-full);
-            padding:4px 12px; font-size:.78rem; color:#ffefcf;
-            border:1px solid rgba(255,255,255,.1);
+            background:rgba(0,0,0,.35); border-radius:var(--r-full);
+            padding:5px 14px; font-size:.8rem; color:#ffecc0; font-weight:600;
+            border:1px solid rgba(255,200,100,.3);
+            text-shadow: 0 1px 2px rgba(0,0,0,.4);
         }
         .weather-info {
             border-radius:var(--r-full); padding:4px 12px; font-size:.78rem; font-weight:600;
@@ -232,7 +234,7 @@
         .farm-grid, .barn-grid, .craft-grid, .research-grid,
         .licenses-grid, .multiplayer-grid, .account-grid, .quests-grid, .handbook-grid {
             display:grid; grid-template-columns:repeat(auto-fill, minmax(170px,1fr));
-            gap:14px; padding:18px 20px;
+            gap:18px; padding:20px 22px;
             background:
                 repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(150,90,30,.06) 39px, rgba(150,90,30,.06) 40px),
                 repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(150,90,30,.06) 39px, rgba(150,90,30,.06) 40px),
@@ -245,20 +247,22 @@
         /* ── KARTEN ── */
         .field-slot, .barn-slot, .craft-slot, .market-slot,
         .research-slot, .license-slot, .multiplayer-slot, .account-slot, .handbook-slot {
-            background: linear-gradient(160deg, #fdf5e2 0%, #f8e8c4 60%, #f0d8a8 100%);
-            border-radius:var(--r-lg); padding:13px 11px; text-align:center;
+            background: linear-gradient(160deg, #fdf8ee 0%, #f8ead0 60%, #f0d8a8 100%);
+            border-radius: 22px; padding: 16px 13px; text-align:center;
             box-shadow:
-                0 2px 0 rgba(255,240,200,.8) inset,
-                0 -1px 0 rgba(150,90,30,.2) inset,
-                var(--shadow-card);
-            border:2px solid #d4a860;
+                0 3px 0 rgba(255,245,210,.9) inset,
+                0 -2px 0 rgba(150,90,30,.15) inset,
+                0 6px 0 rgba(120,70,20,.22),
+                0 10px 28px rgba(80,40,0,.16);
+            border: 2px solid #e0b870;
             position:relative; overflow:hidden; color:var(--text-dark);
-            transition:transform var(--t-fast), box-shadow var(--t-fast), border-color var(--t-fast);
+            transition: transform var(--t-mid), box-shadow var(--t-mid), border-color var(--t-mid);
+            cursor: pointer;
         }
         .field-slot:hover, .barn-slot:hover, .craft-slot:hover, .market-slot:hover, .research-slot:hover {
-            transform:translateY(-4px) scale(1.01);
-            box-shadow:0 8px 0 rgba(150,90,30,.2), 0 14px 30px rgba(80,40,0,.22);
-            border-color:var(--gold);
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 10px 0 rgba(150,90,30,.22), 0 16px 36px rgba(80,40,0,.25);
+            border-color: var(--gold);
         }
         .field-slot::before, .barn-slot::before, .craft-slot::before,
         .market-slot::before, .research-slot::before {
@@ -293,14 +297,25 @@
         }
         .feed-btn:hover, .collect-btn:hover { transform:translateY(-2px); box-shadow:0 5px 0 #1a5010; }
         .feed-btn:active, .collect-btn:active { transform:translateY(1px); box-shadow:0 1px 0 #1a5010; }
-        .plant-btn, .buy-btn, .buy-animal-btn, .buy-license-btn {
+        .plant-btn {
+            background: linear-gradient(135deg, #fdf0d0, #f5e0a0);
+            color: #5a3010; border: 2px solid #d4a040;
+            border-radius: 16px; padding: 10px 8px; font-size: 1.5rem;
+            font-weight: 400; cursor: pointer; margin: 4px;
+            box-shadow: 0 4px 0 #a07020, 0 6px 12px rgba(80,40,0,.2);
+            transition: transform var(--t-fast), box-shadow var(--t-fast);
+            min-width: 52px; min-height: 52px;
+            display: inline-flex; align-items: center; justify-content: center;
+        }
+        .plant-btn:hover { transform: translateY(-3px) scale(1.08); box-shadow: 0 7px 0 #a07020, 0 10px 18px rgba(80,40,0,.25); }
+        .plant-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #a07020; }
+        .buy-btn, .buy-animal-btn, .buy-license-btn {
             background:linear-gradient(135deg,#f0b840,var(--gold-dark));
             color:#3a1e00; border:none; border-radius:var(--r-full);
-            padding:6px 14px; font-size:.77rem; font-weight:700; cursor:pointer; margin:2px;
+            padding:7px 16px; font-size:.8rem; font-weight:700; cursor:pointer; margin:3px;
             box-shadow:0 3px 0 #9a6000; transition:transform var(--t-fast);
-            text-shadow:0 1px 0 rgba(255,220,100,.4);
         }
-        .plant-btn:hover, .buy-btn:hover, .buy-animal-btn:hover, .buy-license-btn:hover { transform:translateY(-2px); }
+        .buy-btn:hover, .buy-animal-btn:hover, .buy-license-btn:hover { transform:translateY(-2px); }
         .harvest-btn {
             background:linear-gradient(135deg,#f09020,#d06010);
             color:#fff8e0; border:none; border-radius:var(--r-full);
@@ -730,6 +745,31 @@
             .market-row-trend,
             .market-grid-header > *:nth-child(5) { display: none; }
         }
+
+        /* Pflanzen-Auswahl Container */
+        .plant-buttons-container {
+            display: flex; flex-wrap: wrap; justify-content: center;
+            gap: 4px; margin-top: 10px; padding: 6px;
+            background: rgba(200,140,50,.1); border-radius: 16px;
+        }
+        .field { border-radius: 22px; }
+        .crop-icon { font-size: 2.4rem; margin-bottom: 4px; line-height: 1;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,.2)); }
+        .crop-name { font-size: .8rem; font-weight: 700; color: var(--text-dark); margin-bottom: 3px; }
+        .buy-field-btn {
+            background: linear-gradient(135deg, #f0b840, var(--gold-dark));
+            color: #3a1e00; border: none; border-radius: var(--r-full);
+            padding: 7px 16px; font-size: .8rem; font-weight: 700; cursor: pointer;
+            box-shadow: 0 3px 0 #9a6000; margin-top: 6px; transition: transform var(--t-fast);
+        }
+        .buy-field-btn:hover { transform: translateY(-2px); }
+        .harvest-btn {
+            background: linear-gradient(135deg, #f09020, #d06010);
+            color: #fff8e0; border: none; border-radius: var(--r-full);
+            padding: 7px 18px; font-size: .82rem; font-weight: 700; cursor: pointer; margin: 3px;
+            box-shadow: 0 3px 0 #904000; transition: transform var(--t-fast);
+        }
+        .harvest-btn:hover { transform: translateY(-2px); }
 </style>
 </head>
 <body>
@@ -827,6 +867,8 @@
                         <button onclick="window.openTicTacToe()" style="flex:1;min-width:130px;background:linear-gradient(135deg,#4a2a5a,#7a3a8a);color:#ffefcf;border:2px solid #9a5abf;border-radius:14px;padding:10px;font-size:.9rem;font-weight:bold;cursor:pointer;">⭕ Tic-Tac-Toe</button>
                         <button onclick="window.openRPS()" style="flex:1;min-width:130px;background:linear-gradient(135deg,#5a3a1a,#8a5a2a);color:#ffefcf;border:2px solid #bf8a4a;border-radius:14px;padding:10px;font-size:.9rem;font-weight:bold;cursor:pointer;">✂️ Schere-Stein-Papier</button>
                         <button onclick="window.openQuizDuel()" style="flex:1;min-width:130px;background:linear-gradient(135deg,#1a4a3a,#2a7a5a);color:#ffefcf;border:2px solid #4abf8a;border-radius:14px;padding:10px;font-size:.9rem;font-weight:bold;cursor:pointer;">❓ Quiz-Duell</button>
+                        <button onclick="window.openHarvestRace()" style="flex:1;min-width:130px;background:linear-gradient(135deg,#3a5a10,#6a9a20);color:#ffefcf;border:2px solid #9aca50;border-radius:14px;padding:10px;font-size:.9rem;font-weight:bold;cursor:pointer;">🌾 Ernte-Rennen</button>
+                        <button onclick="window.openZahlenDuell()" style="flex:1;min-width:130px;background:linear-gradient(135deg,#1a3a5a,#2a6a9a);color:#ffefcf;border:2px solid #5aaada;border-radius:14px;padding:10px;font-size:.9rem;font-weight:bold;cursor:pointer;">🔢 Zahlen-Duell</button>
                     </div>
                 </div>
                 <div class="multiplayer-slot" style="grid-column:1/-1;">
@@ -879,6 +921,15 @@
     <!-- Quiz-Duell Overlay -->
     <div id="qdView" class="mp-game-view" style="display:none;">
         <div id="qdContent"></div>
+    </div>
+
+    <!-- Ernte-Rennen Overlay -->
+    <div id="hrView" class="mp-game-view" style="display:none;">
+        <div id="hrContent"></div>
+    </div>
+    <!-- Zahlen-Duell Overlay -->
+    <div id="zdView" class="mp-game-view" style="display:none;">
+        <div id="zdContent"></div>
     </div>
 
     <!-- Schiffe versenken Overlay -->
@@ -5973,6 +6024,332 @@
             +'<b style="color:#f5a623;">+'+gold+'💰 +'+xp+' XP</b></div>'
             +mpBtn('🔄 Neu','window.openQuizDuel()','#27ae60')+mpBtn('✖ Zurück','window.closeQuizDuel()','#c44'));
         showToast(won?'❓ Gewonnen! +250💰':draw?'🤝 Unentschieden!':'😔 Verloren.');
+    }
+
+    
+    
+    // ═══════════════════════════════════════════════════════════════
+    // 🌾 ERNTE-RENNEN – Wer erntet in 30s mehr Felder?
+    // Firebase: hr/{gameId}
+    // ═══════════════════════════════════════════════════════════════
+    var hrGameId=null,hrRole=null,hrListener=null,hrData=null,hrRewarded=false;
+    var _hrTimer=null;
+
+    window.openHarvestRace=function(){ mpOpen('hr'); hrRenderLobby(); };
+    window.closeHarvestRace=function(){
+        mpClose('hr'); clearInterval(_hrTimer);
+        if(hrGameId&&hrData&&hrData.status!=='finished')
+            try{database.ref('hr/'+hrGameId+'/status').set('abandoned');}catch(e){}
+        hrGameId=null;hrRole=null;hrData=null;hrRewarded=false;
+    };
+
+    async function hrRenderLobby(){
+        var el=mpView('hr');if(!el)return;
+        clearInterval(window._hrLobbyTimer);
+        try{
+            var snap=await database.ref('hr').orderByChild('status').equalTo('waiting').once('value');
+            var games=snap.val()||{};
+            var now=Date.now(),rows='',myGame=null;
+            for(var gid in games){
+                var g=games[gid];
+                if(now-(g.createdAt||0)>600000){database.ref('hr/'+gid).remove();continue;}
+                if(g.host===currentUser.uid){myGame=gid;continue;}
+                rows+='<div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,200,100,.07);border-radius:14px;padding:10px;margin:6px 0;border:1px solid rgba(255,200,100,.15);">'
+                    +'<span>👤 <b>'+(g.hostName||'Unbekannt')+'</b></span>'
+                    +mpBtn('Beitreten','window.hrJoin(\''+gid+'\')','#27ae60')+'</div>';
+            }
+            if(!rows)rows='<div style="color:#c8a878;text-align:center;padding:14px;">Keine offenen Spiele</div>';
+            el.innerHTML=mpCard('<h2 style="color:#9aca50;text-align:center;">🌾 Ernte-Rennen</h2>'
+                +'<div style="text-align:center;font-size:.8rem;color:#c8a878;margin-bottom:10px;">30 Sekunden ernten! Mehr Klicks = mehr Gewinn 🏆<br>Sieger: +300💰 +60 XP</div>'
+                +(myGame?mpStatus('⏳ Dein Spiel wartet... '+mpBtn('Abbrechen','window.hrCancelLobby(\''+myGame+'\')','#c44'))
+                    :mpBtn('➕ Neues Spiel','window.hrCreate()','#27ae60'))
+                +'<div style="font-weight:bold;color:#9aca50;margin:10px 0 5px;">Offene Spiele:</div>'
+                +rows+mpBtn('✖ Zurück','window.closeHarvestRace()','#c44'));
+        }catch(e){el.innerHTML=mpCard(mpStatus('Fehler: '+e.message,'bad'));}
+        window._hrLobbyTimer=setInterval(function(){if(mpView('hr'))hrRenderLobby();else clearInterval(window._hrLobbyTimer);},5000);
+    }
+
+    window.hrCancelLobby=async function(gid){clearInterval(window._hrLobbyTimer);await database.ref('hr/'+gid).remove();hrRenderLobby();};
+
+    window.hrCreate=async function(){
+        clearInterval(window._hrLobbyTimer);
+        var gid=currentUser.uid+'_hr_'+Date.now();
+        hrGameId=gid;hrRole='host';hrRewarded=false;
+        await database.ref('hr/'+gid).set({
+            host:currentUser.uid,hostName:mpName(),guest:null,guestName:null,
+            status:'waiting',hostScore:0,guestScore:0,startTime:null,createdAt:Date.now()
+        });
+        hrListenGame();
+        var el=mpView('hr');if(el)el.innerHTML=mpCard('<h2 style="color:#9aca50;text-align:center;">🌾 Ernte-Rennen</h2>'+mpStatus('⏳ Warte auf Gegner...')+mpBtn('✖ Aufgeben','window.closeHarvestRace()','#c44'));
+    };
+
+    window.hrJoin=async function(gid){
+        clearInterval(window._hrLobbyTimer);
+        hrGameId=gid;hrRole='guest';hrRewarded=false;
+        var startTime=Date.now()+3000; // 3s Countdown
+        await database.ref('hr/'+gid).update({guest:currentUser.uid,guestName:mpName(),status:'playing',startTime:startTime});
+        hrListenGame();
+    };
+
+    function hrListenGame(){
+        if(hrListener){hrListener();hrListener=null;}
+        var ref=database.ref('hr/'+hrGameId);
+        function handler(snap){
+            var g=snap.val();if(!g)return;
+            hrData=g;
+            if(g.status==='abandoned'){showToast('Gegner hat aufgegeben!');window.closeHarvestRace();return;}
+            if(g.status==='finished'){hrRenderEnd(g);}
+            else if(g.status==='playing'){hrRenderGame(g);}
+        }
+        ref.on('value',handler);
+        hrListener=function(){ref.off('value',handler);};
+    }
+
+    function hrRenderGame(g){
+        var el=mpView('hr');if(!el)return;
+        var now=Date.now();
+        var startTime=g.startTime||now;
+        var elapsed=Math.max(0,now-startTime);
+        var timeLeft=Math.max(0,30000-elapsed);
+        var myScore=hrRole==='host'?g.hostScore:g.guestScore;
+        var oppScore=hrRole==='host'?g.guestScore:g.hostScore;
+        var oppName=hrRole==='host'?(g.guestName||'Gegner'):(g.hostName||'Gegner');
+        var plants=['🥕','🌾','🍅','🍓','🎃','🍍','☕','🫐','🍇','🍑','🍋','🍎'];
+        if(timeLeft<=0){
+            // Zeit abgelaufen – Ergebnis senden (nur host)
+            if(hrRole==='host'&&g.status==='playing'){
+                var winner=g.hostScore>g.guestScore?'host':g.guestScore>g.hostScore?'guest':'draw';
+                database.ref('hr/'+hrGameId).update({status:'finished',winner:winner});
+            }
+            return;
+        }
+        // Pflanzen-Grid
+        var grid='';
+        for(var i=0;i<12;i++){
+            var em=plants[Math.floor(Math.random()*plants.length)];
+            grid+='<div onclick="window.hrHarvest(this)" style="width:60px;height:60px;background:rgba(255,200,100,.1);border:2px solid rgba(255,200,100,.2);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:2rem;cursor:pointer;transition:transform .1s;user-select:none;" ontouchstart="window.hrHarvest(this)">'+em+'</div>';
+        }
+        var pct=(timeLeft/30000)*100;
+        el.innerHTML=mpCard('<h2 style="color:#9aca50;text-align:center;">🌾 Ernte-Rennen</h2>'
+            +'<div style="background:rgba(0,0,0,.3);border-radius:var(--r-full);height:10px;margin:6px 0;">'
+            +'<div style="background:linear-gradient(90deg,#9aca50,#f0b840);height:100%;width:'+pct+'%;border-radius:var(--r-full);transition:width .5s;"></div></div>'
+            +'<div style="text-align:center;font-size:.88rem;margin:4px 0;">⏳ <b style="color:#f0b840;">'+Math.ceil(timeLeft/1000)+'s</b> &nbsp; Du: <b style="color:#9aca50;">'+myScore+'</b> | '+oppName+': <b>'+oppScore+'</b></div>'
+            +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-width:300px;margin:10px auto;">'+grid+'</div>'
+            +mpBtn('✖ Aufgeben','window.closeHarvestRace()','#c44'));
+        // Timer
+        clearInterval(_hrTimer);
+        _hrTimer=setInterval(function(){
+            var now2=Date.now();
+            var tl=Math.max(0,30000-(now2-startTime));
+            var bar=el.querySelector('div[style*="transition:width"]');
+            var timeEl=el.querySelector('b[style*="color:#f0b840"]');
+            if(bar)bar.style.width=((tl/30000)*100)+'%';
+            if(timeEl)timeEl.textContent=Math.ceil(tl/1000)+'s';
+            if(tl<=0){clearInterval(_hrTimer);hrRenderGame(g);}
+        },500);
+    }
+
+    window.hrHarvest=async function(el){
+        if(!hrData||hrData.status!=='playing')return;
+        el.style.transform='scale(.8)';
+        el.style.opacity='.4';
+        el.onclick=null;
+        var myKey=hrRole==='host'?'hostScore':'guestScore';
+        var myScore=(hrRole==='host'?hrData.hostScore:hrData.guestScore)+1;
+        var upd={}; upd[myKey]=myScore;
+        await database.ref('hr/'+hrGameId).update(upd);
+    };
+
+    function hrRenderEnd(g){
+        if(hrRewarded)return;hrRewarded=true;
+        clearInterval(_hrTimer);
+        if(hrListener){hrListener();hrListener=null;}
+        var won=g.winner===hrRole,draw=g.winner==='draw';
+        var myScore=hrRole==='host'?g.hostScore:g.guestScore;
+        var oppScore=hrRole==='host'?g.guestScore:g.hostScore;
+        var gold=won?300:draw?80:myScore*5;
+        var xp=won?60:draw?20:myScore*2;
+        playerGold+=gold;addXP(xp);updateMoneyUI();saveGameToLocal();
+        var el=mpView('hr');if(!el)return;
+        el.innerHTML=mpCard('<h2 style="color:#9aca50;text-align:center;">🌾 Ernte-Rennen</h2>'
+            +mpStatus(won?'🏆 Du hast gewonnen!':draw?'🤝 Unentschieden!':'😔 Du hast verloren.',won?'good':draw?'':'bad')
+            +'<div style="text-align:center;margin:8px 0;">Du: <b>'+myScore+'</b> | Gegner: <b>'+oppScore+'</b><br>'
+            +'<b style="color:#f5a623;">+'+gold+'💰 +'+xp+' XP</b></div>'
+            +mpBtn('🔄 Neu','window.openHarvestRace()','#27ae60')+mpBtn('✖ Zurück','window.closeHarvestRace()','#c44'));
+        showToast(won?'🌾 Gewonnen! +'+gold+'💰':'😔 '+myScore+' Ernten – +'+gold+'💰');
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // 🔢 ZAHLEN-DUELL – Wer löst 10 Rechenaufgaben schneller?
+    // Firebase: zd/{gameId}
+    // ═══════════════════════════════════════════════════════════════
+    var zdGameId=null,zdRole=null,zdListener=null,zdData=null,zdRewarded=false;
+    var zdStartTime=0,zdCorrect=0;
+
+    window.openZahlenDuell=function(){mpOpen('zd');zdRenderLobby();};
+    window.closeZahlenDuell=function(){
+        mpClose('zd');
+        if(zdGameId&&zdData&&zdData.status!=='finished')
+            try{database.ref('zd/'+zdGameId+'/status').set('abandoned');}catch(e){}
+        zdGameId=null;zdRole=null;zdData=null;zdRewarded=false;zdCorrect=0;
+    };
+
+    function zdMakeQuestion(){
+        var ops=['+','-','×'];
+        var op=ops[Math.floor(Math.random()*ops.length)];
+        var a,b,ans;
+        if(op==='+'){a=Math.floor(Math.random()*50)+1;b=Math.floor(Math.random()*50)+1;ans=a+b;}
+        else if(op==='-'){a=Math.floor(Math.random()*50)+10;b=Math.floor(Math.random()*a)+1;ans=a-b;}
+        else{a=Math.floor(Math.random()*12)+2;b=Math.floor(Math.random()*12)+2;ans=a*b;}
+        // 3 falsche Antworten
+        var opts=[ans];
+        while(opts.length<4){var w=ans+Math.floor(Math.random()*20)-10;if(w!==ans&&w>0&&!opts.includes(w))opts.push(w);}
+        opts.sort(()=>Math.random()-.5);
+        return {q:a+' '+op+' '+b+' = ?',ans:ans,opts:opts};
+    }
+
+    async function zdRenderLobby(){
+        var el=mpView('zd');if(!el)return;
+        clearInterval(window._zdLobbyTimer);
+        try{
+            var snap=await database.ref('zd').orderByChild('status').equalTo('waiting').once('value');
+            var games=snap.val()||{};
+            var now=Date.now(),rows='',myGame=null;
+            for(var gid in games){
+                var g=games[gid];
+                if(now-(g.createdAt||0)>600000){database.ref('zd/'+gid).remove();continue;}
+                if(g.host===currentUser.uid){myGame=gid;continue;}
+                rows+='<div style="display:flex;justify-content:space-between;align-items:center;background:rgba(90,170,220,.07);border-radius:14px;padding:10px;margin:6px 0;border:1px solid rgba(90,170,220,.15);">'
+                    +'<span>👤 <b>'+(g.hostName||'Unbekannt')+'</b></span>'
+                    +mpBtn('Beitreten','window.zdJoin(\''+gid+'\')','#27ae60')+'</div>';
+            }
+            if(!rows)rows='<div style="color:#c8a878;text-align:center;padding:14px;">Keine offenen Spiele</div>';
+            el.innerHTML=mpCard('<h2 style="color:#5aaada;text-align:center;">🔢 Zahlen-Duell</h2>'
+                +'<div style="text-align:center;font-size:.8rem;color:#c8a878;margin-bottom:10px;">10 Rechenaufgaben! Wer ist schneller?<br>Sieger: +250💰 +50 XP</div>'
+                +(myGame?mpStatus('⏳ Dein Spiel wartet... '+mpBtn('Abbrechen','window.zdCancelLobby(\''+myGame+'\')','#c44'))
+                    :mpBtn('➕ Neues Spiel','window.zdCreate()','#27ae60'))
+                +'<div style="font-weight:bold;color:#5aaada;margin:10px 0 5px;">Offene Spiele:</div>'
+                +rows+mpBtn('✖ Zurück','window.closeZahlenDuell()','#c44'));
+        }catch(e){el.innerHTML=mpCard(mpStatus('Fehler: '+e.message,'bad'));}
+        window._zdLobbyTimer=setInterval(function(){if(mpView('zd'))zdRenderLobby();else clearInterval(window._zdLobbyTimer);},5000);
+    }
+
+    window.zdCancelLobby=async function(gid){clearInterval(window._zdLobbyTimer);await database.ref('zd/'+gid).remove();zdRenderLobby();};
+
+    window.zdCreate=async function(){
+        clearInterval(window._zdLobbyTimer);
+        var gid=currentUser.uid+'_zd_'+Date.now();
+        zdGameId=gid;zdRole='host';zdRewarded=false;zdCorrect=0;
+        await database.ref('zd/'+gid).set({
+            host:currentUser.uid,hostName:mpName(),guest:null,guestName:null,
+            status:'waiting',hostDone:false,guestDone:false,
+            hostTime:null,guestTime:null,hostCorrect:0,guestCorrect:0,createdAt:Date.now()
+        });
+        zdListenGame();
+        var el=mpView('zd');if(el)el.innerHTML=mpCard('<h2 style="color:#5aaada;text-align:center;">🔢 Zahlen-Duell</h2>'+mpStatus('⏳ Warte auf Gegner...')+mpBtn('✖ Aufgeben','window.closeZahlenDuell()','#c44'));
+    };
+
+    window.zdJoin=async function(gid){
+        clearInterval(window._zdLobbyTimer);
+        zdGameId=gid;zdRole='guest';zdRewarded=false;zdCorrect=0;
+        await database.ref('zd/'+gid).update({guest:currentUser.uid,guestName:mpName(),status:'playing'});
+        zdListenGame();
+    };
+
+    function zdListenGame(){
+        if(zdListener){zdListener();zdListener=null;}
+        var ref=database.ref('zd/'+zdGameId);
+        function handler(snap){
+            var g=snap.val();if(!g)return;
+            zdData=g;
+            if(g.status==='abandoned'){showToast('Gegner hat aufgegeben!');window.closeZahlenDuell();return;}
+            if(g.status==='finished'){zdRenderEnd(g);}
+            else if(g.status==='playing'&&!zdStartTime){
+                zdStartTime=Date.now();
+                zdRenderQuestion(0,g);
+            }
+        }
+        ref.on('value',handler);
+        zdListener=function(){ref.off('value',handler);};
+    }
+
+    function zdRenderQuestion(qNum,g){
+        if(qNum>=10){zdFinish(g);return;}
+        var el=mpView('zd');if(!el)return;
+        var q=zdMakeQuestion();
+        var oppName=zdRole==='host'?(g.guestName||'Gegner'):(g.hostName||'Gegner');
+        var myDone=zdRole==='host'?g.hostDone:g.guestDone;
+        var oppDone=zdRole==='host'?g.guestDone:g.hostDone;
+        var opts=q.opts.map(function(o){
+            return '<button onclick="window.zdAnswer('+o+','+q.ans+','+qNum+')" style="background:rgba(90,170,220,.12);border:2px solid rgba(90,170,220,.25);border-radius:14px;padding:12px 8px;color:#ffefcf;font-size:1.1rem;font-weight:700;cursor:pointer;transition:background .15s;width:100%;">'+o+'</button>';
+        }).join('');
+        el.innerHTML=mpCard('<h2 style="color:#5aaada;text-align:center;">🔢 Zahlen-Duell</h2>'
+            +'<div style="text-align:center;font-size:.8rem;color:#c8a878;margin:4px 0;">Frage '+(qNum+1)+'/10 &nbsp;|&nbsp; ✅ '+zdCorrect+' richtig &nbsp;|&nbsp; '+oppName+': '+(oppDone?'✅ Fertig':'⏳')+' </div>'
+            +'<div style="background:rgba(90,170,220,.15);border:2px solid rgba(90,170,220,.3);border-radius:18px;padding:18px;margin:12px 0;text-align:center;font-size:1.6rem;font-weight:800;color:#e8f4ff;">'+q.q+'</div>'
+            +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0;">'+opts+'</div>'
+            +mpBtn('✖ Aufgeben','window.closeZahlenDuell()','#c44'));
+    }
+
+    window.zdAnswer=async function(chosen,correct,qNum){
+        var isCorrect=chosen===correct;
+        if(isCorrect)zdCorrect++;
+        // Kurzes visuelles Feedback
+        var el=mpView('zd');
+        if(el){
+            var msg=el.querySelector('div[style*="font-size:1.6rem"]');
+            if(msg){msg.style.background=isCorrect?'rgba(76,180,60,.3)':'rgba(220,60,40,.3)';
+                msg.style.borderColor=isCorrect?'#60b040':'#d03020';}
+        }
+        var nextQ=qNum+1;
+        if(nextQ>=10){await zdFinish(zdData);return;}
+        setTimeout(function(){zdRenderQuestion(nextQ,zdData);},400);
+    };
+
+    async function zdFinish(g){
+        if(!zdGameId)return;
+        var elapsed=Date.now()-zdStartTime;
+        var myTimeKey=zdRole==='host'?'hostTime':'guestTime';
+        var myCorrectKey=zdRole==='host'?'hostCorrect':'guestCorrect';
+        var myDoneKey=zdRole==='host'?'hostDone':'guestDone';
+        var upd={}; upd[myTimeKey]=elapsed; upd[myCorrectKey]=zdCorrect; upd[myDoneKey]=true;
+        var snap=await database.ref('zd/'+zdGameId).once('value');
+        var g2=snap.val()||{};
+        var otherDone=zdRole==='host'?g2.guestDone:g2.hostDone;
+        if(otherDone){
+            var hc=zdRole==='host'?zdCorrect:(g2.hostCorrect||0);
+            var gc2=zdRole==='guest'?zdCorrect:(g2.guestCorrect||0);
+            var ht=zdRole==='host'?elapsed:(g2.hostTime||999999);
+            var gt=zdRole==='guest'?elapsed:(g2.guestTime||999999);
+            var winner;
+            if(hc!==gc2){winner=hc>gc2?'host':'guest';}
+            else{winner=ht<gt?'host':gt<ht?'guest':'draw';}
+            upd.status='finished'; upd.winner=winner;
+        }
+        await database.ref('zd/'+zdGameId).update(upd);
+        if(!otherDone){
+            var el=mpView('zd');
+            if(el)el.innerHTML=mpCard('<h2 style="color:#5aaada;text-align:center;">🔢 Zahlen-Duell</h2>'
+                +mpStatus('✅ Du bist fertig! '+zdCorrect+'/10 richtig. Warte auf Gegner...')
+                +mpBtn('✖ Zurück','window.closeZahlenDuell()','#c44'));
+        }
+    }
+
+    function zdRenderEnd(g){
+        if(zdRewarded)return;zdRewarded=true;
+        if(zdListener){zdListener();zdListener=null;}
+        var won=g.winner===zdRole,draw=g.winner==='draw';
+        var myScore=zdRole==='host'?g.hostCorrect:g.guestCorrect;
+        var oppScore=zdRole==='host'?g.guestCorrect:g.hostCorrect;
+        var gold=won?250:draw?70:myScore*8;
+        var xp=won?50:draw?15:myScore*3;
+        playerGold+=gold;addXP(xp);updateMoneyUI();saveGameToLocal();
+        var el=mpView('zd');if(!el)return;
+        el.innerHTML=mpCard('<h2 style="color:#5aaada;text-align:center;">🔢 Zahlen-Duell</h2>'
+            +mpStatus(won?'🏆 Du hast gewonnen!':draw?'🤝 Unentschieden!':'😔 Du hast verloren.',won?'good':draw?'':'bad')
+            +'<div style="text-align:center;margin:8px 0;">Du: <b>'+myScore+'/10</b> | Gegner: <b>'+oppScore+'/10</b><br>'
+            +'<b style="color:#f5a623;">+'+gold+'💰 +'+xp+' XP</b></div>'
+            +mpBtn('🔄 Neu','window.openZahlenDuell()','#27ae60')+mpBtn('✖ Zurück','window.closeZahlenDuell()','#c44'));
+        showToast(won?'🔢 Gewonnen! +'+gold+'💰':'🔢 '+myScore+'/10 – +'+gold+'💰');
     }
 
     
