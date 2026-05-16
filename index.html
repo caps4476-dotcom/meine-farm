@@ -7010,23 +7010,61 @@
             // Preispanel
             const priceEl = document.getElementById('marktPricePanel');
             if (priceEl) {
-                // renderAdvancedPricePanel für marktPricePanel
-                const baseProds = ['carrot','wheat','tomato','strawberry','pumpkin','egg','milk','cheese','bread','wool','honey','butter'];
-                const names = {carrot:'Karotte',wheat:'Weizen',tomato:'Tomate',strawberry:'Erdbeere',pumpkin:'Kürbis',
-                    egg:'Ei',milk:'Milch',cheese:'Käse',bread:'Brot',wool:'Wolle',honey:'Honig',butter:'Butter'};
-                const emojis = {carrot:'🥕',wheat:'🌾',tomato:'🍅',strawberry:'🍓',pumpkin:'🎃',
-                    egg:'🥚',milk:'🥛',cheese:'🧀',bread:'🍞',wool:'🧶',honey:'🍯',butter:'🧈'};
+                // Alle Waren mit Preisen anzeigen – gleiche Listen wie Lagerbestand
+                const allPriceProds = [...Object.keys(CROPS),
+                    'egg','milk','truffle','flour','cheese','bread','wool','goatCheese','fertilizer',
+                    'alpacaWool','honey','duckEgg','ostrichEgg','llamaWool','camelMilk','yakWool',
+                    'reindeerFur','peacockFeather','silk','dragonScale','butter','yogurt','woolThread',
+                    'scarf','honeyCake','silkFabric'];
+                const allPriceNames = {carrot:'Karotte',wheat:'Weizen',tomato:'Tomate',strawberry:'Erdbeere',
+                    pumpkin:'Kürbis',pineapple:'Ananas',coffee:'Kaffee',blueberry:'Blaubeere',
+                    raspberry:'Himbeere',grape:'Traube',peach:'Pfirsich',lemon:'Zitrone',apple:'Apfel',
+                    banana:'Banane',mango:'Mango',cherry:'Kirsche',pear:'Birne',pomegranate:'Granatapfel',
+                    kiwi:'Kiwi',dragonfruit:'Drachenfrucht',starfruit:'Sternfrucht',saffron:'Safran',
+                    vanilla:'Vanille',egg:'Ei',milk:'Milch',truffle:'Trüffel',flour:'Mehl',cheese:'Käse',
+                    bread:'Brot',wool:'Wolle',goatCheese:'Ziegenkäse',fertilizer:'Dünger',
+                    alpacaWool:'Alpakawolle',honey:'Honig',duckEgg:'Entenei',ostrichEgg:'Straußenei',
+                    llamaWool:'Lamawolle',camelMilk:'Kamelmilch',yakWool:'Yakwolle',
+                    reindeerFur:'Rentierfell',peacockFeather:'Pfauenfeder',silk:'Seide',
+                    dragonScale:'Drachenschuppe',butter:'Butter',yogurt:'Joghurt',woolThread:'Wollfaden',
+                    scarf:'Schal',honeyCake:'Honigkuchen',silkFabric:'Seidentuch'};
+                const allPriceEmojis = {carrot:'🥕',wheat:'🌾',tomato:'🍅',strawberry:'🍓',pumpkin:'🎃',
+                    pineapple:'🍍',coffee:'☕',blueberry:'🫐',raspberry:'🍓',grape:'🍇',peach:'🍑',
+                    lemon:'🍋',apple:'🍎',banana:'🍌',mango:'🥭',cherry:'🍒',pear:'🍐',
+                    pomegranate:'🍎',kiwi:'🥝',dragonfruit:'🐉',starfruit:'⭐',saffron:'🌸',
+                    vanilla:'🌿',egg:'🥚',milk:'🥛',truffle:'🍄',flour:'🌾',cheese:'🧀',bread:'🍞',
+                    wool:'🧶',goatCheese:'🧀',fertilizer:'💩',alpacaWool:'🧣',honey:'🍯',
+                    duckEgg:'🥚',ostrichEgg:'🥚',llamaWool:'🧣',camelMilk:'🥛',yakWool:'🧣',
+                    reindeerFur:'🧣',peacockFeather:'📿',silk:'👘',dragonScale:'⚡',butter:'🧈',
+                    yogurt:'🥣',woolThread:'🧵',scarf:'🧣',honeyCake:'🍰',silkFabric:'👘'};
+                // Nur Waren anzeigen die der Spieler auf seinem Level freigeschalten hat
+                const productLevels2 = {egg:6,milk:6,truffle:6,flour:8,cheese:8,bread:8,wool:10,
+                    goatCheese:12,fertilizer:14,alpacaWool:16,honey:18,duckEgg:20,ostrichEgg:22,
+                    llamaWool:25,camelMilk:28,yakWool:30,reindeerFur:33,peacockFeather:35,silk:38,
+                    dragonScale:40,butter:8,yogurt:8,woolThread:10,scarf:10,honeyCake:18,silkFabric:38};
                 let html = '';
-                baseProds.forEach(function(prod) {
-                    const base = basePrices[prod] || 10;
+                allPriceProds.forEach(function(prod) {
+                    // Level-Check
+                    if (CROPS[prod]) {
+                        const cr = CROPS[prod];
+                        if (playerLevel < cr.levelRequired) return;
+                        if (cr.licenseRequired && !ownedLicenses.includes(cr.licenseRequired)) return;
+                    } else {
+                        if (playerLevel < (productLevels2[prod] || 1)) return;
+                    }
+                    const base = basePrices[prod] || globalMarketPrices[prod] || 10;
                     const cur  = globalMarketPrices[prod] || base;
-                    const pct  = Math.round((cur/base)*100);
-                    const cls  = pct>=110?'price-good':pct<=90?'price-bad':'';
-                    html += '<div class="price-card"><div style="font-size:1.2rem;">'+( emojis[prod]||'📦')+'</div>'
-                          + '<div style="font-size:.65rem;color:var(--text-mid);">'+(names[prod]||prod)+'</div>'
-                          + '<div class="price-value '+cls+'">'+cur+'💰</div></div>';
+                    const pct  = Math.round((cur / base) * 100);
+                    const cls  = pct >= 110 ? 'price-good' : pct <= 90 ? 'price-bad' : '';
+                    const trend = pct >= 110 ? '📈' : pct <= 90 ? '📉' : '➖';
+                    html += '<div class="price-card" title="' + (allPriceNames[prod]||prod) + '">'
+                          + '<div style="font-size:1.2rem;">' + (allPriceEmojis[prod]||'📦') + '</div>'
+                          + '<div style="font-size:.63rem;color:var(--text-mid);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:68px;">'
+                          + (allPriceNames[prod]||prod) + '</div>'
+                          + '<div class="price-value ' + cls + '">' + cur + '💰 ' + trend + '</div>'
+                          + '</div>';
                 });
-                priceEl.innerHTML = html;
+                priceEl.innerHTML = html || '<div style="color:var(--text-mid);padding:10px;">Keine Preise verfügbar</div>';
             }
             // Produktliste – nutzt gleiche renderMarket-Logik aber anderen Container
             const listEl = document.getElementById('marktList');
