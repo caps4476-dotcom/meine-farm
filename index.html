@@ -982,26 +982,27 @@
                 <button id="viewHandbookBtn" class="view-btn">📖 Handbuch</button>
             <button id="viewAdminBtn" class="view-btn hidden" style="background:linear-gradient(135deg,#8a1010,#c01818);color:#fff;">👑 Admin</button>
             </div>
-            <div class="mass-plant-row" id="massPlantRow"></div>
-            <div class="mass-actions">
+            <div id="farmView" class="farm-grid">
+                <div class="mass-plant-row" id="massPlantRow"></div>
+                <div class="mass-actions">
                 <button id="harvestAllBtn" class="mass-btn harvest-all-btn">🚜 Alle ernten</button>
                 <button id="upgradeStorageBtn" class="mass-btn upgrade-storage-btn">🏚️ Lager +50 (500💰)</button>
                 <button id="cleanupLeaderboardBtn" class="mass-btn cleanup-btn">🧹 Bestenliste</button>
                 <button id="resetGameBtn" class="mass-btn reset-btn">🔄 Neues Spiel</button>
                 <input type="file" id="importFile" style="display:none" accept=".json">
             </div>
-            <div id="helperToggleWrap" class="mass-actions" style="display:none; align-items:center; gap:10px;">
+                <div id="helperToggleWrap" class="mass-actions" style="display:none; align-items:center; gap:10px;">
                 <button id="helperToggleBtn" class="mass-btn" style="background:#8b6e3a;">🧑‍🌾 Erntehelfer</button>
                 <span id="helperInfo" style="color:#ffefcf; font-size:0.85rem;"></span>
             </div>
-            <div id="farmView" class="farm-grid"></div>
-            <div class="orders-section" id="ordersContainer">
+                <div class="orders-section" id="ordersContainer">
                 <div style="text-align:center; font-weight:bold;">📋 MARKTAUFTRÄGE</div>
             </div>
-            <div class="market-section" id="farmMarketSection">
+                <div class="market-section" id="farmMarketSection">
                 <div class="market-title">🧺 Wochenmarkt</div>
                 <div class="price-panel" id="pricePanel"></div>
                 <div class="products-list" id="marketList"></div>
+            </div>
             </div>
             <!-- Eigenständiger Markt-View -->
 
@@ -1116,7 +1117,7 @@
                 </div>
             </div>
             <div id="adminView" class="hidden">
-            <div id="adminSection" class="admin-section" style="padding:20px;">
+                <div id="adminSection" class="admin-section" style="padding:20px;">
                 <div class="admin-title" style="color:#ff9800; font-size:1.1rem;">🛠️ ADMIN-ZENTRALE</div>
                 <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;">
                     <button onclick="debugFirebase()" style="background:#27ae60; color:white; border:none; padding:8px 14px; border-radius:8px; cursor:pointer;">🔍 Debug</button>
@@ -1146,10 +1147,15 @@
                     <button id="adminRefreshPlayersBtn" class="admin-btn" style="margin-top:10px;">🔄 Aktualisieren</button>
                 </div>
             </div>
+            </div>
 
             <div id="marktView" class="hidden">
                 <div class="market-section">
                     <div class="market-title">🧺 Wochenmarkt – Waren verkaufen</div>
+                    <div id="marktPricePanel" class="price-panel"></div>
+                    <div id="marktList"></div>
+                </div>
+            </div>
                     <div id="marktPricePanel" class="price-panel"></div>
                     <div id="marktList"></div>
                 </div>
