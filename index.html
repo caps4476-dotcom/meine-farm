@@ -1,4 +1,9 @@
-<!DOCTYPE html>
+<!DOC
+            <!-- Admin View -->
+            <div id="adminView" class="hidden">
+                <div id="adminSection" style="padding:20px;">
+                </div>
+            </div>TYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
@@ -976,9 +981,11 @@
                 <button id="viewLicensesBtn" class="view-btn locked">📜 Lizenzen (Level 10)</button>
                 <button id="viewMultiplayerBtn" class="view-btn locked">🌍 Multiplayer (Level 5)</button>
                 <button id="viewQuestsBtn" class="view-btn">📋 Quests</button>
+            <button id="viewMarktBtn" class="view-btn">🧺 Markt</button>
                 <button id="viewAccountBtn" class="view-btn">👤 Account</button>
                 <button id="viewAchievementsBtn" class="view-btn">🏆 Erfolge</button>
                 <button id="viewHandbookBtn" class="view-btn">📖 Handbuch</button>
+            <button id="viewAdminBtn" class="view-btn hidden" style="background:linear-gradient(135deg,#8a1010,#c01818);color:#fff;">👑 Admin</button>
             </div>
             <div class="mass-plant-row" id="massPlantRow"></div>
             <div class="mass-actions">
@@ -1175,6 +1182,18 @@
                 <div class="market-title">🧺 Wochenmarkt</div>
                 <div class="price-panel" id="pricePanel"></div>
                 <div class="products-list" id="marketList"></div>
+            </div>
+            <!-- Eigenständiger Markt-View -->
+            <div id="marktView" class="hidden">
+                <div class="market-section">
+                    <div class="market-title">🧺 Wochenmarkt – Waren verkaufen</div>
+                    <div id="marktPricePanel" class="price-panel"></div>
+                    <div id="marktList"></div>
+                </div>
+            </div>
+            <!-- Admin View -->
+            <div id="adminView" class="hidden">
+                <div id="adminSectionContainer" style="padding:0;"></div>
             </div>
             <footer>✨ Account-System | Version 4.5</footer>
             <!-- "Was ist neu?" Modal -->
@@ -1479,7 +1498,16 @@
             { id: "sell_100",   name: "💰 Marktkönig",        description: "Verkaufe 100 Produkte",               target: 100,rewardGold: 1400, rewardXP: 200, type: "sell"    },
             { id: "harvest_30", name: "🌾 Fleißige Hände",    description: "Ernte 30 Pflanzen in Folge",         target: 30, rewardGold: 380,  rewardXP: 55,  type: "harvest" },
             { id: "plant_30",   name: "🌱 Aussaat-Profi",     description: "Pflanze 30 Pflanzen",                 target: 30, rewardGold: 450,  rewardXP: 65,  type: "plant"   },
-            { id: "animal_8",   name: "🐄 Guter Hirte",       description: "Sammle 8 tierische Produkte",         target: 8,  rewardGold: 300,  rewardXP: 50,  type: "animal"  }
+            { id: "animal_8",    name: "🐄 Guter Hirte",        description: "Sammle 8 tierische Produkte",          target: 8,   rewardGold: 300,  rewardXP: 50,  type: "animal"  },
+            { id: "craft_5",    name: "⚙️ Erste Schritte",    description: "Stelle 5 verarbeitete Produkte her",   target: 5,   rewardGold: 350,  rewardXP: 55,  type: "craft"   },
+            { id: "sell_10",    name: "💰 Guter Start",        description: "Verkaufe 10 Produkte",                 target: 10,  rewardGold: 200,  rewardXP: 35,  type: "sell"    },
+            { id: "harvest_10", name: "🌾 Erste Ernte",        description: "Ernte 10 Pflanzen",                    target: 10,  rewardGold: 180,  rewardXP: 30,  type: "harvest" },
+            { id: "plant_8",    name: "🌱 Frischer Start",     description: "Pflanze 8 Pflanzen",                   target: 8,   rewardGold: 160,  rewardXP: 25,  type: "plant"   },
+            { id: "sell_150",   name: "💰 Großhändler",        description: "Verkaufe 150 Produkte",                target: 150, rewardGold: 1800, rewardXP: 250, type: "sell"    },
+            { id: "harvest_100",name: "🌾 Ernte-Marathon",     description: "Ernte 100 Pflanzen",                   target: 100, rewardGold: 1100, rewardXP: 160, type: "harvest" },
+            { id: "plant_60",   name: "🌱 Pflanz-Experte",     description: "Pflanze 60 Pflanzen",                  target: 60,  rewardGold: 700,  rewardXP: 100, type: "plant"   },
+            { id: "animal_50",  name: "🐄 Stall-König",        description: "Sammle 50 tierische Produkte",         target: 50,  rewardGold: 1100, rewardXP: 170, type: "animal"  },
+            { id: "craft_40",   name: "⚙️ Verarbeitungs-Profi",description: "Stelle 40 verarbeitete Produkte her",  target: 40,  rewardGold: 1500, rewardXP: 220, type: "craft"   }
         ];
         const WEEKLY_QUEST_POOL = [
             { id: "w_harvest_100", name: "⭐ Meisterfarmer", description: "Ernte 100 Pflanzen", target: 100,
@@ -1496,8 +1524,12 @@
                 rewardGold: 2200, rewardXP: 300, type: "animal" },
             { id: "w_craft_40", name: "⭐ Handwerks-Meister", description: "Stelle 40 Produkte her", target: 40,
                 rewardGold: 2500, rewardXP: 320, type: "craft" },
-            { id: "w_plant_150", name: "⭐ Gärtner-Gott", description: "Pflanze 150 Pflanzen", target: 150,
-                rewardGold: 2000, rewardXP: 250, type: "plant" }
+            { id: "w_plant_150",   name: "⭐ Gärtner-Gott",      description: "Pflanze 150 Pflanzen",              target: 150, rewardGold: 2000, rewardXP: 250,  type: "plant"   },
+            { id: "w_harvest_300", name: "🌾 Ernte-Woche",        description: "Ernte 300 Pflanzen diese Woche",    target: 300, rewardGold: 4000, rewardXP: 700,  type: "harvest" },
+            { id: "w_animal_100",  name: "🐄 Stall-Woche",        description: "Sammle 100 Tierprodukte",           target: 100, rewardGold: 4500, rewardXP: 750,  type: "animal"  },
+            { id: "w_sell_1000",   name: "💰 Markt-König",        description: "Verkaufe 1000 Produkte",             target: 1000,rewardGold: 9000, rewardXP: 1400, type: "sell"    },
+            { id: "w_craft_100",   name: "⚙️ Fabrik-Betreiber",   description: "Stelle 100 verarbeitete Produkte her",target:100, rewardGold: 6500, rewardXP: 1100, type: "craft"   },
+            { id: "w_plant_300",   name: "🌱 Mega-Aussaat",       description: "Pflanze 300 Pflanzen diese Woche",  target: 300, rewardGold: 3500, rewardXP: 600,  type: "plant"   }
         ];
 
         function pickDailyQuests() {
@@ -1714,7 +1746,22 @@
                 goldCost: 40000,
                 resources: { carrot: 300, wheat: 250, tomato: 250, strawberry: 200, pumpkin: 200, pineapple: 150,
                     coffee: 120, blueberry: 100, raspberry: 100, grape: 80, peach: 80 }, researchTime: 480000,
-                effect: { type: "helper", value: 3 } }
+                effect: { type: "helper", value: 3 } },
+            lagermeister: { name: "📦 Lagermeister", emoji: "📦", description: "Maximales Lager +200",
+                goldCost: 6000, resources: { wheat: 40, flour: 10 }, researchTime: 720000,
+                effect: { type: "storageBonus", value: 200 } },
+            goldgier: { name: "💰 Goldgier", emoji: "💰", description: "Alle Verkaufspreise +10%",
+                goldCost: 12000, resources: { honey: 15, butter: 15 }, researchTime: 1200000,
+                effect: { type: "sellBonus", value: 1.10 } },
+            tierfluesterer: { name: "🐄 Tierflüsterer", emoji: "🐄", description: "Tierproduktionszeit -20%",
+                goldCost: 9000, resources: { milk: 30, egg: 30 }, researchTime: 900000,
+                effect: { type: "animalSpeed", value: 0.80 } },
+            meisterkoch: { name: "👨‍🍳 Meisterkoch", emoji: "👨‍🍳", description: "Verarbeitungszeit -25%",
+                goldCost: 10000, resources: { bread: 20, cheese: 20 }, researchTime: 1080000,
+                effect: { type: "craftSpeed", value: 0.75 } },
+            xpBooster: { name: "⭐ XP-Booster", emoji: "⭐", description: "Alle XP-Gewinne +25%",
+                goldCost: 7000, resources: { coffee: 25, pineapple: 20 }, researchTime: 720000,
+                effect: { type: "xpBonus", value: 1.25 } }
         };
         // ==================== PREISE ====================
         let globalMarketPrices = {
@@ -4039,6 +4086,9 @@
             document.getElementById("questsView").classList.toggle("hidden", view !== "quests");
             document.getElementById("accountView").classList.toggle("hidden", view !== "account");
             document.getElementById("achievementsView").classList.toggle("hidden", view !== "achievements");
+            document.getElementById("marktView").classList.toggle("hidden", view !== "markt");
+            const adminViewEl = document.getElementById("adminView");
+            if (adminViewEl) adminViewEl.classList.toggle("hidden", view !== "admin");
             document.getElementById("handbookView").classList.toggle("hidden", view !== "handbook");
             document.getElementById("viewFarmBtn").classList.toggle("active", view === "farm");
             document.getElementById("viewBarnBtn").classList.toggle("active", view === "barn");
@@ -4049,12 +4099,21 @@
             document.getElementById("viewQuestsBtn").classList.toggle("active", view === "quests");
             document.getElementById("viewAccountBtn").classList.toggle("active", view === "account");
             document.getElementById("viewAchievementsBtn").classList.toggle("active", view === "achievements");
+            const marktBtn = document.getElementById("viewMarktBtn");
+            if (marktBtn) marktBtn.classList.toggle("active", view === "markt");
+            const adminNavBtn = document.getElementById("viewAdminBtn");
+            if (adminNavBtn) adminNavBtn.classList.toggle("active", view === "admin");
             document.getElementById("viewHandbookBtn").classList.toggle("active", view === "handbook");
             if (view === "barn") renderBarn();
             if (view === "craft") renderCraft();
             if (view === "research") renderResearch();
             if (view === "licenses") renderLicenses();
             if (view === "achievements") renderAchievements();
+            if (view === "markt") { renderMarktView(); }
+            if (view === "admin" && isAdmin) {
+                const adminNavBtn = document.getElementById("viewAdminBtn");
+                if (adminNavBtn) adminNavBtn.classList.remove("hidden");
+            }
             if (view === "handbook") renderHandbook();
             if (view === "multiplayer") clearChatNotifications();
             if (view === "quests") { renderLoginBonus();
@@ -5705,10 +5764,10 @@
     }
 
 
-        window.mgSelectW = function(k) { document.querySelectorAll('.bet-opt').forEach(function(b) { b.style
-                .background = '';
-                b.style.borderColor = ''; }); var el = document.getElementById('bw_' + k); if (el) { el.style
-                .background = '#3a5a8a';
+        window.mgSelectW = function(k) {
+            window._mgBetW = k;
+            document.querySelectorAll('.bet-opt').forEach(function(b) { b.style.background = ''; b.style.borderColor = ''; });
+            var el = document.getElementById('bw_' + k); if (el) { el.style.background = '#3a5a8a';
                 el.style.borderColor = '#f5a623'; }
             window._mgBetW = k; };
         window.mgSelectAmt = function(a, btn) { document.querySelectorAll('.mg-btn-blue').forEach(function(b) { b.style
@@ -6946,7 +7005,135 @@
             isBanned = false; }
 
         function checkAndBlockBanned() { if (isBanned) { showBanMessage(); return true; } return false; }
-        // ==================== INIT ====================
+
+        function renderMarktView() {
+            // Preispanel
+            const priceEl = document.getElementById('marktPricePanel');
+            if (priceEl) {
+                // renderAdvancedPricePanel für marktPricePanel
+                const baseProds = ['carrot','wheat','tomato','strawberry','pumpkin','egg','milk','cheese','bread','wool','honey','butter'];
+                const names = {carrot:'Karotte',wheat:'Weizen',tomato:'Tomate',strawberry:'Erdbeere',pumpkin:'Kürbis',
+                    egg:'Ei',milk:'Milch',cheese:'Käse',bread:'Brot',wool:'Wolle',honey:'Honig',butter:'Butter'};
+                const emojis = {carrot:'🥕',wheat:'🌾',tomato:'🍅',strawberry:'🍓',pumpkin:'🎃',
+                    egg:'🥚',milk:'🥛',cheese:'🧀',bread:'🍞',wool:'🧶',honey:'🍯',butter:'🧈'};
+                let html = '';
+                baseProds.forEach(function(prod) {
+                    const base = basePrices[prod] || 10;
+                    const cur  = globalMarketPrices[prod] || base;
+                    const pct  = Math.round((cur/base)*100);
+                    const cls  = pct>=110?'price-good':pct<=90?'price-bad':'';
+                    html += '<div class="price-card"><div style="font-size:1.2rem;">'+( emojis[prod]||'📦')+'</div>'
+                          + '<div style="font-size:.65rem;color:var(--text-mid);">'+(names[prod]||prod)+'</div>'
+                          + '<div class="price-value '+cls+'">'+cur+'💰</div></div>';
+                });
+                priceEl.innerHTML = html;
+            }
+            // Produktliste – nutzt gleiche renderMarket-Logik aber anderen Container
+            const listEl = document.getElementById('marktList');
+            if (!listEl) return;
+
+            const baseProducts = [...Object.keys(CROPS), 'egg','milk','truffle','flour','cheese','bread','wool',
+                'goatCheese','fertilizer','alpacaWool','honey','duckEgg','ostrichEgg','llamaWool','camelMilk',
+                'yakWool','reindeerFur','peacockFeather','silk','dragonScale','butter','yogurt','woolThread',
+                'scarf','honeyCake','silkFabric'];
+            const inventoryKeys = Object.keys(inventory||{}).filter(k=>(inventory[k]||0)>0);
+            const allProds = Array.from(new Set([...baseProducts,...inventoryKeys]));
+            const names2 = {carrot:'Karotte',wheat:'Weizen',tomato:'Tomate',strawberry:'Erdbeere',pumpkin:'Kürbis',
+                pineapple:'Ananas',coffee:'Kaffee',blueberry:'Blaubeere',raspberry:'Himbeere',grape:'Traube',
+                peach:'Pfirsich',lemon:'Zitrone',apple:'Apfel',banana:'Banane',mango:'Mango',cherry:'Kirsche',
+                pear:'Birne',pomegranate:'Granatapfel',kiwi:'Kiwi',dragonfruit:'Drachenfrucht',
+                starfruit:'Sternfrucht',saffron:'Safran',vanilla:'Vanille',
+                egg:'Ei',milk:'Milch',truffle:'Trüffel',flour:'Mehl',cheese:'Käse',bread:'Brot',
+                wool:'Wolle',goatCheese:'Ziegenkäse',fertilizer:'Dünger',alpacaWool:'Alpakawolle',
+                honey:'Honig',duckEgg:'Entenei',ostrichEgg:'Straußenei',llamaWool:'Lamawolle',
+                camelMilk:'Kamelmilch',yakWool:'Yakwolle',reindeerFur:'Rentierfell',
+                peacockFeather:'Pfauenfeder',silk:'Seide',dragonScale:'Drachenschuppe',
+                butter:'Butter',yogurt:'Joghurt',woolThread:'Wollfaden',scarf:'Schal',
+                honeyCake:'Honigkuchen',silkFabric:'Seidentuch'};
+            const emojis2 = {carrot:'🥕',wheat:'🌾',tomato:'🍅',strawberry:'🍓',pumpkin:'🎃',pineapple:'🍍',
+                coffee:'☕',blueberry:'🫐',raspberry:'🍓',grape:'🍇',peach:'🍑',lemon:'🍋',apple:'🍎',
+                banana:'🍌',mango:'🥭',cherry:'🍒',pear:'🍐',pomegranate:'🍎',kiwi:'🥝',dragonfruit:'🐉',
+                starfruit:'⭐',saffron:'🌸',vanilla:'🌿',egg:'🥚',milk:'🥛',truffle:'🍄',flour:'🌾',
+                cheese:'🧀',bread:'🍞',wool:'🧶',goatCheese:'🧀',fertilizer:'💩',alpacaWool:'🧣',
+                honey:'🍯',duckEgg:'🥚',ostrichEgg:'🥚',llamaWool:'🧣',camelMilk:'🥛',yakWool:'🧣',
+                reindeerFur:'🧣',peacockFeather:'📿',silk:'👘',dragonScale:'⚡',butter:'🧈',yogurt:'🥣',
+                woolThread:'🧵',scarf:'🧣',honeyCake:'🍰',silkFabric:'👘'};
+
+            const cats = [
+                {id:'all',label:'🧺 Alle'},
+                {id:'crops',label:'🌾 Pflanzen'},
+                {id:'animal',label:'🐄 Tierprodukte'},
+                {id:'craft',label:'⚙️ Verarbeitet'},
+            ];
+            const cropKeys = new Set(Object.keys(CROPS));
+            const animalKeys = new Set(['egg','milk','truffle','wool','alpacaWool','honey','duckEgg',
+                'ostrichEgg','llamaWool','camelMilk','yakWool','reindeerFur','peacockFeather','silk',
+                'dragonScale','goatCheese','fertilizer']);
+            const craftKeys = new Set(['flour','cheese','bread','butter','yogurt','woolThread','scarf','honeyCake','silkFabric']);
+            function getCat(p){if(cropKeys.has(p))return'crops';if(animalKeys.has(p))return'animal';if(craftKeys.has(p))return'craft';return'crops';}
+
+            const activeCat = listEl._activeTab || 'all';
+            const productLevels = {egg:6,milk:6,truffle:6,flour:8,cheese:8,bread:8,wool:10,goatCheese:12,
+                fertilizer:14,alpacaWool:16,honey:18,duckEgg:20,ostrichEgg:22,llamaWool:25,camelMilk:28,
+                yakWool:30,reindeerFur:33,peacockFeather:35,silk:38,dragonScale:40,butter:8,yogurt:8,
+                woolThread:10,scarf:10,honeyCake:18,silkFabric:38};
+
+            const inStock = allProds.filter(function(prod){
+                if((inventory[prod]||0)<=0) return false;
+                if(CROPS[prod]){const cr=CROPS[prod];return playerLevel>=cr.levelRequired&&(!cr.licenseRequired||ownedLicenses.includes(cr.licenseRequired));}
+                return playerLevel>=(productLevels[prod]||1);
+            });
+
+            let html = '<div class="market-tabs">';
+            cats.forEach(function(cat){
+                const cnt = cat.id==='all'?inStock.length:inStock.filter(p=>getCat(p)===cat.id).length;
+                if(cat.id!=='all'&&cnt===0) return;
+                const active = cat.id===activeCat?' active':'';
+                html += '<button class="market-tab'+active+'" onclick="window.setMarktTab(\''+cat.id+'\')">'+cat.label+(cnt>0?' ('+cnt+')':'')+'</button>';
+            });
+            html += '</div>';
+
+            const filtered = activeCat==='all'?inStock:inStock.filter(p=>getCat(p)===activeCat);
+            if(filtered.length===0){
+                html += '<div class="market-grid"><div class="market-empty">🧺 Nichts im Lager – ernte oder verarbeite etwas!</div></div>';
+            } else {
+                html += '<div class="market-grid">';
+                html += '<div class="market-grid-header"><div></div><div>Produkt</div><div style="text-align:center">Bestand</div><div style="text-align:center">Preis</div><div style="text-align:center">Trend</div><div></div></div>';
+                filtered.forEach(function(prod){
+                    const amount = inventory[prod]||0;
+                    if(amount<=0) return;
+                    const baseP = (CROPS[prod]&&CROPS[prod].basePrice)||globalMarketPrices[prod]||10;
+                    const price = globalMarketPrices[prod]||basePrices[prod]||baseP;
+                    const pct = (price/baseP)*100;
+                    const pCls = pct>=110?'price-good':pct<=90?'price-bad':'';
+                    const trend = pct>=110?'📈':pct<=90?'📉':'➖';
+                    html += '<div class="market-row">'
+                        + '<div class="market-row-emoji">'+(emojis2[prod]||'📦')+'</div>'
+                        + '<div class="market-row-name">'+(names2[prod]||prod)+'</div>'
+                        + '<div class="market-row-qty">'+amount+'</div>'
+                        + '<div class="market-row-price '+pCls+'">'+price+'💰</div>'
+                        + '<div class="market-row-trend">'+trend+'</div>'
+                        + '<div class="market-row-btns">'
+                        + '<button class="sell-btn-sm" data-product="'+prod+'" data-container="markt">1x</button>'
+                        + '<button class="sell-btn-all" data-product="'+prod+'" data-container="markt">Alle ('+amount+')</button>'
+                        + '</div></div>';
+                });
+                html += '</div>';
+            }
+            listEl.innerHTML = html;
+            listEl.querySelectorAll('.sell-btn-sm').forEach(function(btn){
+                btn.addEventListener('click',function(){sellProduct(btn.dataset.product);setTimeout(renderMarktView,200);});
+            });
+            listEl.querySelectorAll('.sell-btn-all').forEach(function(btn){
+                btn.addEventListener('click',function(){sellAllProduct(btn.dataset.product);setTimeout(renderMarktView,200);});
+            });
+        }
+        window.setMarktTab = function(cat) {
+            const listEl = document.getElementById('marktList');
+            if (listEl) { listEl._activeTab = cat; renderMarktView(); }
+        };
+        
+                // ==================== INIT ====================
         async function init() {
             try {
                 for (let i = 0; i < MAX_FIELDS; i++) fields.push({ owned: i < 4, cropId: null, plantedAt: null,
@@ -7009,6 +7196,10 @@
                 document.getElementById("viewAccountBtn").onclick = () => setView("account");
                 document.getElementById("viewAchievementsBtn").onclick = () => setView("achievements");
                 document.getElementById("viewHandbookBtn").onclick = () => setView("handbook");
+                const vMarktBtn = document.getElementById("viewMarktBtn");
+                if (vMarktBtn) vMarktBtn.onclick = () => setView("markt");
+                const vAdminBtn = document.getElementById("viewAdminBtn");
+                if (vAdminBtn) vAdminBtn.onclick = () => setView("admin");
                 document.getElementById("registerBtn").onclick = () => register();
                 document.getElementById("loginBtn").onclick = () => login();
                 document.getElementById("savePlayerNameBtn")?.addEventListener("click", async () => { const
@@ -7060,8 +7251,17 @@
         function checkAdminStatus() { const isExplicitAdmin = (currentUser && currentUser.uid ===
                 'Hb9Btkhn3UOBJLjapmwXfsDi05z2'); const isEmailAdmin = (currentUser && typeof ADMIN_EMAILS !==
                 'undefined' && ADMIN_EMAILS.includes(currentUser.email)); if (isExplicitAdmin || isEmailAdmin) {
-                isAdmin = true; const section = document.getElementById("adminSection"); if (section) section
-                    .classList.remove("hidden");
+                isAdmin = true;
+                // Admin-Nav-Button anzeigen
+                const adminNavBtn = document.getElementById("viewAdminBtn");
+                if (adminNavBtn) adminNavBtn.classList.remove("hidden");
+                // Admin-Section in adminView verschieben (falls noch nicht da)
+                const section = document.getElementById("adminSection");
+                const adminView = document.getElementById("adminView");
+                if (section && adminView && !adminView.contains(section)) {
+                    adminView.appendChild(section);
+                }
+                if (section) section.classList.remove("hidden");
                 console.log("👑 Admin-Status verifiziert!"); if (typeof loadBannedPlayers === 'function')
                 loadBannedPlayers(); if (typeof adminLoadAllPlayers === 'function') adminLoadAllPlayers(); } else {
                 isAdmin = false; const section = document.getElementById("adminSection"); if (section) section
