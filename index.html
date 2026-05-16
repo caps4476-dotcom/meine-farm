@@ -1,9 +1,4 @@
-<!DOC
-            <!-- Admin View -->
-            <div id="adminView" class="hidden">
-                <div id="adminSection" style="padding:20px;">
-                </div>
-            </div>TYPE html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
@@ -1052,40 +1047,9 @@
                     <div style="font-size: 0.6rem; margin-top: 5px; color: #aaa;">💡 Sei respektvoll! Admin kann Nachrichten löschen.</div>
                 </div>
             </div>
-            <!-- Minispiele Overlay -->
-            <div id="minigamesView" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#1a1f14; z-index:200; overflow-y:auto;">
-                <div style="padding:8px 10px 0; position:sticky; top:0; background:#1a1f14; z-index:201; border-bottom:1px solid #3a4a2a;">
-                    <button onclick="window.toggleMinigames()" style="background:#4a3a2a;color:#ffefcf;border:2px solid #8b6942;border-radius:20px;padding:6px 16px;font-size:.85rem;cursor:pointer;">← Zurück zum Multiplayer</button>
-                </div>
-                <div id="mgContent" style="padding:8px;"></div>
-            </div>
-            <!-- Tic-Tac-Toe Overlay -->
-    <div id="tttView" class="mp-game-view" style="display:none;">
-        <div id="tttContent"></div>
-    </div>
-    <!-- Schere-Stein-Papier Overlay -->
-    <div id="rpsView" class="mp-game-view" style="display:none;">
-        <div id="rpsContent"></div>
-    </div>
-    <!-- Quiz-Duell Overlay -->
-    <div id="qdView" class="mp-game-view" style="display:none;">
-        <div id="qdContent"></div>
-    </div>
-
-    <!-- Ernte-Rennen Overlay -->
-    <div id="hrView" class="mp-game-view" style="display:none;">
-        <div id="hrContent"></div>
-    </div>
-    <!-- Zahlen-Duell Overlay -->
-    <div id="zdView" class="mp-game-view" style="display:none;">
-        <div id="zdContent"></div>
-    </div>
-
-    <!-- Schiffe versenken Overlay -->
-            <div id="battleshipView" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#0d1a2a; z-index:200; overflow-y:auto;">
-                <div id="battleshipContent"></div>
-            </div>
-            <div id="adminSection" class="admin-section hidden" style="grid-column:1/-1;">
+            <!-- Admin View -->
+            <div id="adminView" class="hidden">
+            <div id="adminSection" class="admin-section" style="padding:20px;">
                 <div class="admin-title" style="color:#ff9800; font-size:1.1rem;">🛠️ ADMIN-ZENTRALE</div>
                 <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;">
                     <button onclick="debugFirebase()" style="background:#27ae60; color:white; border:none; padding:8px 14px; border-radius:8px; cursor:pointer;">🔍 Debug</button>
@@ -1190,6 +1154,40 @@
                     <div id="marktPricePanel" class="price-panel"></div>
                     <div id="marktList"></div>
                 </div>
+            </div>
+            </div>
+            <!-- Minispiele Overlay -->
+            <div id="minigamesView" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#1a1f14; z-index:200; overflow-y:auto;">
+                <div style="padding:8px 10px 0; position:sticky; top:0; background:#1a1f14; z-index:201; border-bottom:1px solid #3a4a2a;">
+                    <button onclick="window.toggleMinigames()" style="background:#4a3a2a;color:#ffefcf;border:2px solid #8b6942;border-radius:20px;padding:6px 16px;font-size:.85rem;cursor:pointer;">← Zurück zum Multiplayer</button>
+                </div>
+                <div id="mgContent" style="padding:8px;"></div>
+            </div>
+            <!-- Tic-Tac-Toe Overlay -->
+    <div id="tttView" class="mp-game-view" style="display:none;">
+        <div id="tttContent"></div>
+    </div>
+    <!-- Schere-Stein-Papier Overlay -->
+    <div id="rpsView" class="mp-game-view" style="display:none;">
+        <div id="rpsContent"></div>
+    </div>
+    <!-- Quiz-Duell Overlay -->
+    <div id="qdView" class="mp-game-view" style="display:none;">
+        <div id="qdContent"></div>
+    </div>
+
+    <!-- Ernte-Rennen Overlay -->
+    <div id="hrView" class="mp-game-view" style="display:none;">
+        <div id="hrContent"></div>
+    </div>
+    <!-- Zahlen-Duell Overlay -->
+    <div id="zdView" class="mp-game-view" style="display:none;">
+        <div id="zdContent"></div>
+    </div>
+
+    <!-- Schiffe versenken Overlay -->
+            <div id="battleshipView" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#0d1a2a; z-index:200; overflow-y:auto;">
+                <div id="battleshipContent"></div>
             </div>
             <!-- Admin View -->
             <div id="adminView" class="hidden">
@@ -4111,8 +4109,8 @@
             if (view === "achievements") renderAchievements();
             if (view === "markt") { renderMarktView(); }
             if (view === "admin" && isAdmin) {
-                const adminNavBtn = document.getElementById("viewAdminBtn");
-                if (adminNavBtn) adminNavBtn.classList.remove("hidden");
+                // Admin-Spielerliste laden
+                if (typeof loadAdminPlayerPicker === "function") loadAdminPlayerPicker();
             }
             if (view === "handbook") renderHandbook();
             if (view === "multiplayer") clearChatNotifications();
@@ -7293,13 +7291,9 @@
                 // Admin-Nav-Button anzeigen
                 const adminNavBtn = document.getElementById("viewAdminBtn");
                 if (adminNavBtn) adminNavBtn.classList.remove("hidden");
-                // Admin-Section in adminView verschieben (falls noch nicht da)
+                // adminSection ist bereits im adminView – einfach einblenden
                 const section = document.getElementById("adminSection");
-                const adminView = document.getElementById("adminView");
-                if (section && adminView && !adminView.contains(section)) {
-                    adminView.appendChild(section);
-                }
-                if (section) section.classList.remove("hidden");
+                if (section) section.style.display = "block";
                 console.log("👑 Admin-Status verifiziert!"); if (typeof loadBannedPlayers === 'function')
                 loadBannedPlayers(); if (typeof adminLoadAllPlayers === 'function') adminLoadAllPlayers(); } else {
                 isAdmin = false; const section = document.getElementById("adminSection"); if (section) section
