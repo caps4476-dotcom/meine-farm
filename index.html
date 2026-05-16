@@ -994,10 +994,17 @@
                 <button id="helperToggleBtn" class="mass-btn" style="background:#8b6e3a;">🧑‍🌾 Erntehelfer</button>
                 <span id="helperInfo" style="color:#ffefcf; font-size:0.85rem;"></span>
             </div>
-            <div style="padding:8px 18px 0;background:linear-gradient(180deg,#e8d5a3,#dcc890);">
-            <span style="font-size:.75rem;font-weight:700;color:#7a4a22;text-transform:uppercase;letter-spacing:.5px;">🌾 Deine Felder</span>
-        </div>
-        <div id="farmView" class="farm-grid"></div>
+            <div id="farmView" class="farm-grid"></div>
+            <div class="orders-section" id="ordersContainer">
+                <div style="text-align:center; font-weight:bold;">📋 MARKTAUFTRÄGE</div>
+            </div>
+            <div class="market-section" id="farmMarketSection">
+                <div class="market-title">🧺 Wochenmarkt</div>
+                <div class="price-panel" id="pricePanel"></div>
+                <div class="products-list" id="marketList"></div>
+            </div>
+            <!-- Eigenständiger Markt-View -->
+
             <div id="barnView" class="barn-grid hidden"></div>
             <div id="craftView" class="craft-grid hidden"></div>
             <div id="researchView" class="research-grid hidden"></div>
@@ -1140,15 +1147,6 @@
                 </div>
             </div>
 
-            <div class="orders-section" id="ordersContainer">
-                <div style="text-align:center; font-weight:bold;">📋 MARKTAUFTRÄGE</div>
-            </div>
-            <div class="market-section" id="farmMarketSection">
-                <div class="market-title">🧺 Wochenmarkt</div>
-                <div class="price-panel" id="pricePanel"></div>
-                <div class="products-list" id="marketList"></div>
-            </div>
-            <!-- Eigenständiger Markt-View -->
             <div id="marktView" class="hidden">
                 <div class="market-section">
                     <div class="market-title">🧺 Wochenmarkt – Waren verkaufen</div>
@@ -3564,7 +3562,7 @@
                 "<div style='padding:15px;'>🧺 Dein Lager ist leer. Ernte oder verarbeite etwas, um Preise zu sehen!</div>";
         }
 
-        function sellProduct(productKey) { if (checkAndBlockBanned()) return; if (isPaused) { showToast(
+        window.sellProduct = function sellProduct(productKey) { if (checkAndBlockBanned()) return; if (isPaused) { showToast(
                     "⏸️ Spiel ist pausiert! Drücke Start, um fortzufahren.", true); return; } if (inventory[
                     productKey] > 0) { let price = globalMarketPrices[productKey];
                 removeFromInventory(productKey, 1);
@@ -3579,7 +3577,7 @@
                 showToast(`💰 +${price} Gold (1 verkauft)!`);
                 updateQuestProgress("sell", 1); } else showToast(`Nichts zu verkaufen!`, true); }
 
-        function sellAllProduct(productKey) { if (isPaused) { showToast(
+        window.sellAllProduct = function sellAllProduct(productKey) { if (isPaused) { showToast(
                     "⏸️ Spiel ist pausiert! Drücke Start, um fortzufahren.", true); return; } const amount = inventory[
                     productKey]; if (amount > 0) { let price = globalMarketPrices[productKey]; const totalGold = amount *
                     price;
@@ -4121,23 +4119,7 @@
                     renderAdvancedPricePanel();
                     initChat(); } else document.getElementById("multiplayerView").innerHTML =
                     `<div class="multiplayer-slot" style="grid-column:1/-1;"><div class="status">⚠️ Firebase nicht konfiguriert!</div></div>`; }
-            // Farm-only Bereiche: nur bei Farm-View sichtbar
-            const isFarm = view === "farm";
-            ["massPlantRow","massPlantBtnRow","helperToggleWrap"].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.classList.toggle("hidden", !isFarm);
-            });
-            // mass-actions Buttons (Alle ernten, Lager etc.) ebenfalls
-            document.querySelectorAll(".mass-actions").forEach(el => {
-                el.classList.toggle("hidden", !isFarm);
-            });
-            // Acker-Filter-Bar (Alle Äcker / Acker 1 etc.)
-            document.querySelectorAll(".acker-filter-bar").forEach(el => {
-                el.classList.toggle("hidden", !isFarm);
-            });
-            // Markt-Bereich im Farm-View (Wochenmarkt + Preisanzeige)
-            const marketSection = document.getElementById("farmMarketSection");
-            if (marketSection) marketSection.classList.toggle("hidden", !isFarm);
+            // Farm-only Elemente werden automatisch durch farmView versteckt
         }
         // ==================== EXPORT/IMPORT ====================
         function exportGame() { const saveData = { gold: playerGold, inventory, day: currentDay,
@@ -7156,10 +7138,10 @@
             }
             listEl.innerHTML = html;
             listEl.querySelectorAll('.sell-btn-sm').forEach(function(btn){
-                btn.addEventListener('click',function(){sellProduct(btn.dataset.product);setTimeout(renderMarktView,200);});
+                btn.addEventListener('click',function(){ window.sellProduct(btn.dataset.product); setTimeout(renderMarktView, 300); });
             });
             listEl.querySelectorAll('.sell-btn-all').forEach(function(btn){
-                btn.addEventListener('click',function(){sellAllProduct(btn.dataset.product);setTimeout(renderMarktView,200);});
+                btn.addEventListener('click',function(){ window.sellAllProduct(btn.dataset.product); setTimeout(renderMarktView, 300); });
             });
         }
         window.setMarktTab = function(cat) {
