@@ -982,8 +982,8 @@
                 <button id="viewHandbookBtn" class="view-btn">📖 Handbuch</button>
             <button id="viewAdminBtn" class="view-btn hidden" style="background:linear-gradient(135deg,#8a1010,#c01818);color:#fff;">👑 Admin</button>
             </div>
-            <div id="farmView" class="farm-grid">
-                <div class="mass-plant-row" id="massPlantRow"></div>
+            <div id="farmControls" class="hidden">
+<div class="mass-plant-row" id="massPlantRow"></div>
                 <div class="mass-actions">
                 <button id="harvestAllBtn" class="mass-btn harvest-all-btn">🚜 Alle ernten</button>
                 <button id="upgradeStorageBtn" class="mass-btn upgrade-storage-btn">🏚️ Lager +50 (500💰)</button>
@@ -1004,8 +1004,8 @@
                 <div class="products-list" id="marketList"></div>
             </div>
             </div>
-            <!-- Eigenständiger Markt-View -->
-
+            <div id="farmView" class="farm-grid hidden">
+            </div>
             <div id="barnView" class="barn-grid hidden"></div>
             <div id="craftView" class="craft-grid hidden"></div>
             <div id="researchView" class="research-grid hidden"></div>
@@ -4078,6 +4078,8 @@
         function setView(view) {
             currentView = view;
             document.getElementById("farmView").classList.toggle("hidden", view !== "farm");
+            const farmCtrlEl = document.getElementById("farmControls");
+            if (farmCtrlEl) farmCtrlEl.classList.toggle("hidden", view !== "farm");
             document.getElementById("barnView").classList.toggle("hidden", view !== "barn");
             document.getElementById("craftView").classList.toggle("hidden", view !== "craft");
             document.getElementById("researchView").classList.toggle("hidden", view !== "research");
