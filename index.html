@@ -915,9 +915,7 @@
 </style>
 </head>
 <body>
-    <div id="admin-panel" style="position: fixed; top: 0; right: 10px; z-index: 10000; display: none;">
-        <button onclick="setView('multiplayer'); document.getElementById('adminSection').classList.remove('hidden'); document.getElementById('adminSection').scrollIntoView({behavior:'smooth'});" style="background:#ff9800; color:white; border:none; padding:6px 14px; border-radius:0 0 10px 10px; cursor:pointer; font-weight:bold; font-size:13px;">🛠️ ADMIN</button>
-    </div>
+    
     <div style="height: 50px;"></div>
     <div id="loginScreen" class="login-screen">
         <div class="login-card">
@@ -995,14 +993,8 @@
                 <button id="helperToggleBtn" class="mass-btn" style="background:#8b6e3a;">🧑‍🌾 Erntehelfer</button>
                 <span id="helperInfo" style="color:#ffefcf; font-size:0.85rem;"></span>
             </div>
-                <div class="orders-section" id="ordersContainer">
-                <div style="text-align:center; font-weight:bold;">📋 MARKTAUFTRÄGE</div>
-            </div>
-                <div class="market-section" id="farmMarketSection">
-                <div class="market-title">🧺 Wochenmarkt</div>
-                <div class="price-panel" id="pricePanel"></div>
-                <div class="products-list" id="marketList"></div>
-            </div>
+
+
             </div>
             <div id="farmView" class="farm-grid hidden">
             </div>
@@ -1329,12 +1321,10 @@
 
         function updateAuthUI() {
             const user = currentUser;
-            const adminPanel = document.getElementById('admin-panel');
             const loggedIn = document.getElementById('accountLoggedIn');
             const loggedOut = document.getElementById('accountLoggedOut');
             if (user) {
                 isAdmin = ADMIN_EMAILS.includes(user.email);
-                if (adminPanel) adminPanel.style.display = isAdmin ? 'flex' : 'none';
                 if (loggedIn) loggedIn.style.display = 'block';
                 if (loggedOut) loggedOut.style.display = 'none';
                 const emailEl = document.getElementById('accountEmailDisplay');
@@ -1343,7 +1333,6 @@
                 if (nameEl) nameEl.innerText = playerName ? `👤 ${playerName}` : '';
             } else {
                 isAdmin = false;
-                if (adminPanel) adminPanel.style.display = 'none';
                 if (loggedIn) loggedIn.style.display = 'none';
                 if (loggedOut) loggedOut.style.display = 'block';
             }
@@ -3508,7 +3497,7 @@
         }
         // ==================== MARKT & PREISE ====================
         function renderPricePanel() {
-            if (!pricePanel) return;
+            if (!pricePanel) return; // pricePanel nur im marktView vorhanden
             pricePanel.innerHTML = "";
             for (let [cropId, crop] of Object.entries(CROPS)) {
                 const inStock = (inventory[cropId] || 0) > 0;
@@ -3611,7 +3600,14 @@
                 updateQuestProgress("sell", amount); } else showToast(`Nichts zu verkaufen!`, true); }
 
         function renderMarket() {
-            if (!marketContainer) return;
+            if (!marketContainer) {
+                // marketList nicht im Farm-View - ggf. marktView aktualisieren
+                if (typeof renderMarktView === 'function' && document.getElementById('marktView') &&
+                    !document.getElementById('marktView').classList.contains('hidden')) {
+                    renderMarktView();
+                }
+                return;
+            }
 
             // Alle verfügbaren Produkte ermitteln
             const baseProducts = [...Object.keys(CROPS), 'egg','milk','truffle','flour','cheese','bread','wool',
