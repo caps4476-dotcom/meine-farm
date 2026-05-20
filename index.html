@@ -969,6 +969,7 @@
             <div class="view-switcher">
                 <button id="viewFarmBtn" class="view-btn active">🌱 Farm</button>
                 <button id="viewBarnBtn" class="view-btn locked">🐄 Stall (Level 6)</button>
+                <button id="viewBreedingBtn" class="view-btn locked">🐾 Zuchtstation (Level 15)</button>
                 <button id="viewCraftBtn" class="view-btn locked">🏭 Verarbeitung (Level 8)</button>
                 <button id="viewResearchBtn" class="view-btn locked">🔬 Forschung (Level 9)</button>
                 <button id="viewLicensesBtn" class="view-btn locked">📜 Lizenzen (Level 10)</button>
@@ -999,6 +1000,8 @@
             <div id="farmView" class="farm-grid hidden">
             </div>
             <div id="barnView" class="barn-grid hidden"></div>
+            <div id="breedingView" class="hidden" style="background:linear-gradient(180deg,#e8cc90,#ddb868);min-height:400px;padding:16px 18px;">
+            </div>
             <div id="craftView" class="craft-grid hidden"></div>
             <div id="researchView" class="research-grid hidden"></div>
             <div id="licensesView" class="licenses-grid hidden"></div>
@@ -1390,7 +1393,7 @@
             }
         }
         // ==================== GAME VERSION ====================
-        const CURRENT_GAME_VERSION = "5.2";
+        const CURRENT_GAME_VERSION = "6.0";
         // ==================== RELEASE NOTES ====================
         const RELEASE_NOTES = [
             { version: "4.5", date: "Mai 2026", title: "🐄 Auto-Sammler & Auto-Füttern kombiniert",
@@ -1413,7 +1416,18 @@
                     "💾 <b>Lokales Backup</b>: Wenn kein Cloud-Spielstand gefunden wird aber ein lokales Backup mit Gold existiert, wird dieses automatisch verwendet.",
                     "🔄 <b>Race-Condition behoben</b>: Auto-Save kann nicht mehr während des Cloud-Ladens feuern und dabei Gold überschreiben.",
                     "🛡️ <b>Admin: Bonus</b>: Bonus kann jetzt gezielt für einzelne Spieler oder global vergeben werden."
-                ] }
+                ] },
+        {
+            version: "6.0",
+            date: "Mai 2026",
+            title: "🐾 Zuchtstation, Quests & Verbesserungen",
+            changes: [
+                "🐾 <b>Zuchtstation</b>: Neue Seite zum Züchten eigener Tiere – über Forschung freischaltbar.",
+                "🌾 <b>Erntehelfer verbessert</b>: Wähle eine bevorzugte Pflanze die der Helfer anbaut. Erntet fertige Felder und pflanzt sofort nach.",
+                "📋 <b>Mehr Quests</b>: +10 Tagesquests und +8 Wochenquests hinzugefügt.",
+                "✨ <b>Was ist neu</b>: Release-Notes werden wieder beim Update automatisch angezeigt."
+            ]
+        }
         ];
         let firebaseInitialized = false;
         let database = null;
@@ -1496,7 +1510,16 @@
             { id: "harvest_100",name: "🌾 Ernte-Marathon",     description: "Ernte 100 Pflanzen",                   target: 100, rewardGold: 1100, rewardXP: 160, type: "harvest" },
             { id: "plant_60",   name: "🌱 Pflanz-Experte",     description: "Pflanze 60 Pflanzen",                  target: 60,  rewardGold: 700,  rewardXP: 100, type: "plant"   },
             { id: "animal_50",  name: "🐄 Stall-König",        description: "Sammle 50 tierische Produkte",         target: 50,  rewardGold: 1100, rewardXP: 170, type: "animal"  },
-            { id: "craft_40",   name: "⚙️ Verarbeitungs-Profi",description: "Stelle 40 verarbeitete Produkte her",  target: 40,  rewardGold: 1500, rewardXP: 220, type: "craft"   }
+            { id: "craft_40",   name: "⚙️ Verarbeitungs-Profi",description: "Stelle 40 verarbeitete Produkte her",  target: 40,  rewardGold: 1500, rewardXP: 220, type: "craft"   },
+            { id: "harvest_5",  name: "🌾 Erste Schritte",      description: "Ernte 5 Pflanzen",                     target: 5,   rewardGold: 120,  rewardXP: 20,  type: "harvest" },
+            { id: "sell_5",     name: "💰 Erster Verkauf",      description: "Verkaufe 5 Produkte",                  target: 5,   rewardGold: 100,  rewardXP: 15,  type: "sell"    },
+            { id: "animal_3",   name: "🐄 Tierfreund",          description: "Sammle 3 tierische Produkte",          target: 3,   rewardGold: 150,  rewardXP: 25,  type: "animal"  },
+            { id: "plant_20",   name: "🌱 Fleißiger Bauer",     description: "Pflanze 20 Pflanzen",                  target: 20,  rewardGold: 300,  rewardXP: 45,  type: "plant"   },
+            { id: "harvest_50", name: "🌾 Ernte-Profi",         description: "Ernte 50 Pflanzen",                   target: 50,  rewardGold: 550,  rewardXP: 80,  type: "harvest" },
+            { id: "sell_200",   name: "💰 Händler-Elite",       description: "Verkaufe 200 Produkte",                target: 200, rewardGold: 2200, rewardXP: 300, type: "sell"    },
+            { id: "craft_50",   name: "⚙️ Meister-Produzent",  description: "Stelle 50 verarbeitete Produkte her",  target: 50,  rewardGold: 1800, rewardXP: 260, type: "craft"   },
+            { id: "animal_20",  name: "🐄 Stallmeister",        description: "Sammle 20 tierische Produkte",         target: 20,  rewardGold: 600,  rewardXP: 90,  type: "animal"  },
+            { id: "harvest_150",name: "🌾 Ernte-Champion",      description: "Ernte 150 Pflanzen",                  target: 150, rewardGold: 1600, rewardXP: 230, type: "harvest" }
         ];
         const WEEKLY_QUEST_POOL = [
             { id: "w_harvest_100", name: "⭐ Meisterfarmer", description: "Ernte 100 Pflanzen", target: 100,
@@ -1518,7 +1541,14 @@
             { id: "w_animal_100",  name: "🐄 Stall-Woche",        description: "Sammle 100 Tierprodukte",           target: 100, rewardGold: 4500, rewardXP: 750,  type: "animal"  },
             { id: "w_sell_1000",   name: "💰 Markt-König",        description: "Verkaufe 1000 Produkte",             target: 1000,rewardGold: 9000, rewardXP: 1400, type: "sell"    },
             { id: "w_craft_100",   name: "⚙️ Fabrik-Betreiber",   description: "Stelle 100 verarbeitete Produkte her",target:100, rewardGold: 6500, rewardXP: 1100, type: "craft"   },
-            { id: "w_plant_300",   name: "🌱 Mega-Aussaat",       description: "Pflanze 300 Pflanzen diese Woche",  target: 300, rewardGold: 3500, rewardXP: 600,  type: "plant"   }
+            { id: "w_plant_300",   name: "🌱 Mega-Aussaat",       description: "Pflanze 300 Pflanzen diese Woche",      target: 300,  rewardGold: 3500,  rewardXP: 600,  type: "plant"   },
+            { id: "w_animal_200",  name: "🐄 Stall-Champion",     description: "Sammle 200 Tierprodukte diese Woche",   target: 200,  rewardGold: 8000,  rewardXP: 1300, type: "animal"  },
+            { id: "w_sell_2000",   name: "💰 Handels-Imperium",   description: "Verkaufe 2000 Produkte diese Woche",    target: 2000, rewardGold: 15000, rewardXP: 2500, type: "sell"    },
+            { id: "w_harvest_200", name: "🌾 Ernte-Profi-Woche",  description: "Ernte 200 Pflanzen diese Woche",        target: 200,  rewardGold: 2800,  rewardXP: 480,  type: "harvest" },
+            { id: "w_craft_200",   name: "⚙️ Industrie-Riese",   description: "Stelle 200 verarbeitete Produkte her",  target: 200,  rewardGold: 12000, rewardXP: 2000, type: "craft"   },
+            { id: "w_plant_500",   name: "🌱 Aussaat-Meister",    description: "Pflanze 500 Pflanzen diese Woche",      target: 500,  rewardGold: 5500,  rewardXP: 900,  type: "plant"   },
+            { id: "w_sell_500",    name: "💰 Wochen-Großhändler", description: "Verkaufe 500 Produkte",                 target: 500,  rewardGold: 4500,  rewardXP: 750,  type: "sell"    },
+            { id: "w_animal_50",   name: "🐄 Tier-Woche",        description: "Sammle 50 Tierprodukte diese Woche",    target: 50,   rewardGold: 2500,  rewardXP: 400,  type: "animal"  }
         ];
 
         function pickDailyQuests() {
@@ -1750,7 +1780,10 @@
                 effect: { type: "craftSpeed", value: 0.75 } },
             xpBooster: { name: "⭐ XP-Booster", emoji: "⭐", description: "Alle XP-Gewinne +25%",
                 goldCost: 7000, resources: { coffee: 25, pineapple: 20 }, researchTime: 720000,
-                effect: { type: "xpBonus", value: 1.25 } }
+                effect: { type: "xpBonus", value: 1.25 } },
+            zuchtstation: { name: "🐾 Zuchtstation", emoji: "🐾", description: "Schaltet die Zuchtstation frei – züchte deine eigenen Tiere!",
+                goldCost: 20000, resources: { milk: 50, egg: 50, wool: 30 }, researchTime: 3600000,
+                effect: { type: "unlockBreeding", value: 1 } }
         };
         // ==================== PREISE ====================
         let globalMarketPrices = {
@@ -2585,6 +2618,12 @@
             if (isBarnUnlocked(playerLevel)) { barnBtn.classList.remove("locked");
                 barnBtn.innerHTML = "🐄 Stall"; } else { barnBtn.classList.add("locked");
                 barnBtn.innerHTML = "🐄 Stall (Level 6)"; }
+            const breedingNavBtn = document.getElementById("viewBreedingBtn");
+            if (breedingNavBtn) {
+                const breedUnlocked = playerLevel >= 15 && completedResearch.includes("zuchtstation");
+                if (breedUnlocked) { breedingNavBtn.classList.remove("locked"); breedingNavBtn.innerHTML = "🐾 Zuchtstation"; }
+                else { breedingNavBtn.classList.add("locked"); breedingNavBtn.innerHTML = "🐾 Zuchtstation (Forschung)"; }
+            }
             if (isCraftingUnlocked(playerLevel)) { craftBtn.classList.remove("locked");
                 craftBtn.innerHTML = "🏭 Verarbeitung"; } else { craftBtn.classList.add("locked");
                 craftBtn.innerHTML = "🏭 Verarbeitung (Level 8)"; }
@@ -2935,9 +2974,8 @@
             const range = getHelperFieldRange();
             if (!range) return;
             const availableCrops = getAvailableCropsForHelper();
-            let harvestedCount = 0,
-                plantedCount = 0,
-                lostCount = 0;
+            let harvestedCount = 0, plantedCount = 0, lostCount = 0;
+            // Schritt 1: Alle fertigen Felder ernten
             for (let i = range.startIdx; i < range.endIdx; i++) {
                 const f = fields[i];
                 if (!f || !f.owned || !f.cropId) continue;
@@ -2945,21 +2983,14 @@
                 if (!f.isReady) continue;
                 if (getWeatherHarvestRisk()) {
                     if (f.timerId) clearTimeout(f.timerId);
-                    f.cropId = null;
-                    f.plantedAt = null;
-                    f.isReady = false;
-                    f.timerId = null;
-                    lostCount++;
-                    continue;
+                    f.cropId = null; f.plantedAt = null; f.isReady = false; f.timerId = null;
+                    lostCount++; continue;
                 }
                 const cropId = f.cropId;
                 let amount = Math.max(1, Math.floor(1 * getYieldBonus()));
                 if (addToInventory(cropId, amount)) {
                     if (f.timerId) clearTimeout(f.timerId);
-                    f.cropId = null;
-                    f.plantedAt = null;
-                    f.isReady = false;
-                    f.timerId = null;
+                    f.cropId = null; f.plantedAt = null; f.isReady = false; f.timerId = null;
                     harvestedCount++;
                     stats.totalHarvest++;
                     addXP(5 * amount);
@@ -2967,13 +2998,24 @@
                     updateQuestProgress("harvest", amount);
                 } else { break; }
             }
+            // Schritt 2: Leere Felder bepflanzen
+            // Bevorzuge: 1) vom Spieler gewählte Pflanze, 2) günstigste verfügbare, 3) zufällig
             if (availableCrops.length > 0) {
                 for (let i = range.startIdx; i < range.endIdx; i++) {
                     const f = fields[i];
                     if (!f || !f.owned || f.cropId) continue;
                     const affordable = availableCrops.filter(id => playerGold >= CROPS[id].seedCost);
                     if (affordable.length === 0) break;
-                    const cropId = affordable[Math.floor(Math.random() * affordable.length)];
+                    // Bevorzuge vom Spieler gewählte Pflanze (window.helperPreferredCrop)
+                    let cropId;
+                    const preferred = window.helperPreferredCrop;
+                    if (preferred && affordable.includes(preferred)) {
+                        cropId = preferred;
+                    } else {
+                        // Günstigste zuerst
+                        affordable.sort((a,b) => CROPS[a].seedCost - CROPS[b].seedCost);
+                        cropId = affordable[0];
+                    }
                     const crop = CROPS[cropId];
                     playerGold -= crop.seedCost;
                     f.cropId = cropId;
@@ -2983,6 +3025,7 @@
                     startFieldTimer(i, cropId);
                     plantedCount++;
                     addXP(2);
+                    updateQuestProgress("plant", 1);
                 }
             }
             if (harvestedCount > 0 || plantedCount > 0 || lostCount > 0) { updateMoneyUI();
@@ -4077,6 +4120,7 @@
             const farmCtrlEl = document.getElementById("farmControls");
             if (farmCtrlEl) farmCtrlEl.classList.toggle("hidden", view !== "farm");
             document.getElementById("barnView").classList.toggle("hidden", view !== "barn");
+            document.getElementById("breedingView").classList.toggle("hidden", view !== "breeding");
             document.getElementById("craftView").classList.toggle("hidden", view !== "craft");
             document.getElementById("researchView").classList.toggle("hidden", view !== "research");
             document.getElementById("licensesView").classList.toggle("hidden", view !== "licenses");
@@ -4090,6 +4134,8 @@
             document.getElementById("handbookView").classList.toggle("hidden", view !== "handbook");
             document.getElementById("viewFarmBtn").classList.toggle("active", view === "farm");
             document.getElementById("viewBarnBtn").classList.toggle("active", view === "barn");
+            const breedBtn = document.getElementById("viewBreedingBtn");
+            if (breedBtn) breedBtn.classList.toggle("active", view === "breeding");
             document.getElementById("viewCraftBtn").classList.toggle("active", view === "craft");
             document.getElementById("viewResearchBtn").classList.toggle("active", view === "research");
             document.getElementById("viewLicensesBtn").classList.toggle("active", view === "licenses");
@@ -4103,6 +4149,7 @@
             if (adminNavBtn) adminNavBtn.classList.toggle("active", view === "admin");
             document.getElementById("viewHandbookBtn").classList.toggle("active", view === "handbook");
             if (view === "barn") renderBarn();
+            if (view === "breeding") renderBreedingStation();
             if (view === "craft") renderCraft();
             if (view === "research") renderResearch();
             if (view === "licenses") renderLicenses();
@@ -4377,6 +4424,7 @@
             acker3Owned = data.acker3Owned || false;
             helperEnabled = data.helperEnabled || false;
             if (data.lastSeenReleaseVersion) lastSeenReleaseVersion = data.lastSeenReleaseVersion;
+            if (data.activeBreedings) activeBreedings = data.activeBreedings;
             // Animals validieren: nur Einträge mit gültigem type übernehmen
             animals = (data.animals || []).filter(a => a && a.type && ANIMALS[a.type]);
             if (data.animals && data.animals.length > 0 && animals.length < data.animals.length) {
@@ -4463,6 +4511,7 @@
                 acker3Owned: acker3Owned || false,
                 helperEnabled: helperEnabled || false,
                 lastSeenReleaseVersion: lastSeenReleaseVersion || null,
+                activeBreedings: activeBreedings || [],
                 animals: (animals || []).filter(a => a && a.type && ANIMALS[a.type]).map(a => ({
                     type: a.type || null,
                     name: a.name || null,
@@ -7153,6 +7202,158 @@
             if (listEl) { listEl._activeTab = cat; renderMarktView(); }
         };
         
+        
+        // ==================== ZUCHTSTATION ====================
+        let activeBreedings = []; // { animalType, startTime, duration, cost, slot }
+        const MAX_BREEDING_SLOTS = 3;
+        const BREEDING_RECIPES = {
+            chicken: { parents: ['chicken','chicken'], result: 'chicken', duration: 300000, cost: 500,
+                levelReq: 6, emoji: '🐣', desc: 'Huhn × Huhn → Küken', resultName: 'Huhn' },
+            cow: { parents: ['cow','cow'], result: 'cow', duration: 600000, cost: 1200,
+                levelReq: 8, emoji: '🐮', desc: 'Kuh × Kuh → Kalb', resultName: 'Kuh' },
+            sheep: { parents: ['sheep','sheep'], result: 'sheep', duration: 480000, cost: 900,
+                levelReq: 10, emoji: '🐑', desc: 'Schaf × Schaf → Lamm', resultName: 'Schaf' },
+            pig: { parents: ['pig','pig'], result: 'pig', duration: 420000, cost: 800,
+                levelReq: 12, emoji: '🐷', desc: 'Schwein × Schwein → Ferkel', resultName: 'Schwein' },
+            goat: { parents: ['goat','goat'], result: 'goat', duration: 540000, cost: 1000,
+                levelReq: 12, emoji: '🐐', desc: 'Ziege × Ziege → Kitz', resultName: 'Ziege' },
+            rabbit: { parents: ['rabbit','rabbit'], result: 'rabbit', duration: 360000, cost: 700,
+                levelReq: 14, emoji: '🐇', desc: 'Hase × Hase → Häschen', resultName: 'Hase' },
+            duck: { parents: ['duck','duck'], result: 'duck', duration: 480000, cost: 900,
+                levelReq: 15, emoji: '🐥', desc: 'Ente × Ente → Entchen', resultName: 'Ente' },
+            alpaca: { parents: ['sheep','goat'], result: 'alpaca', duration: 900000, cost: 2000,
+                levelReq: 16, emoji: '🦙', desc: 'Schaf × Ziege → Alpaka', resultName: 'Alpaka' },
+            bee: { parents: ['bee','bee'], result: 'bee', duration: 600000, cost: 1500,
+                levelReq: 18, emoji: '🐝', desc: 'Biene × Biene → Bienenstock', resultName: 'Biene' },
+            horse: { parents: ['cow','cow'], result: 'horse', duration: 1200000, cost: 3000,
+                levelReq: 20, emoji: '🐴', desc: 'Kuh × Kuh (selten) → Pferd', resultName: 'Pferd' },
+        };
+
+        function renderBreedingStation() {
+            const el = document.getElementById("breedingView");
+            if (!el) return;
+            const unlocked = completedResearch.includes("zuchtstation") && playerLevel >= 15;
+            if (!unlocked) {
+                el.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--text-mid);">
+                    <div style="font-size:3rem;margin-bottom:12px;">🔒</div>
+                    <div style="font-size:1.1rem;font-weight:700;">Zuchtstation gesperrt</div>
+                    <div style="font-size:.88rem;margin-top:8px;">Erforsche "🐾 Zuchtstation" in der Forschung (Level 15, 20.000💰)</div>
+                </div>`;
+                return;
+            }
+            const now = Date.now();
+            // Aktive Zuchtprozesse aufräumen
+            activeBreedings = (activeBreedings || []).filter(b => b && b.animalType);
+            let html = `<div style="font-size:1.1rem;font-weight:800;color:var(--wood-dark);margin-bottom:14px;">🐾 Zuchtstation <span style="font-size:.75rem;color:var(--text-mid);font-weight:400;">(${activeBreedings.length}/${MAX_BREEDING_SLOTS} Slots belegt)</span></div>`;
+
+            // Aktive Zuchtprozesse
+            if (activeBreedings.length > 0) {
+                html += `<div style="margin-bottom:14px;"><div style="font-weight:700;color:var(--wood-mid);margin-bottom:8px;">⏳ Laufende Zucht</div>`;
+                activeBreedings.forEach((b, idx) => {
+                    const recipe = BREEDING_RECIPES[b.animalType];
+                    const elapsed = now - b.startTime;
+                    const pct = Math.min(100, Math.round((elapsed / b.duration) * 100));
+                    const remaining = Math.max(0, b.duration - elapsed);
+                    const done = remaining <= 0;
+                    html += `<div style="background:linear-gradient(160deg,#fff8e8,#f5e8c4);border-radius:16px;padding:12px;margin:6px 0;border:2px solid ${done?'#6ab040':'#d4a860'};">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-size:1.1rem;">${recipe?.emoji||'🐾'} ${recipe?.resultName||b.animalType}</span>
+                            ${done
+                                ? `<button onclick="window.collectBreeding(${idx})" style="background:linear-gradient(135deg,#6ab040,#3a7a20);color:#fff;border:none;border-radius:20px;padding:7px 16px;font-weight:700;cursor:pointer;">🎉 Einsammeln!</button>`
+                                : `<span style="font-size:.8rem;color:var(--text-mid);">⏳ ${Math.ceil(remaining/60000)} Min</span>`
+                            }
+                        </div>
+                        <div style="background:rgba(0,0,0,.1);border-radius:20px;height:8px;margin-top:8px;">
+                            <div style="background:linear-gradient(90deg,#6ab040,#f0b840);height:100%;width:${pct}%;border-radius:20px;transition:width .5s;"></div>
+                        </div>
+                    </div>`;
+                });
+                html += `</div>`;
+            }
+
+            // Verfügbare Rezepte
+            html += `<div style="font-weight:700;color:var(--wood-mid);margin-bottom:8px;">📋 Verfügbare Rezepte</div>`;
+            html += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;">`;
+            Object.entries(BREEDING_RECIPES).forEach(([key, recipe]) => {
+                if (playerLevel < recipe.levelReq) return;
+                const canBreed = activeBreedings.length < MAX_BREEDING_SLOTS;
+                const ownParent1 = animals.some(a => a.type === recipe.parents[0]);
+                const ownParent2 = animals.some(a => a.type === recipe.parents[1] && a !== animals.find(x=>x.type===recipe.parents[0]));
+                const canAfford = playerGold >= recipe.cost;
+                const available = canBreed && canAfford && ownParent1;
+                const dur = Math.round(recipe.duration/60000);
+                html += `<div style="background:linear-gradient(160deg,${available?'#f0fff0,#d4f5d4':'#fff8e8,#f5e8c4'});border-radius:18px;padding:13px;border:2px solid ${available?'#6ab040':'#d4a860'};box-shadow:0 4px 0 rgba(0,0,0,.15);">
+                    <div style="font-size:1.6rem;text-align:center;">${recipe.emoji}</div>
+                    <div style="font-weight:700;font-size:.85rem;text-align:center;color:var(--text-dark);">${recipe.resultName}</div>
+                    <div style="font-size:.7rem;color:var(--text-mid);text-align:center;margin:3px 0;">${recipe.desc}</div>
+                    <div style="font-size:.72rem;color:var(--text-mid);text-align:center;">⏱️ ${dur} Min | 💰 ${recipe.cost}</div>
+                    ${!ownParent1?`<div style="font-size:.68rem;color:#c04040;text-align:center;margin-top:4px;">⚠️ Elterntier fehlt</div>`:''}
+                    ${!canAfford?`<div style="font-size:.68rem;color:#c04040;text-align:center;margin-top:4px;">⚠️ Nicht genug Gold</div>`:''}
+                    <button onclick="window.startBreeding('${key}')"
+                        style="width:100%;margin-top:8px;background:${available?'linear-gradient(135deg,#f0b840,#c07d10)':'#ccc'};color:${available?'#3a1e00':'#888'};border:none;border-radius:20px;padding:7px;font-size:.78rem;font-weight:700;cursor:${available?'pointer':'not-allowed'};">
+                        ${available?'🐾 Züchten starten':'🔒 Nicht verfügbar'}
+                    </button>
+                </div>`;
+            });
+            html += `</div>`;
+            el.innerHTML = html;
+            // Timer für Fortschrittsbalken
+            clearInterval(window._breedTimer);
+            if (activeBreedings.some(b => b.startTime + b.duration > Date.now())) {
+                window._breedTimer = setInterval(() => {
+                    if (document.getElementById("breedingView") &&
+                        !document.getElementById("breedingView").classList.contains("hidden")) {
+                        renderBreedingStation();
+                    } else {
+                        clearInterval(window._breedTimer);
+                    }
+                }, 10000);
+            }
+        }
+
+        window.startBreeding = function(animalType) {
+            const recipe = BREEDING_RECIPES[animalType];
+            if (!recipe) return;
+            if (activeBreedings.length >= MAX_BREEDING_SLOTS) { showToast("❌ Alle Slots belegt!", true); return; }
+            if (playerGold < recipe.cost) { showToast("❌ Nicht genug Gold!", true); return; }
+            if (!animals.some(a => a.type === recipe.parents[0])) {
+                showToast(`❌ Du brauchst ein ${recipe.parents[0]} als Elterntier!`, true); return;
+            }
+            playerGold -= recipe.cost;
+            updateMoneyUI();
+            activeBreedings.push({ animalType, startTime: Date.now(), duration: recipe.duration, cost: recipe.cost });
+            saveGameToLocal();
+            showToast(`🐾 Zucht gestartet: ${recipe.resultName}! (${Math.round(recipe.duration/60000)} Min)`);
+            renderBreedingStation();
+        };
+
+        window.collectBreeding = function(idx) {
+            const b = activeBreedings[idx];
+            if (!b) return;
+            const recipe = BREEDING_RECIPES[b.animalType];
+            if (!recipe) return;
+            if (Date.now() < b.startTime + b.duration) { showToast("⏳ Noch nicht fertig!", true); return; }
+            // Tier hinzufügen
+            const allAnimals = { ...ANIMALS };
+            const animalData = allAnimals[b.animalType];
+            if (!animalData) { showToast("❌ Tierdaten nicht gefunden!", true); return; }
+            const newAnimal = {
+                type: b.animalType, name: animalData.name, emoji: animalData.emoji,
+                isReady: false, fed: true, happiness: 100,
+                productionStartTime: Date.now(),
+                lastFed: Date.now(), isReady: false
+            };
+            animals.push(newAnimal);
+            const newIdx = animals.length - 1;
+            startAnimalProduction(newAnimal, newIdx);
+            activeBreedings.splice(idx, 1);
+            addXP(50);
+            saveGameToLocal();
+            showToast(`🎉 ${animalData.emoji} ${animalData.name} wurde geboren! +50 XP`);
+            renderBreedingStation();
+            renderBarn();
+        };
+        
                 // ==================== INIT ====================
         async function init() {
             try {
@@ -7218,6 +7419,13 @@
                 document.getElementById("viewHandbookBtn").onclick = () => setView("handbook");
                 const vMarktBtn = document.getElementById("viewMarktBtn");
                 if (vMarktBtn) vMarktBtn.onclick = () => setView("markt");
+                const vBreedBtn = document.getElementById("viewBreedingBtn");
+                if (vBreedBtn) vBreedBtn.onclick = () => {
+                    if (playerLevel < 15 || !completedResearch.includes("zuchtstation")) {
+                        showToast("🔒 Zuchtstation zuerst erforschen!", true); return;
+                    }
+                    setView("breeding");
+                };
                 const vAdminBtn = document.getElementById("viewAdminBtn");
                 if (vAdminBtn) vAdminBtn.onclick = () => setView("admin");
                 document.getElementById("registerBtn").onclick = () => register();
