@@ -259,9 +259,13 @@
             transition: transform var(--t-mid), box-shadow var(--t-mid), border-color var(--t-mid);
             cursor: pointer;
         }
-        .field-slot:hover, .barn-slot:hover, .craft-slot:hover, .market-slot:hover, .research-slot:hover {
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 0 10px 0 rgba(150,90,30,.22), 0 16px 36px rgba(80,40,0,.25);
+        .field-slot:hover, .barn-slot:hover, .craft-slot:hover, .market-slot:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 0 rgba(150,90,30,.2), 0 10px 28px rgba(80,40,0,.2);
+            border-color: var(--gold);
+        }
+        .research-slot:hover {
+            box-shadow: 0 6px 0 rgba(150,90,30,.2), 0 10px 28px rgba(80,40,0,.2);
             border-color: var(--gold);
         }
         .field-slot::before, .barn-slot::before, .craft-slot::before,
@@ -1766,22 +1770,22 @@
                 resources: { carrot: 300, wheat: 250, tomato: 250, strawberry: 200, pumpkin: 200, pineapple: 150,
                     coffee: 120, blueberry: 100, raspberry: 100, grape: 80, peach: 80 }, researchTime: 480000,
                 effect: { type: "helper", value: 3 } },
-            lagermeister: { name: "📦 Lagermeister", emoji: "📦", description: "Maximales Lager +200",
+            lagermeister: { name: "📦 Lagermeister", emoji: "📦", description: "Maximales Lager +200", category: "Lager",
                 goldCost: 6000, resources: { wheat: 40, flour: 10 }, researchTime: 720000,
                 effect: { type: "storageBonus", value: 200 } },
-            goldgier: { name: "💰 Goldgier", emoji: "💰", description: "Alle Verkaufspreise +10%",
+            goldgier: { name: "💰 Goldgier", emoji: "💰", description: "Alle Verkaufspreise +10%", category: "Wirtschaft",
                 goldCost: 12000, resources: { honey: 15, butter: 15 }, researchTime: 1200000,
                 effect: { type: "sellBonus", value: 1.10 } },
-            tierfluesterer: { name: "🐄 Tierflüsterer", emoji: "🐄", description: "Tierproduktionszeit -20%",
+            tierfluesterer: { name: "🐄 Tierflüsterer", emoji: "🐄", description: "Tierproduktionszeit -20%", category: "Tiere",
                 goldCost: 9000, resources: { milk: 30, egg: 30 }, researchTime: 900000,
                 effect: { type: "animalSpeed", value: 0.80 } },
-            meisterkoch: { name: "👨‍🍳 Meisterkoch", emoji: "👨‍🍳", description: "Verarbeitungszeit -25%",
+            meisterkoch: { name: "👨‍🍳 Meisterkoch", emoji: "👨‍🍳", description: "Verarbeitungszeit -25%", category: "Verarbeitung",
                 goldCost: 10000, resources: { bread: 20, cheese: 20 }, researchTime: 1080000,
                 effect: { type: "craftSpeed", value: 0.75 } },
-            xpBooster: { name: "⭐ XP-Booster", emoji: "⭐", description: "Alle XP-Gewinne +25%",
+            xpBooster: { name: "⭐ XP-Booster", emoji: "⭐", description: "Alle XP-Gewinne +25%", category: "Spezial",
                 goldCost: 7000, resources: { coffee: 25, pineapple: 20 }, researchTime: 720000,
                 effect: { type: "xpBonus", value: 1.25 } },
-            zuchtstation: { name: "🐾 Zuchtstation", emoji: "🐾", description: "Schaltet die Zuchtstation frei – züchte deine eigenen Tiere!",
+            zuchtstation: { name: "🐾 Zuchtstation", emoji: "🐾", description: "Schaltet die Zuchtstation frei – züchte deine eigenen Tiere!", category: "Spezial",
                 goldCost: 20000, resources: { milk: 50, egg: 50, wool: 30 }, researchTime: 3600000,
                 effect: { type: "unlockBreeding", value: 1 } }
         };
@@ -3790,11 +3794,23 @@
         };
 
                 // ==================== FORSCHUNG ====================
-        function initResearchProgress() { for (let id of Object.keys(RESEARCH)) { if (!researchProgress[id]) {
-                    researchProgress[id] = { goldPaid: 0, resourcesPaid: {}, activeResearch: null, timerId: null }; for (
-                        let res of Object.keys(RESEARCH[id].resources)) researchProgress[id].resourcesPaid[res] =
-                    0; } }
-            loadResearchProgress(); }
+        function initResearchProgress() {
+            // Erst laden (setzt researchProgress aus localStorage)
+            loadResearchProgressFromLS();
+            // Dann ALLE RESEARCH-Einträge sicherstellen (auch neue die noch nicht im localStorage sind)
+            for (let id of Object.keys(RESEARCH)) {
+                if (!researchProgress[id]) {
+                    researchProgress[id] = { goldPaid: 0, resourcesPaid: {}, activeResearch: null, timerId: null };
+                }
+                // resourcesPaid für alle Ressourcen des Eintrags sicherstellen
+                if (!researchProgress[id].resourcesPaid) researchProgress[id].resourcesPaid = {};
+                for (let res of Object.keys(RESEARCH[id].resources || {})) {
+                    if (researchProgress[id].resourcesPaid[res] === undefined) {
+                        researchProgress[id].resourcesPaid[res] = 0;
+                    }
+                }
+            }
+        }
         // ---------- LOKALES SPEICHERN / LADEN DER FORSCHUNG ----------
         function saveResearchProgressLS() {
             localStorage.setItem('farmResearchProgress', JSON.stringify(researchProgress));
@@ -3849,7 +3865,21 @@
                         researchBonuses.doubleChance = r.effect.value; break; case "craftSpeed":
                         researchBonuses.craftSpeedBonus = r.effect.value; break; case "craftPrice":
                         researchBonuses.craftPriceBonus = r.effect.value; break; case "sellPrice":
-                        researchBonuses.sellPriceBonus = r.effect.value; break; } } } }
+                        researchBonuses.sellPriceBonus = r.effect.value; break;
+                    case "sellBonus":
+                        researchBonuses.sellPriceBonus = r.effect.value; break;
+                    case "storageBonus":
+                        maxStorage = Math.min(99999, (maxStorage || 5000) + r.effect.value); break;
+                    case "xpBonus":
+                        researchBonuses.xpBonus = r.effect.value; break;
+                    case "animalSpeed":
+                        researchBonuses.animalSpeedBonus = r.effect.value; break;
+                    case "craftSpeed":
+                        researchBonuses.craftSpeedBonus = r.effect.value; break;
+                    case "unlockBreeding":
+                        // Zuchtstation: nichts zu tun, wird per completedResearch geprüft
+                        break;
+                    } } } }
 
         function saveResearchProgress() {
             saveResearchProgressLS();
