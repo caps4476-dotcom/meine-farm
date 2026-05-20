@@ -265,8 +265,16 @@
             border-color: var(--gold);
         }
         .research-slot:hover {
-            box-shadow: 0 6px 0 rgba(150,90,30,.2), 0 10px 28px rgba(80,40,0,.2);
+            box-shadow: 0 4px 0 rgba(150,90,30,.15), 0 8px 20px rgba(80,40,0,.15);
             border-color: var(--gold);
+        }
+        /* Buttons in research-slot nicht transformieren */
+        .research-slot button {
+            position: relative;
+            z-index: 2;
+        }
+        .research-slot button:hover {
+            transform: translateY(-1px);
         }
         .field-slot::before, .barn-slot::before, .craft-slot::before,
         .market-slot::before, .research-slot::before {
@@ -994,9 +1002,16 @@
                 <button id="resetGameBtn" class="mass-btn reset-btn">🔄 Neues Spiel</button>
                 <input type="file" id="importFile" style="display:none" accept=".json">
             </div>
-                <div id="helperToggleWrap" class="mass-actions" style="display:none; align-items:center; gap:10px;">
-                <button id="helperToggleBtn" class="mass-btn" style="background:#8b6e3a;">🧑‍🌾 Erntehelfer</button>
+                <div id="helperToggleWrap" class="mass-actions" style="display:none; align-items:center; gap:10px; flex-wrap:wrap;">
+                <button id="helperToggleBtn" class="mass-btn" style="background:#8b6e3a;">🧑‍🌾 Erntehelfer: AUS</button>
                 <span id="helperInfo" style="color:#ffefcf; font-size:0.85rem;"></span>
+                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                    <span style="color:#ffefcf;font-size:.8rem;">🌱 Pflanzt:</span>
+                    <select id="helperCropSelect" onchange="window.setHelperCrop(this.value)"
+                        style="background:#3a2010;color:#ffefcf;border:2px solid #c8a040;border-radius:20px;padding:5px 10px;font-size:.8rem;cursor:pointer;max-width:160px;">
+                        <option value="">🎲 Zufällig (günstigste)</option>
+                    </select>
+                </div>
             </div>
 
 
@@ -3048,10 +3063,41 @@
             updateHelperUI();
             saveGameToLocal();
             if (helperEnabled) { showToast("🧑‍🌾 Erntehelfer aktiviert!");
+                populateHelperCropSelect();
                 runHarvestHelper(true);
                 startHelperLoop(); } else { showToast("🧑‍🌾 Erntehelfer pausiert.");
                 stopHelperLoop(); }
         }
+
+        function populateHelperCropSelect() {
+            const sel = document.getElementById('helperCropSelect');
+            if (!sel) return;
+            const currentVal = sel.value;
+            sel.innerHTML = '<option value="">🎲 Zufällig (günstigste)</option>';
+            // Alle freigeschalteten Pflanzen
+            const cropOrder = ["carrot","wheat","tomato","strawberry","pumpkin","pineapple",
+                "coffee","blueberry","raspberry","grape","peach","lemon","apple","banana",
+                "mango","cherry","pear","pomegranate","kiwi","dragonfruit","starfruit","saffron","vanilla"];
+            cropOrder.forEach(cropId => {
+                const crop = CROPS[cropId];
+                if (!crop) return;
+                if (playerLevel < crop.levelRequired) return;
+                if (crop.licenseRequired && !ownedLicenses.includes(crop.licenseRequired)) return;
+                const opt = document.createElement('option');
+                opt.value = cropId;
+                opt.textContent = crop.emoji + ' ' + crop.name + ' (' + crop.seedCost + '💰)';
+                sel.appendChild(opt);
+            });
+            // Vorherige Auswahl wiederherstellen
+            if (currentVal) sel.value = currentVal;
+        }
+
+        window.setHelperCrop = function(cropId) {
+            window.helperPreferredCrop = cropId || null;
+            const name = cropId && CROPS[cropId] ? CROPS[cropId].name : 'Zufällig';
+            showToast('🌱 Erntehelfer pflanzt jetzt: ' + name);
+            saveGameToLocal();
+        };
 
         function startHelperLoop() { if (helperInterval) clearInterval(helperInterval);
             helperInterval = setInterval(() => runHarvestHelper(true), HELPER_TICK_MS); }
@@ -3066,7 +3112,8 @@
             if (!wrap || !btn) return;
             const lvl = getMaxHelperLevel();
             if (lvl <= 0) { wrap.style.display = "none"; return; }
-            wrap.style.display = "";
+            wrap.style.display = "flex";
+            populateHelperCropSelect();
             btn.innerText = helperEnabled ? "🧑‍🌾 Erntehelfer: AN ⏸️ Pause" : "🧑‍🌾 Erntehelfer: AUS ▶️ Start";
             btn.style.background = helperEnabled ? "#4a8b6e" : "#8b6e3a";
             if (info) info.innerText =
@@ -4464,6 +4511,18 @@
             stats = data.stats || stats;
             completedResearch = data.completedResearch || [];
             researchProgress = data.researchProgress || {};
+            // Fehlende Forschungseinträge ergänzen (neue Features nach Cloud-Speicherung)
+            for (let id of Object.keys(RESEARCH)) {
+                if (!researchProgress[id]) {
+                    researchProgress[id] = { goldPaid: 0, resourcesPaid: {}, activeResearch: null, timerId: null };
+                }
+                if (!researchProgress[id].resourcesPaid) researchProgress[id].resourcesPaid = {};
+                for (let res of Object.keys(RESEARCH[id].resources || {})) {
+                    if (researchProgress[id].resourcesPaid[res] === undefined) {
+                        researchProgress[id].resourcesPaid[res] = 0;
+                    }
+                }
+            }
             ownedLicenses = data.ownedLicenses || [];
             if (data.currentWeather) currentWeather = data.currentWeather;
             if (data.fields) { for (let i = 0; i < fields.length && i < data.fields.length; i++) { fields[i].owned =
