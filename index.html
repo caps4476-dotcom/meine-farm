@@ -1009,7 +1009,7 @@
                     <span style="color:#ffefcf;font-size:.8rem;">🌱 Pflanzt:</span>
                     <select id="helperCropSelect" onchange="window.setHelperCrop(this.value)"
                         style="background:#3a2010;color:#ffefcf;border:2px solid #c8a040;border-radius:20px;padding:5px 10px;font-size:.8rem;cursor:pointer;max-width:160px;">
-                        <option value="">🎲 Zufällig (günstigste)</option>
+                        <option value="">🎲 Zufällig</option>
                     </select>
                 </div>
             </div>
@@ -3031,9 +3031,8 @@
                     if (preferred && affordable.includes(preferred)) {
                         cropId = preferred;
                     } else {
-                        // Günstigste zuerst
-                        affordable.sort((a,b) => CROPS[a].seedCost - CROPS[b].seedCost);
-                        cropId = affordable[0];
+                        // Wirklich zufällig aus allen verfügbaren
+                        cropId = affordable[Math.floor(Math.random() * affordable.length)];
                     }
                     const crop = CROPS[cropId];
                     playerGold -= crop.seedCost;
@@ -3073,7 +3072,7 @@
             const sel = document.getElementById('helperCropSelect');
             if (!sel) return;
             const currentVal = sel.value;
-            sel.innerHTML = '<option value="">🎲 Zufällig (günstigste)</option>';
+            sel.innerHTML = '<option value="">🎲 Zufällig</option>';
             // Alle freigeschalteten Pflanzen
             const cropOrder = ["carrot","wheat","tomato","strawberry","pumpkin","pineapple",
                 "coffee","blueberry","raspberry","grape","peach","lemon","apple","banana",
