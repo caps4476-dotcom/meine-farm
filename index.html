@@ -990,6 +990,7 @@
             <button id="viewMarktBtn" class="view-btn">🧺 Markt</button>
                 <button id="viewAccountBtn" class="view-btn">👤 Account</button>
                 <button id="viewAchievementsBtn" class="view-btn">🏆 Erfolge</button>
+                <button id="viewDekoBtn" class="view-btn">🎨 Deko</button>
                 <button id="viewHandbookBtn" class="view-btn">📖 Handbuch</button>
             <button id="viewAdminBtn" class="view-btn hidden" style="background:linear-gradient(135deg,#8a1010,#c01818);color:#fff;">👑 Admin</button>
             </div>
@@ -1016,6 +1017,8 @@
 
 
             </div>
+            <div id="seasonalEventBanner" class="hidden"></div>
+            <div id="farmDekoBar" class="hidden" style="text-align:center; padding:4px 0 2px;"></div>
             <div id="farmView" class="farm-grid hidden">
             </div>
             <div id="barnView" class="barn-grid hidden"></div>
@@ -1072,6 +1075,10 @@
             <!-- Admin View -->
             <div id="questsView" class="quests-grid hidden">
                 <div class="quests-slot" style="grid-column:1/-1;">
+                    <div class="status" style="background:#2a5a6a;">🌍 GEMEINSCHAFTSQUEST (alle Spieler)</div>
+                    <div id="communityQuestCard"></div>
+                </div>
+                <div class="quests-slot" style="grid-column:1/-1;">
                     <div class="status" style="background:#3a5a3a;">🎁 TÄGLICHER LOGIN-BONUS</div>
                     <div id="loginBonusCard" class="login-bonus-card"></div>
                 </div>
@@ -1113,6 +1120,10 @@
                     </div>
                 </div>
                 <div class="account-slot" style="grid-column:1/-1;">
+                    <div class="status" style="background:#3a5a3a;">📬 GESCHENKE</div>
+                    <div id="giftsListContainer" style="padding:6px 2px;"></div>
+                </div>
+                <div class="account-slot" style="grid-column:1/-1;">
                     <div class="status" style="background:#3a5a3a;">📜 NEUIGKEITEN</div>
                     <div style="text-align:center; padding:6px; color:#ffefcf; font-size:0.9rem;">
                         Sieh dir an, was sich in dieser und früheren Versionen geändert hat.
@@ -1123,6 +1134,11 @@
             <div id="achievementsView" class="achievements-section hidden">
                 <div style="font-size:1.3rem; text-align:center; margin-bottom:15px;">🏆 Erfolge</div>
                 <div id="achievementsList" class="achievement-list"></div>
+            </div>
+            <div id="dekoView" class="achievements-section hidden">
+                <div style="font-size:1.3rem; text-align:center; margin-bottom:4px;">🎨 Deko-Shop</div>
+                <div style="text-align:center; font-size:.78rem; color:#c8a478; margin-bottom:15px;">Rein kosmetisch – kein Einfluss auf Werte oder Preise.</div>
+                <div id="dekoList" class="achievement-list"></div>
             </div>
             <div id="handbookView" class="handbook-grid hidden">
                 <div class="handbook-slot" style="grid-column:1/-1;">
@@ -1145,6 +1161,12 @@
                         <button onclick="giveGlobalBonus()" style="background:#e67e22;color:white;border:none;padding:8px 14px;border-radius:8px;cursor:pointer;">🎁 Bonus vergeben</button>
                     </div>
                     <button onclick="adminGlobalReset()" style="background:#cc0000; color:white; border:none; padding:8px 14px; border-radius:8px; cursor:pointer;">🔥 Globaler Reset</button>
+                    <div style="background:#3a2a1a;border-radius:12px;padding:10px;margin:6px 0;">
+                        <div style="font-weight:bold;color:#f5a623;margin-bottom:6px;">🎉 Saison-Event</div>
+                        <div id="adminSeasonalEventStatus" style="font-size:.75rem;color:#c8b090;margin-bottom:8px;"></div>
+                        <button onclick="adminStartSeasonalEvent()" style="background:#8b3a8b;color:white;border:none;padding:6px 12px;border-radius:8px;cursor:pointer;margin-right:6px;">🎉 Event starten</button>
+                        <button onclick="adminEndSeasonalEvent()" style="background:#8b2020;color:white;border:none;padding:6px 12px;border-radius:8px;cursor:pointer;">⏹️ Event beenden</button>
+                    </div>
                 </div>
                 <div style="margin-top:15px;">
                     <div class="admin-title">🛡️ SPIELER VERWALTEN</div>
@@ -1583,6 +1605,97 @@
         const WEEKLY_QUESTS = pickWeeklyQuests();
         let quests = { daily: JSON.parse(JSON.stringify(DAILY_QUESTS)), weekly: JSON.parse(JSON.stringify(
                 WEEKLY_QUESTS)), lastReset: Date.now(), weeklyReset: Date.now() };
+        // ==================== GEMEINSCHAFTSQUEST (serverweit, für alle Spieler) ====================
+        const COMMUNITY_QUEST_POOL = [
+            { title: "🌾 Gemeinschaftsernte", description: "Alle Spieler zusammen: Pflanzen ernten", type: "harvest", target: 5000, rewardGold: 450, rewardXP: 90 },
+            { title: "🌱 Große Aussaat", description: "Alle Spieler zusammen: Pflanzen anpflanzen", type: "plant", target: 6000, rewardGold: 400, rewardXP: 80 },
+            { title: "💰 Wochenmarkt-Ansturm", description: "Alle Spieler zusammen: Produkte verkaufen", type: "sell", target: 4000, rewardGold: 500, rewardXP: 100 },
+            { title: "🐄 Hofgemeinschaft", description: "Alle Spieler zusammen: Tierprodukte sammeln", type: "animal", target: 2500, rewardGold: 480, rewardXP: 95 },
+            { title: "🏭 Kollektive Produktion", description: "Alle Spieler zusammen: Waren verarbeiten", type: "craft", target: 1500, rewardGold: 550, rewardXP: 110 }
+        ];
+        let currentCommunityQuest = null, communityQuestWeekKey = null, communityQuestListenerRef = null;
+        function getWeekKey() { return "W" + Math.floor(Date.now() / (7 * 24 * 3600 * 1000)); }
+        async function ensureCommunityQuest() {
+            if (!firebaseInitialized || !database) return;
+            const weekKey = getWeekKey();
+            const ref = database.ref("communityQuest/" + weekKey);
+            try {
+                const snap = await ref.once("value");
+                if (!snap.exists()) {
+                    const pick = COMMUNITY_QUEST_POOL[Math.floor(Math.random() * COMMUNITY_QUEST_POOL.length)];
+                    await ref.transaction(cur => cur ? cur : { ...pick, progress: 0, createdAt: Date.now() });
+                }
+            } catch (e) { console.warn("Gemeinschaftsquest-Init fehlgeschlagen:", e); }
+            listenCommunityQuest(weekKey);
+        }
+        function listenCommunityQuest(weekKey) {
+            if (communityQuestListenerRef) communityQuestListenerRef.off();
+            communityQuestWeekKey = weekKey;
+            communityQuestListenerRef = database.ref("communityQuest/" + weekKey);
+            communityQuestListenerRef.on("value", (snap) => {
+                currentCommunityQuest = snap.val();
+                renderCommunityQuest();
+            });
+        }
+        function contributeToCommunityQuest(type, amount) {
+            if (!firebaseInitialized || !database || !currentUser) return;
+            if (!currentCommunityQuest || !communityQuestWeekKey) return;
+            if (currentCommunityQuest.type !== type) return;
+            if ((currentCommunityQuest.progress || 0) >= currentCommunityQuest.target) return;
+            const base = "communityQuest/" + communityQuestWeekKey;
+            const updates = {};
+            updates[base + "/progress"] = firebase.database.ServerValue.increment(amount);
+            updates[base + "/contributors/" + currentUser.uid] = firebase.database.ServerValue.increment(amount);
+            database.ref().update(updates).catch(e => console.warn("Gemeinschaftsquest-Beitrag fehlgeschlagen:", e));
+        }
+        async function claimCommunityQuest() {
+            if (!currentUser) { showToast("❌ Bitte zuerst einloggen!", true); return; }
+            if (!currentCommunityQuest || !communityQuestWeekKey) return;
+            if ((currentCommunityQuest.progress || 0) < currentCommunityQuest.target) { showToast("❌ Ziel noch nicht erreicht!", true); return; }
+            const myContribution = (currentCommunityQuest.contributors || {})[currentUser.uid] || 0;
+            if (myContribution <= 0) { showToast("❌ Du hast diese Woche noch nicht beigetragen.", true); return; }
+            if (currentCommunityQuest.claimed && currentCommunityQuest.claimed[currentUser.uid]) { showToast("✅ Belohnung schon abgeholt.", false); return; }
+            try {
+                await database.ref("communityQuest/" + communityQuestWeekKey + "/claimed/" + currentUser.uid).set(true);
+                playerGold += currentCommunityQuest.rewardGold;
+                if (currentCommunityQuest.rewardXP > 0) addXP(currentCommunityQuest.rewardXP);
+                updateMoneyUI();
+                saveGameToLocal();
+                if (typeof autoSaveToCloud === "function") autoSaveToCloud();
+                showToast(`🎉 Gemeinschaftsbelohnung: +${currentCommunityQuest.rewardGold} Gold${currentCommunityQuest.rewardXP > 0 ? ` +${currentCommunityQuest.rewardXP} XP` : ""}`, false);
+            } catch (e) { showToast("❌ Fehler beim Abholen.", true); }
+        }
+        function renderCommunityQuest() {
+            const card = document.getElementById("communityQuestCard");
+            if (!card) return;
+            if (!currentCommunityQuest) { card.innerHTML = `<div style="text-align:center;padding:10px;color:#aaa;">Lädt…</div>`; return; }
+            const q = currentCommunityQuest;
+            const progress = q.progress || 0;
+            const pct = Math.min(100, Math.round((progress / q.target) * 100));
+            const done = progress >= q.target;
+            const myContribution = (q.contributors || {})[currentUser?.uid] || 0;
+            const alreadyClaimed = !!(q.claimed && currentUser && q.claimed[currentUser.uid]);
+            const contributorCount = Object.keys(q.contributors || {}).length;
+            card.innerHTML = `
+                <div style="padding:6px 4px;">
+                    <div style="font-weight:700;font-size:1rem;color:#ffefcf;">${q.title}</div>
+                    <div style="font-size:.8rem;color:#c8b090;margin-bottom:8px;">${q.description}</div>
+                    <div style="background:#2a2a25;border-radius:20px;height:18px;overflow:hidden;margin-bottom:4px;">
+                        <div style="background:${done ? 'linear-gradient(90deg,#5a9e4a,#8ec87a)' : 'linear-gradient(90deg,#4a6e8b,#6f9ecb)'};height:100%;width:${pct}%;transition:width .3s;"></div>
+                    </div>
+                    <div style="font-size:.75rem;color:#aaa;text-align:center;margin-bottom:8px;">${progress} / ${q.target} (${pct}%) &nbsp;|&nbsp; 👥 ${contributorCount} Mitwirkende</div>
+                    <div style="font-size:.75rem;color:#c8b090;text-align:center;margin-bottom:8px;">Dein Beitrag: ${myContribution}</div>
+                    ${done
+                        ? (alreadyClaimed
+                            ? `<div style="text-align:center;color:#5a9e4a;font-weight:700;font-size:.85rem;">✅ Belohnung abgeholt</div>`
+                            : (myContribution > 0
+                                ? `<button id="claimCommunityQuestBtn" class="mass-btn" style="background:#5a9e4a;width:100%;">🎁 Belohnung abholen (+${q.rewardGold}💰 +${q.rewardXP}XP)</button>`
+                                : `<div style="text-align:center;color:#aaa;font-size:.78rem;">Ziel erreicht – aber du hast nicht beigetragen.</div>`))
+                        : `<div style="text-align:center;color:#c8b090;font-size:.78rem;">Belohnung bei Erreichen: +${q.rewardGold}💰 +${q.rewardXP}XP für alle Mitwirkenden</div>`}
+                </div>`;
+            const claimBtn = document.getElementById("claimCommunityQuestBtn");
+            if (claimBtn) claimBtn.onclick = () => claimCommunityQuest();
+        }
         // ==================== ERWEITERTE TIERE ====================
         const EXTENDED_ANIMALS = {
             sheep: { name: "Schaf", emoji: "🐑", product: "Wolle", productKey: "wool", productEmoji: "🧶", basePrice: 35,
@@ -2457,6 +2570,92 @@
                 level30: false, level50: false, firstResearch: false, masterResearcher: false, firstLicense: false,
                 masterCollector: false };
         let stats = { totalHarvest: 0, totalOrders: 0, totalGoldEarned: 0, totalCrafts: 0, totalResearch: 0 };
+        let ownedDecorations = {};
+        const DEKO_ITEMS = {
+            scarecrow:   { name: "Vogelscheuche",     emoji: "🎃", desc: "Klassiker für jede Farm", price: 150 },
+            windmill:    { name: "Windmühle",         emoji: "🎡", desc: "Dreht sich im Wind", price: 400 },
+            gnome:       { name: "Gartenzwerg",       emoji: "🧙", desc: "Wacht über die Felder", price: 250 },
+            fountain:    { name: "Brunnen",           emoji: "⛲", desc: "Plätschert vor sich hin", price: 600 },
+            lanterns:    { name: "Lichterkette",      emoji: "🏮", desc: "Für stimmungsvolle Abende", price: 350 },
+            flowerbed:   { name: "Blumenbeet",        emoji: "🌷", desc: "Bunt und duftend", price: 200 },
+            beehive:     { name: "Bienenstock-Deko",  emoji: "🐝", desc: "Rein dekorativ, kein Honigbonus", price: 300 },
+            statue:      { name: "Bauernstatue",      emoji: "🗿", desc: "Ehrenvolles Denkmal", price: 800 },
+            hayBale:     { name: "Heuballen-Deko",    emoji: "🌾", desc: "Herbstliche Stimmung", price: 120 },
+            flag:        { name: "Hoffahne",          emoji: "🚩", desc: "Zeig deine Farm-Farben", price: 180 }
+        };
+        // ==================== SAISON-EVENTS (zeitlich begrenzt, exklusive Deko) ====================
+        const SEASONAL_EVENT_POOL = [
+            { id: "herbstfest",     title: "🍂 Herbstfest",     description: "Feiere die Ernte mit einer besonderen Deko!", itemId: "eventPumpkinLantern", itemName: "Kürbislaterne",     itemEmoji: "🎃", itemPrice: 500 },
+            { id: "fruehlingsfest", title: "🌸 Frühlingsfest",  description: "Der Frühling hält Einzug auf deiner Farm!",    itemId: "eventCherryBlossom",  itemName: "Kirschblütenbaum",  itemEmoji: "🌸", itemPrice: 550 },
+            { id: "sommerfest",     title: "☀️ Sommerfest",     description: "Sonne, Farm und gute Laune!",                  itemId: "eventBeachChair",     itemName: "Liegestuhl",        itemEmoji: "🏖️", itemPrice: 450 },
+            { id: "winterfest",     title: "❄️ Winterfest",     description: "Winterzauber für deine Farm!",                 itemId: "eventSnowman",        itemName: "Schneemann",        itemEmoji: "⛄", itemPrice: 600 }
+        ];
+        let currentSeasonalEvent = null, seasonalEventListenerRef = null, seasonalEventTickInterval = null;
+        function isSeasonalEventActive() {
+            return !!(currentSeasonalEvent && currentSeasonalEvent.endTime && Date.now() < currentSeasonalEvent.endTime);
+        }
+        function listenSeasonalEvent() {
+            if (!database) return;
+            if (seasonalEventListenerRef) seasonalEventListenerRef.off();
+            seasonalEventListenerRef = database.ref("seasonalEvent");
+            seasonalEventListenerRef.on("value", (snap) => {
+                currentSeasonalEvent = snap.val();
+                if (currentSeasonalEvent && currentSeasonalEvent.itemId) {
+                    DEKO_ITEMS[currentSeasonalEvent.itemId] = {
+                        name: currentSeasonalEvent.itemName,
+                        emoji: currentSeasonalEvent.itemEmoji,
+                        desc: currentSeasonalEvent.title + " – Event-exklusiv",
+                        price: currentSeasonalEvent.itemPrice,
+                        eventExclusive: true
+                    };
+                }
+                renderSeasonalEventBanner();
+                if (currentView === "deko") renderDekoShop();
+            });
+            if (seasonalEventTickInterval) clearInterval(seasonalEventTickInterval);
+            seasonalEventTickInterval = setInterval(renderSeasonalEventBanner, 60000);
+        }
+        function renderSeasonalEventBanner() {
+            const bar = document.getElementById("seasonalEventBanner");
+            if (!bar) return;
+            if (!isSeasonalEventActive()) { bar.innerHTML = ""; bar.classList.add("hidden"); return; }
+            const e = currentSeasonalEvent;
+            const daysLeft = Math.max(1, Math.ceil((e.endTime - Date.now()) / (24 * 3600 * 1000)));
+            bar.classList.remove("hidden");
+            bar.innerHTML = `<div style="text-align:center;background:linear-gradient(90deg,#8b3a8b,#c060c0);border-radius:14px;padding:8px 12px;margin:6px 10px;color:#fff;font-size:.82rem;font-weight:700;">${e.title} – noch ${daysLeft} Tag${daysLeft > 1 ? "e" : ""}! Exklusive Deko im 🎨 Deko-Shop.</div>`;
+        }
+        function renderAdminSeasonalEventStatus() {
+            const el = document.getElementById("adminSeasonalEventStatus");
+            if (!el) return;
+            if (isSeasonalEventActive()) {
+                const daysLeft = Math.max(1, Math.ceil((currentSeasonalEvent.endTime - Date.now()) / (24 * 3600 * 1000)));
+                el.textContent = `Aktiv: ${currentSeasonalEvent.title} – noch ${daysLeft} Tag(e)`;
+            } else {
+                el.textContent = "Kein Event aktiv.";
+            }
+        }
+        async function adminStartSeasonalEvent() {
+            if (!isAdmin) { alert("Kein Zugriff!"); return; }
+            const list = SEASONAL_EVENT_POOL.map((e, i) => `${i + 1}. ${e.title} (${e.itemEmoji} ${e.itemName}, ${e.itemPrice}💰)`).join("\n");
+            const choice = parseInt(prompt("Welches Event starten?\n" + list + "\n\nNummer eingeben:"));
+            const event = SEASONAL_EVENT_POOL[choice - 1];
+            if (!event) { alert("Ungültige Auswahl."); return; }
+            const days = parseInt(prompt("Wie viele Tage soll das Event laufen?", "14"));
+            if (!days || days <= 0) return;
+            if (!confirm(`"${event.title}" für ${days} Tage starten? Alle Spieler sehen es sofort.`)) return;
+            const startTime = Date.now();
+            const endTime = startTime + days * 24 * 3600 * 1000;
+            await database.ref("seasonalEvent").set({ ...event, startTime, endTime });
+            showToast(`🎉 ${event.title} gestartet!`, false);
+            renderAdminSeasonalEventStatus();
+        }
+        async function adminEndSeasonalEvent() {
+            if (!isAdmin) { alert("Kein Zugriff!"); return; }
+            if (!confirm("Aktuelles Event wirklich vorzeitig beenden?")) return;
+            await database.ref("seasonalEvent").remove();
+            showToast("Event beendet.", false);
+            renderAdminSeasonalEventStatus();
+        }
         let activeEvent = null,
             eventTimer = null,
             isPaused = false,
@@ -4204,6 +4403,7 @@
             document.getElementById("questsView").classList.toggle("hidden", view !== "quests");
             document.getElementById("accountView").classList.toggle("hidden", view !== "account");
             document.getElementById("achievementsView").classList.toggle("hidden", view !== "achievements");
+            document.getElementById("dekoView").classList.toggle("hidden", view !== "deko");
             document.getElementById("marktView").classList.toggle("hidden", view !== "markt");
             const adminViewEl = document.getElementById("adminView");
             if (adminViewEl) adminViewEl.classList.toggle("hidden", view !== "admin");
@@ -4219,6 +4419,8 @@
             document.getElementById("viewQuestsBtn").classList.toggle("active", view === "quests");
             document.getElementById("viewAccountBtn").classList.toggle("active", view === "account");
             document.getElementById("viewAchievementsBtn").classList.toggle("active", view === "achievements");
+            const dekoBtn = document.getElementById("viewDekoBtn");
+            if (dekoBtn) dekoBtn.classList.toggle("active", view === "deko");
             const marktBtn = document.getElementById("viewMarktBtn");
             if (marktBtn) marktBtn.classList.toggle("active", view === "markt");
             const adminNavBtn = document.getElementById("viewAdminBtn");
@@ -4230,15 +4432,20 @@
             if (view === "research") renderResearch();
             if (view === "licenses") renderLicenses();
             if (view === "achievements") renderAchievements();
+            if (view === "account") renderGiftsList();
+            if (view === "deko") renderDekoShop();
+            if (view === "farm") renderFarmDecorations();
             if (view === "markt") { renderMarktView(); }
             if (view === "admin" && isAdmin) {
                 // Admin-Spielerliste laden
                 if (typeof loadAdminPlayerPicker === "function") loadAdminPlayerPicker();
+                renderAdminSeasonalEventStatus();
             }
             if (view === "handbook") renderHandbook();
             if (view === "multiplayer") clearChatNotifications();
             if (view === "quests") { renderLoginBonus();
-                renderQuests(); }
+                renderQuests();
+                ensureCommunityQuest(); }
             if (view === "multiplayer" && isMultiplayerUnlocked(playerLevel)) { if (firebaseInitialized) {
                     updateLeaderboard();
                     loadGlobalPrices();
@@ -4256,7 +4463,7 @@
                     type: a.type, name: a.name, isReady: (barnUpgrades && barnUpgrades.autoCollector) ? false :
                         a.isReady, productionStartTime: a.productionStartTime || Date.now() })),
                 achievements, stats, playerLevel, playerXP, completedResearch, researchProgress, ownedLicenses,
-                currentWeather, timestamp: Date.now(), version: CURRENT_GAME_VERSION }; const dataStr = JSON
+                currentWeather, ownedDecorations, timestamp: Date.now(), version: CURRENT_GAME_VERSION }; const dataStr = JSON
                 .stringify(saveData); const blob = new Blob([dataStr], { type: "application/json" }); const url = URL
                 .createObjectURL(blob); const a = document.createElement("a");
             a.href = url;
@@ -4406,6 +4613,7 @@
                     researchProgress: researchProgress || {},
                     ownedLicenses: ownedLicenses || [],
                     currentWeather: currentWeather || "sunny",
+                    ownedDecorations: ownedDecorations || {},
                     timestamp: Date.now(),
                     version: CURRENT_GAME_VERSION
                 };
@@ -4524,6 +4732,8 @@
             }
             ownedLicenses = data.ownedLicenses || [];
             if (data.currentWeather) currentWeather = data.currentWeather;
+            ownedDecorations = data.ownedDecorations || {};
+            renderFarmDecorations();
             if (data.fields) { for (let i = 0; i < fields.length && i < data.fields.length; i++) { fields[i].owned =
                         data.fields[i].owned;
                     fields[i].cropId = data.fields[i].cropId;
@@ -4656,6 +4866,7 @@
                 researchProgress: researchProgress || {},
                 ownedLicenses: ownedLicenses || [],
                 currentWeather: currentWeather || "sunny",
+                ownedDecorations: ownedDecorations || {},
                 timestamp: Date.now()
             };
             localStorage.setItem("farmPremium", JSON.stringify(saveData));
@@ -4754,6 +4965,58 @@
             achievementsContainer.innerHTML = achList.map(a =>
                 `<div class="achievement-item ${a.unlocked ? '' : 'achievement-locked'}"><strong>${a.name}</strong><br><small>${a.desc}</small></div>`
                 ).join(''); }
+        function renderDekoShop() {
+            const container = document.getElementById("dekoList");
+            if (!container) return;
+            container.innerHTML = Object.entries(DEKO_ITEMS).map(([id, item]) => {
+                const owned = !!(ownedDecorations && ownedDecorations[id]);
+                const isEventItem = !!item.eventExclusive;
+                const eventStillActive = isEventItem && isSeasonalEventActive() && currentSeasonalEvent.itemId === id;
+                const eventExpired = isEventItem && !eventStillActive;
+                let actionHtml;
+                if (owned) {
+                    actionHtml = `<span style="color:#5a9e4a;font-size:.75rem;font-weight:700;">✅ Im Besitz</span>`;
+                } else if (eventExpired) {
+                    actionHtml = `<span style="color:#a08050;font-size:.72rem;font-weight:700;">⌛ Event beendet</span>`;
+                } else {
+                    actionHtml = `<button class="mass-btn" style="margin-top:6px;padding:6px 10px;font-size:.72rem;" data-deko="${id}">💰 Kaufen (${item.price})</button>`;
+                }
+                const eventBadge = eventStillActive ? `<div style="font-size:.68rem;color:#c060c0;font-weight:700;margin-top:2px;">🎉 Event-exklusiv – begrenzt verfügbar!</div>` : "";
+                return `<div class="achievement-item ${owned ? '' : 'achievement-locked'}" style="position:relative;">
+                    <strong>${item.emoji} ${item.name}</strong><br><small>${item.desc}</small>${eventBadge}<br>
+                    ${actionHtml}
+                </div>`;
+            }).join('');
+            container.querySelectorAll('[data-deko]').forEach(btn => {
+                btn.onclick = () => buyDecoration(btn.getAttribute('data-deko'));
+            });
+        }
+        function buyDecoration(id) {
+            const item = DEKO_ITEMS[id];
+            if (!item) return;
+            if (item.eventExclusive && !(isSeasonalEventActive() && currentSeasonalEvent.itemId === id)) {
+                showToast("❌ Dieses Event ist leider vorbei.", true); return;
+            }
+            if (!ownedDecorations) ownedDecorations = {};
+            if (ownedDecorations[id]) return;
+            if ((playerGold || 0) < item.price) { showToast("❌ Nicht genug Gold!", true); return; }
+            playerGold -= item.price;
+            ownedDecorations[id] = true;
+            updateMoneyUI();
+            renderDekoShop();
+            renderFarmDecorations();
+            showToast(`🎉 ${item.emoji} ${item.name} freigeschaltet!`, false);
+            if (typeof saveGameToLocal === "function") saveGameToLocal();
+            if (typeof autoSaveToCloud === "function") autoSaveToCloud();
+        }
+        function renderFarmDecorations() {
+            const bar = document.getElementById("farmDekoBar");
+            if (!bar) return;
+            const owned = Object.keys(ownedDecorations || {});
+            if (owned.length === 0) { bar.innerHTML = ""; bar.classList.add("hidden"); return; }
+            bar.classList.remove("hidden");
+            bar.innerHTML = owned.map(id => DEKO_ITEMS[id] ? `<span title="${DEKO_ITEMS[id].name}" style="font-size:1.3rem;margin-right:6px;">${DEKO_ITEMS[id].emoji}</span>` : '').join('');
+        }
         // ==================== TOAST & EVENT ====================
         function showToast(msg, isError = false) { toastEl.style.backgroundColor = isError ? "#8b3a3acc" :
                 "#2c2b26ee";
@@ -4822,15 +5085,15 @@
                 ?.value || playerName || "Anonymous"; if (currentUser && !bannedPlayers.some(b => b.name ===
                     currentPlayerName) && !isPaused) { const scoreRef = database.ref('leaderboard/' +
                 currentPlayerName); await scoreRef.set({ name: currentPlayerName, gold: playerGold, level: playerLevel,
-                    day: currentDay, timestamp: Date.now(), online: true }); } const snapshot = await database.ref(
+                    day: currentDay, timestamp: Date.now(), online: true, uid: currentUser.uid }); } const snapshot = await database.ref(
                 'leaderboard').orderByChild('level').limitToLast(20).once('value'); const scores = [];
             snapshot.forEach(child => { const entry = child.val(); if (!bannedPlayers.some(b => b.name === entry.name))
                     scores.push(entry); });
             scores.reverse();
             scores.splice(10); const container = document.getElementById("leaderboardList"); if (container) { container
                     .innerHTML = scores.map((s, i) => { const isOnline = onlinePlayers[s.name] !== undefined; const
-                            isCurrentPlayer = s.name === currentPlayerName && currentUser; return `<div class="leaderboard-entry ${isOnline ? 'online' : ''}" style="${isCurrentPlayer ? 'background: rgba(245, 166, 35, 0.2);' : ''}"><div class="leaderboard-name"><span class="online-indicator ${isOnline ? 'online-true' : 'online-false'}"></span>${i+1}. ${s.name} ${isCurrentPlayer ? '👑' : ''}</div><div class="leaderboard-gold">⭐ Level ${s.level} &nbsp;|&nbsp; 💰 ${s.gold}</div><div style="display:none"></div>${isAdmin ? `<button class="admin-btn danger" style="font-size:0.6rem;" onclick="adminRemovePlayerFromList('${s.name}')">🗑️</button>` : ''}</div>`; })
-                        .join(''); if (scores.length === 0) container.innerHTML =
+                            isCurrentPlayer = s.name === currentPlayerName && currentUser; return `<div class="leaderboard-entry ${isOnline ? 'online' : ''}" style="${isCurrentPlayer ? 'background: rgba(245, 166, 35, 0.2);' : ''}"><div class="leaderboard-name"><span class="online-indicator ${isOnline ? 'online-true' : 'online-false'}"></span>${i+1}. ${s.name} ${isCurrentPlayer ? '👑' : ''}</div><div class="leaderboard-gold">⭐ Level ${s.level} &nbsp;|&nbsp; 💰 ${s.gold}</div><div style="display:none"></div>${!isCurrentPlayer ? `<button class="admin-btn" style="font-size:0.6rem;" data-view-farm="${s.name}" data-view-farm-uid="${s.uid || ''}">👁️ Farm</button>` : ''}${isAdmin ? `<button class="admin-btn danger" style="font-size:0.6rem;" onclick="adminRemovePlayerFromList('${s.name}')">🗑️</button>` : ''}</div>`; })
+                        .join(''); container.querySelectorAll('[data-view-farm]').forEach(btn => { btn.onclick = () => viewPlayerFarm(btn.getAttribute('data-view-farm'), btn.getAttribute('data-view-farm-uid')); }); if (scores.length === 0) container.innerHTML =
                         "<div class='status'>Noch keine Einträge. Spiele und erscheine hier!</div>"; const onlineCount =
                         Object.keys(onlinePlayers).length; const existingCount = container.parentElement.querySelector(
                             ".online-count"); if (existingCount) existingCount.remove(); const onlineCountDiv = document
@@ -4844,6 +5107,220 @@
                     `🟢 ${onlineCount} Spieler online ${isAdmin ? '| 👑 Admin-Modus' : ''}`;
                 container.parentElement.appendChild(onlineCountDiv); } }
         async function updateLeaderboard() { await updateLeaderboardWithBans(); }
+        // ==================== FREMDE FARM ANSEHEN (nur lesend) ====================
+        async function viewPlayerFarm(name, uid) {
+            if (!firebaseInitialized || !database) { showToast("❌ Keine Verbindung", true); return; }
+            try {
+                let targetUid = uid || null;
+                if (!targetUid) {
+                    const onlineSnap = await database.ref('onlinePlayers').once('value');
+                    onlineSnap.forEach(child => { const p = child.val(); if (p && p.name === name) targetUid = child.key; });
+                }
+                if (!targetUid) {
+                    const usersSnap = await database.ref('users').once('value');
+                    const all = usersSnap.val() || {};
+                    for (const [id, d] of Object.entries(all)) {
+                        const n = d.playerName || (d.savegame || {}).playerName || '';
+                        if (n === name) { targetUid = id; break; }
+                    }
+                }
+                if (!targetUid) { showToast("❌ Farm nicht gefunden", true); return; }
+                const sgSnap = await database.ref('users/' + targetUid + '/savegame').once('value');
+                const sg = sgSnap.val();
+                if (!sg) { showToast("❌ Keine Spieldaten gefunden", true); return; }
+                showPlayerFarmModal(name, targetUid, sg);
+            } catch (err) { console.error(err); showToast("❌ Fehler beim Laden der Farm", true); }
+        }
+        function showPlayerFarmModal(name, targetUid, sg) {
+            const existing = document.getElementById("playerFarmModal");
+            if (existing) existing.remove();
+            const modal = document.createElement("div");
+            modal.id = "playerFarmModal";
+            modal.style.cssText = "position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.75); z-index:9998; display:flex; align-items:center; justify-content:center; padding:20px;";
+            const fields = sg.fields || [];
+            const fieldsHtml = fields.map(f => {
+                if (!f.owned) return '<div style="width:32px;height:32px;background:#2a2015;border-radius:6px;opacity:.35;"></div>';
+                let emoji = '🟫';
+                if (f.cropId && CROPS[f.cropId]) emoji = f.isReady ? '✅' : CROPS[f.cropId].emoji;
+                return `<div style="width:32px;height:32px;background:#3a2a18;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1.05rem;">${emoji}</div>`;
+            }).join('');
+            const animals = sg.animals || [];
+            const animalsHtml = animals.length ? animals.map(a => {
+                const def = ANIMALS[a.type];
+                const emoji = def ? def.emoji : '🐾';
+                return `<span style="font-size:1.3rem;margin-right:4px;" title="${def ? def.name : a.type}">${emoji}${a.isReady ? '✨' : ''}</span>`;
+            }).join('') : '<span style="opacity:.6;">Keine Tiere</span>';
+            const decos = Object.keys(sg.ownedDecorations || {});
+            const decoHtml = decos.length ? decos.map(id => DEKO_ITEMS[id] ? `<span title="${DEKO_ITEMS[id].name}" style="font-size:1.2rem;margin-right:4px;">${DEKO_ITEMS[id].emoji}</span>` : '').join('') : '<span style="opacity:.6;">Keine Deko</span>';
+            modal.innerHTML = `
+                <div style="background:linear-gradient(160deg,#fdf3e0,#f0ddb8);border-radius:24px;padding:24px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.4);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                        <div style="font-weight:800;font-size:1.15rem;color:#5c3317;">🚜 ${name}s Farm</div>
+                        <button id="closePlayerFarmModalBtn" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:#5c3317;">✕</button>
+                    </div>
+                    <div style="font-size:.85rem;color:#6b4226;margin-bottom:10px;">⭐ Level ${sg.playerLevel || 1} &nbsp;|&nbsp; 💰 ${sg.gold || 0} &nbsp;|&nbsp; 📅 Tag ${sg.day || 1}</div>
+                    <div style="font-size:.8rem;font-weight:700;color:#6b4226;margin-bottom:4px;">🌱 Felder</div>
+                    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-bottom:14px;">${fieldsHtml}</div>
+                    <div style="font-size:.8rem;font-weight:700;color:#6b4226;margin-bottom:4px;">🐾 Tiere</div>
+                    <div style="margin-bottom:14px;">${animalsHtml}</div>
+                    <div style="font-size:.8rem;font-weight:700;color:#6b4226;margin-bottom:4px;">🎨 Deko</div>
+                    <div>${decoHtml}</div>
+                    <div style="text-align:center;margin-top:14px;">
+                        <button id="sendGiftBtn" class="mass-btn" style="background:#4a8b6e;">🎁 Geschenk senden</button>
+                    </div>
+                    <div style="font-size:.68rem;color:#a08050;margin-top:8px;text-align:center;">👁️ Nur Ansicht – hier kann nichts verändert werden.</div>
+                </div>`;
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+            document.body.appendChild(modal);
+            document.getElementById("closePlayerFarmModalBtn").onclick = () => modal.remove();
+            const giftBtn = document.getElementById("sendGiftBtn");
+            if (giftBtn) giftBtn.onclick = () => openGiftPicker(name, targetUid);
+        }
+        // ==================== GESCHENKE ====================
+        function getProductEmoji(key) {
+            if (CROPS[key]) return CROPS[key].emoji;
+            for (const id in RECIPES) if (RECIPES[id].output === key) return RECIPES[id].outputEmoji;
+            for (const id in ANIMALS) if (ANIMALS[id].productKey === key) return ANIMALS[id].productEmoji;
+            return "📦";
+        }
+        function openGiftPicker(name, targetUid) {
+            if (!currentUser) { showToast("❌ Bitte zuerst einloggen!", true); return; }
+            if (targetUid === currentUser.uid) { showToast("❌ Du kannst dir selbst nichts schenken.", true); return; }
+            const existing = document.getElementById("giftPickerModal");
+            if (existing) existing.remove();
+            const items = Object.entries(inventory || {}).filter(([, qty]) => qty > 0);
+            const modal = document.createElement("div");
+            modal.id = "giftPickerModal";
+            modal.style.cssText = "position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px;";
+            modal.innerHTML = `
+                <div style="background:linear-gradient(160deg,#fdf3e0,#f0ddb8);border-radius:24px;padding:24px;max-width:380px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.4);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                        <div style="font-weight:800;font-size:1.05rem;color:#5c3317;">🎁 Geschenk an ${name}</div>
+                        <button id="closeGiftPickerBtn" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:#5c3317;">✕</button>
+                    </div>
+                    <div style="font-size:.8rem;font-weight:700;color:#6b4226;margin-bottom:4px;">💰 Gold senden</div>
+                    <div style="display:flex;gap:6px;margin-bottom:14px;">
+                        <input type="number" id="giftGoldAmount" min="1" max="${playerGold}" placeholder="Menge" style="flex:1;padding:8px;border-radius:10px;border:2px solid #c8a060;">
+                        <button id="sendGoldGiftBtn" class="mass-btn" style="background:#8b6e3a;">Senden</button>
+                    </div>
+                    <div style="font-size:.8rem;font-weight:700;color:#6b4226;margin-bottom:4px;">📦 Ware senden</div>
+                    ${items.length === 0
+                        ? `<div style="font-size:.78rem;color:#a08050;">Dein Lager ist leer.</div>`
+                        : `<select id="giftItemSelect" style="width:100%;padding:8px;border-radius:10px;border:2px solid #c8a060;margin-bottom:6px;">
+                            ${items.map(([key, qty]) => `<option value="${key}">${getProductEmoji(key)} ${getProductName(key)} (verfügbar: ${qty})</option>`).join('')}
+                          </select>
+                          <div style="display:flex;gap:6px;">
+                            <input type="number" id="giftItemAmount" min="1" value="1" style="flex:1;padding:8px;border-radius:10px;border:2px solid #c8a060;">
+                            <button id="sendItemGiftBtn" class="mass-btn" style="background:#4a8b6e;">Senden</button>
+                          </div>`}
+                </div>`;
+            document.body.appendChild(modal);
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+            document.getElementById("closeGiftPickerBtn").onclick = () => modal.remove();
+            const goldBtn = document.getElementById("sendGoldGiftBtn");
+            if (goldBtn) goldBtn.onclick = () => {
+                const amount = parseInt(document.getElementById("giftGoldAmount").value);
+                sendGift(targetUid, name, "gold", null, amount);
+                modal.remove();
+            };
+            const itemBtn = document.getElementById("sendItemGiftBtn");
+            if (itemBtn) itemBtn.onclick = () => {
+                const key = document.getElementById("giftItemSelect").value;
+                const amount = parseInt(document.getElementById("giftItemAmount").value);
+                sendGift(targetUid, name, "item", key, amount);
+                modal.remove();
+            };
+        }
+        async function sendGift(targetUid, targetName, type, key, amount) {
+            if (!currentUser) { showToast("❌ Bitte zuerst einloggen!", true); return; }
+            if (!targetUid || targetUid === currentUser.uid) { showToast("❌ Ungültiger Empfänger.", true); return; }
+            amount = parseInt(amount);
+            if (!amount || amount <= 0) { showToast("❌ Ungültige Menge.", true); return; }
+            if (type === "gold") {
+                if ((playerGold || 0) < amount) { showToast("❌ Nicht genug Gold!", true); return; }
+            } else {
+                if (!inventory[key] || inventory[key] < amount) { showToast("❌ Nicht genug im Lager!", true); return; }
+            }
+            // lokal abziehen
+            if (type === "gold") { playerGold -= amount; updateMoneyUI(); }
+            else { inventory[key] -= amount; if (typeof updateStorageUI === "function") updateStorageUI(); }
+            try {
+                const giftRef = database.ref("gifts/" + targetUid).push();
+                await giftRef.set({
+                    fromUid: currentUser.uid,
+                    fromName: playerName || "Anonym",
+                    type, key: type === "gold" ? null : key, amount,
+                    timestamp: Date.now()
+                });
+                showToast(`🎁 Geschenk an ${targetName} gesendet!`, false);
+                saveGameToLocal();
+                if (typeof autoSaveToCloud === "function") autoSaveToCloud();
+            } catch (err) {
+                // Rückgängig machen, falls Senden fehlschlug
+                if (type === "gold") { playerGold += amount; updateMoneyUI(); }
+                else { inventory[key] = (inventory[key] || 0) + amount; if (typeof updateStorageUI === "function") updateStorageUI(); }
+                showToast("❌ Fehler beim Senden.", true);
+            }
+        }
+        let incomingGifts = {}, giftsListenerRef = null;
+        function listenForGifts() {
+            if (!currentUser || !database) return;
+            if (giftsListenerRef) giftsListenerRef.off();
+            giftsListenerRef = database.ref("gifts/" + currentUser.uid);
+            giftsListenerRef.on("value", (snap) => {
+                incomingGifts = snap.val() || {};
+                updateGiftBadge();
+                renderGiftsList();
+            });
+        }
+        function updateGiftBadge() {
+            const btn = document.getElementById("viewAccountBtn");
+            if (!btn) return;
+            const count = Object.keys(incomingGifts || {}).length;
+            let badge = btn.querySelector(".gift-unread-badge");
+            if (count > 0) {
+                if (!badge) {
+                    badge = document.createElement("span");
+                    badge.className = "gift-unread-badge";
+                    badge.style.cssText =
+                        "background:#e74c3c; color:white; border-radius:50%; min-width:20px; height:20px; line-height:20px; text-align:center; padding:0 5px; margin-left:6px; font-size:0.7rem; font-weight:bold; display:inline-block; vertical-align:middle;";
+                    btn.appendChild(badge);
+                }
+                badge.innerText = count > 99 ? "99+" : count;
+            } else if (badge) badge.remove();
+        }
+        function renderGiftsList() {
+            const container = document.getElementById("giftsListContainer");
+            if (!container) return;
+            const entries = Object.entries(incomingGifts || {});
+            if (entries.length === 0) { container.innerHTML = `<div style="text-align:center;color:#aaa;font-size:.85rem;padding:8px;">Keine Geschenke.</div>`; return; }
+            container.innerHTML = entries.map(([giftId, g]) => {
+                const label = g.type === "gold" ? `💰 ${g.amount} Gold` : `${getProductEmoji(g.key)} ${g.amount}x ${getProductName(g.key)}`;
+                return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:#3a3a35;border-radius:10px;margin-bottom:6px;">
+                    <div style="font-size:.85rem;color:#ffefcf;">${label}<br><small style="color:#aaa;">von ${g.fromName || "Unbekannt"}</small></div>
+                    <button class="mass-btn" style="background:#5a9e4a;padding:6px 10px;font-size:.75rem;" data-claim-gift="${giftId}">Abholen</button>
+                </div>`;
+            }).join('');
+            container.querySelectorAll('[data-claim-gift]').forEach(btn => {
+                btn.onclick = () => claimGift(btn.getAttribute('data-claim-gift'));
+            });
+        }
+        async function claimGift(giftId) {
+            const g = incomingGifts[giftId];
+            if (!g || !currentUser) return;
+            try {
+                await database.ref("gifts/" + currentUser.uid + "/" + giftId).remove();
+                if (g.type === "gold") { playerGold += g.amount; updateMoneyUI(); }
+                else {
+                    if (inventory[g.key] === undefined) inventory[g.key] = 0;
+                    inventory[g.key] += g.amount;
+                    if (typeof updateStorageUI === "function") updateStorageUI();
+                }
+                saveGameToLocal();
+                if (typeof autoSaveToCloud === "function") autoSaveToCloud();
+                showToast(`✅ Geschenk abgeholt: ${g.type === "gold" ? g.amount + " Gold" : g.amount + "x " + getProductName(g.key)}`, false);
+            } catch (err) { showToast("❌ Fehler beim Abholen.", true); }
+        }
         async function cleanupOldLeaderboardEntries() { if (!firebaseInitialized || !database) return 0; const
             oneWeekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000); const allEntries = await database.ref('leaderboard')
                 .once('value'); const updates = {}; let deletedCount = 0;
@@ -5077,7 +5554,8 @@
                         .progress >= quest.target) showToast(`⭐ Wöchentliche Quest abgeschlossen: ${quest.name}!`,
                     false); } });
             saveQuests();
-            renderQuests(); }
+            renderQuests();
+            contributeToCommunityQuest(type, amount); }
 
         function claimQuest(questId, isWeekly = false) { const questList = isWeekly ? quests.weekly : quests.daily;
             const quest = questList.find(q => q.id === questId); if (!quest || quest.completed) return; if (quest
@@ -7504,6 +7982,8 @@
                 document.getElementById("viewQuestsBtn").onclick = () => setView("quests");
                 document.getElementById("viewAccountBtn").onclick = () => setView("account");
                 document.getElementById("viewAchievementsBtn").onclick = () => setView("achievements");
+                const vDekoBtn = document.getElementById("viewDekoBtn");
+                if (vDekoBtn) vDekoBtn.onclick = () => setView("deko");
                 document.getElementById("viewHandbookBtn").onclick = () => setView("handbook");
                 const vMarktBtn = document.getElementById("viewMarktBtn");
                 if (vMarktBtn) vMarktBtn.onclick = () => setView("markt");
@@ -7545,6 +8025,9 @@
                 // NICHT für komplettes applyCloudData (würde Tiere/Inventar überschreiben)
                 if (typeof firebase !== 'undefined' && firebase.auth) firebase.auth().onAuthStateChanged((user) => {
                     if (user) {
+                        ensureCommunityQuest();
+                        listenForGifts();
+                        listenSeasonalEvent();
                         const goldRef = firebase.database().ref('users/' + user.uid + '/savegame/gold');
                         goldRef.on('value', (snapshot) => {
                             const cloudGold = snapshot.val();
@@ -7766,7 +8249,7 @@
                             false, productionStartTime: a.productionStartTime || null })),
                     achievements: achievements || [], stats: stats || {}, completedResearch: completedResearch ||
                         [], researchProgress: researchProgress || {}, ownedLicenses: ownedLicenses || [],
-                    currentWeather: currentWeather || "sunny", timestamp: Date.now(), version: CURRENT_GAME_VERSION }; await database
+                    currentWeather: currentWeather || "sunny", ownedDecorations: ownedDecorations || {}, timestamp: Date.now(), version: CURRENT_GAME_VERSION }; await database
                     .ref("users/" + currentUser.uid + "/savegame").set(saveData);
                 alert("✅ Gespeichert!\nGold: " + playerGold + "\nXP: " + playerXP + "\nLevel: " + playerLevel); } catch (
                 e) { alert("❌ Fehler beim Speichern: " + e.message); } }
