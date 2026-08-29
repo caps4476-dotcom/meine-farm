@@ -5124,7 +5124,7 @@
                         if (n === name) { targetUid = id; break; }
                     }
                 }
-                if (!targetUid) { showToast("❌ Farm nicht gefunden", true); alert("Diagnose (Farm ansehen): Keine passende UID zu Name \"" + name + "\" gefunden."); return; }
+                if (!targetUid) { showToast("❌ Spieler aktuell nicht auffindbar (offline & Eintrag veraltet)", true); return; }
                 const sgSnap = await database.ref('users/' + targetUid + '/savegame').once('value');
                 const sg = sgSnap.val();
                 if (!sg) { showToast("❌ Keine Spieldaten gefunden", true); return; }
@@ -5132,7 +5132,6 @@
             } catch (err) {
                 console.error(err);
                 showToast("❌ Fehler beim Laden der Farm", true);
-                alert("Diagnose (Farm ansehen):\n" + (err && err.message ? err.message : err));
             }
         }
         function showPlayerFarmModal(name, targetUid, sg) {
