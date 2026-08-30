@@ -5159,9 +5159,11 @@
             }).join('') : '<span style="opacity:.6;">Keine Tiere</span>';
             const decos = Object.keys(sg.ownedDecorations || {});
             const decoHtml = decos.length ? decos.map(id => DEKO_ITEMS[id] ? `<span title="${DEKO_ITEMS[id].name}" style="font-size:1.2rem;margin-right:4px;">${DEKO_ITEMS[id].emoji}</span>` : '').join('') : '<span style="opacity:.6;">Keine Deko</span>';
+            const emptyFieldCount = fields.filter(f => f && f.owned && !f.cropId).length;
             const helpButtonsHtml = `
                 ${readyFieldIndices.length > 0 ? `<button id="helpHarvestBtn" class="mass-btn" style="background:#5a9e4a;width:100%;margin-bottom:6px;">🤝 Bei der Ernte helfen (${readyFieldIndices.length} Feld${readyFieldIndices.length > 1 ? 'er' : ''})</button>` : ''}
-                ${readyAnimalIndices.length > 0 ? `<button id="helpAnimalsBtn" class="mass-btn" style="background:#8b6e3a;width:100%;margin-bottom:6px;">🤝 Beim Einsammeln helfen (${readyAnimalIndices.length} Tier${readyAnimalIndices.length > 1 ? 'e' : ''})</button>` : ''}`;
+                ${readyAnimalIndices.length > 0 ? `<button id="helpAnimalsBtn" class="mass-btn" style="background:#8b6e3a;width:100%;margin-bottom:6px;">🤝 Beim Einsammeln helfen (${readyAnimalIndices.length} Tier${readyAnimalIndices.length > 1 ? 'e' : ''})</button>` : ''}
+                ${emptyFieldCount > 0 ? `<button id="helpPlantBtn" class="mass-btn" style="background:#4a7b4a;width:100%;margin-bottom:6px;">🌱 Beim Pflanzen helfen (${emptyFieldCount} freie${emptyFieldCount > 1 ? '' : 's'} Feld${emptyFieldCount > 1 ? 'er' : ''})</button>` : ''}`;
             modal.innerHTML = `
                 <div style="background:linear-gradient(160deg,#fdf3e0,#f0ddb8);border-radius:24px;padding:24px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.4);">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
@@ -5175,7 +5177,7 @@
                     <div style="margin-bottom:14px;">${animalsHtml}</div>
                     <div style="font-size:.8rem;font-weight:700;color:#6b4226;margin-bottom:4px;">🎨 Deko</div>
                     <div>${decoHtml}</div>
-                    ${(readyFieldIndices.length > 0 || readyAnimalIndices.length > 0) ? `<div style="margin-top:14px;">${helpButtonsHtml}</div>` : ''}
+                    ${(readyFieldIndices.length > 0 || readyAnimalIndices.length > 0 || emptyFieldCount > 0) ? `<div style="margin-top:14px;">${helpButtonsHtml}</div>` : ''}
                     <div style="text-align:center;margin-top:14px;">
                         <button id="sendGiftBtn" class="mass-btn" style="background:#4a8b6e;">🎁 Geschenk senden</button>
                     </div>
@@ -5196,16 +5198,92 @@
                 sendFarmHelp(targetUid, name, "collectAnimals", readyAnimalIndices);
                 helpAnimalsBtn.disabled = true; helpAnimalsBtn.style.opacity = 0.5; helpAnimalsBtn.textContent = "🤝 Geholfen!";
             };
+            const helpPlantBtn = document.getElementById("helpPlantBtn");
+            if (helpPlantBtn) helpPlantBtn.onclick = () => openPlantHelpPicker(targetUid, name, sg, emptyFieldCount);
         }
-        async function sendFarmHelp(targetUid, targetName, type, indices) {
+        async function sendFarmHelp(targetUid, targetName, type, indices, extra) {
             if (!currentUser) { showToast("❌ Bitte zuerst einloggen!", true); return; }
             if (!targetUid || targetUid === currentUser.uid) { showToast("❌ Du kannst dir nicht selbst helfen.", true); return; }
-            if (!indices || indices.length === 0) return;
+            if (!indices && !extra) return;
             try {
                 const ref = database.ref("farmHelp/" + targetUid).push();
-                await ref.set({ type, indices, helperName: playerName || "Anonym", timestamp: Date.now() });
+                await ref.set({ type, indices: indices || null, ...(extra || {}), helperName: playerName || "Anonym", timestamp: Date.now() });
                 showToast(`🤝 Danke fürs Helfen! ${targetName} bekommt es beim nächsten Öffnen gutgeschrieben.`, false);
             } catch (err) { showToast("❌ Konnte nicht helfen.", true); }
+        }
+        async function sendPlantHelp(targetUid, targetName, cropId, count) {
+            if (!currentUser) { showToast("❌ Bitte zuerst einloggen!", true); return; }
+            if (!targetUid || targetUid === currentUser.uid) { showToast("❌ Du kannst dir nicht selbst helfen.", true); return; }
+            const crop = CROPS[cropId];
+            if (!crop) return;
+            const totalCost = crop.seedCost * count;
+            if ((playerGold || 0) < totalCost) { showToast(`❌ Nicht genug Gold! Benötigt: ${totalCost}💰`, true); return; }
+            playerGold -= totalCost;
+            updateMoneyUI();
+            try {
+                const ref = database.ref("farmHelp/" + targetUid).push();
+                await ref.set({ type: "plantFields", cropId, count, helperName: playerName || "Anonym", timestamp: Date.now() });
+                showToast(`🤝 ${count}x ${crop.emoji} ${crop.name} für ${targetName} bezahlt und geschickt (-${totalCost}💰)!`, false);
+                saveGameToLocal();
+                if (typeof autoSaveToCloud === "function") autoSaveToCloud();
+            } catch (err) {
+                playerGold += totalCost; updateMoneyUI();
+                showToast("❌ Konnte nicht helfen – Gold zurückerstattet.", true);
+            }
+        }
+        function openPlantHelpPicker(targetUid, targetName, sg, emptyFieldCount) {
+            if (!currentUser) { showToast("❌ Bitte zuerst einloggen!", true); return; }
+            if (existing) existing.remove();
+            const ownerLevel = sg.playerLevel || 1;
+            const ownerLicenses = sg.ownedLicenses || [];
+            const plantableCrops = Object.entries(CROPS).filter(([, crop]) =>
+                ownerLevel >= crop.levelRequired && (!crop.licenseRequired || ownerLicenses.includes(crop.licenseRequired))
+            );
+            const modal = document.createElement("div");
+            modal.id = "plantHelpModal";
+            modal.style.cssText = "position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px;";
+            modal.innerHTML = `
+                <div style="background:linear-gradient(160deg,#fdf3e0,#f0ddb8);border-radius:24px;padding:24px;max-width:380px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.4);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                        <div style="font-weight:800;font-size:1.05rem;color:#5c3317;">🌱 Für ${targetName} pflanzen</div>
+                        <button id="closePlantHelpBtn" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:#5c3317;">✕</button>
+                    </div>
+                    <div style="font-size:.78rem;color:#6b4226;margin-bottom:10px;">Du bezahlst die Aussaat aus deinem eigenen Gold, ${targetName} bekommt die Felder bepflanzt und die XP dafür gutgeschrieben. Es werden nur Pflanzen angezeigt, die ${targetName} bereits freigeschaltet hat.</div>
+                    ${plantableCrops.length === 0
+                        ? `<div style="font-size:.8rem;color:#a08050;">Keine passende Pflanze gefunden.</div>`
+                        : `<select id="plantHelpCropSelect" style="width:100%;padding:8px;border-radius:10px;border:2px solid #c8a060;margin-bottom:10px;">
+                            ${plantableCrops.map(([id, crop]) => `<option value="${id}" data-cost="${crop.seedCost}">${crop.emoji} ${crop.name} (${crop.seedCost}💰/Feld)</option>`).join('')}
+                          </select>
+                          <div style="font-size:.78rem;color:#6b4226;margin-bottom:4px;">Anzahl Felder (max. ${emptyFieldCount}):</div>
+                          <input type="number" id="plantHelpCount" min="1" max="${emptyFieldCount}" value="${emptyFieldCount}" style="width:100%;padding:8px;border-radius:10px;border:2px solid #c8a060;margin-bottom:8px;">
+                          <div id="plantHelpCostPreview" style="font-size:.8rem;color:#5c3317;font-weight:700;margin-bottom:12px;">Deine Kosten: – 💰 (dein Gold: ${Math.floor(playerGold)}💰)</div>
+                          <button id="confirmPlantHelpBtn" class="mass-btn" style="background:#4a7b4a;width:100%;">🌱 Pflanzen schicken</button>`}
+                </div>`;
+            document.body.appendChild(modal);
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+            document.getElementById("closePlantHelpBtn").onclick = () => modal.remove();
+            const costPreview = document.getElementById("plantHelpCostPreview");
+            const cropSelect = document.getElementById("plantHelpCropSelect");
+            const countInput = document.getElementById("plantHelpCount");
+            function updateCostPreview() {
+                if (!costPreview || !cropSelect || !countInput) return;
+                const cost = parseInt(cropSelect.selectedOptions[0]?.dataset.cost || 0);
+                const count = Math.max(1, Math.min(emptyFieldCount, parseInt(countInput.value) || 1));
+                const total = cost * count;
+                costPreview.textContent = `Deine Kosten: ${total}💰 (dein Gold: ${Math.floor(playerGold)}💰)`;
+                costPreview.style.color = total > playerGold ? "#c0392b" : "#5c3317";
+            }
+            if (cropSelect) { cropSelect.onchange = updateCostPreview; updateCostPreview(); }
+            if (countInput) countInput.oninput = updateCostPreview;
+            const confirmBtn = document.getElementById("confirmPlantHelpBtn");
+            if (confirmBtn) confirmBtn.onclick = () => {
+                const cropId = cropSelect.value;
+                const count = Math.max(1, Math.min(emptyFieldCount, parseInt(countInput.value) || 1));
+                sendPlantHelp(targetUid, targetName, cropId, count);
+                modal.remove();
+                const helpPlantBtn = document.getElementById("helpPlantBtn");
+                if (helpPlantBtn) { helpPlantBtn.disabled = true; helpPlantBtn.style.opacity = 0.5; helpPlantBtn.textContent = "🤝 Geholfen!"; }
+            };
         }
         let farmHelpListenerRef = null;
         function listenForFarmHelp() {
@@ -5216,15 +5294,15 @@
         }
         async function applyFarmHelp(helpId, help) {
             try {
-                if (!help || !Array.isArray(help.indices)) return;
-                if (help.type === "harvestFields") {
+                if (!help) return;
+                if (help.type === "harvestFields" && Array.isArray(help.indices)) {
                     let count = 0;
                     help.indices.forEach(idx => {
                         const f = fields[idx];
                         if (f && f.owned && f.cropId && f.isReady) { harvestField(idx); count++; }
                     });
                     if (count > 0) showToast(`🤝 ${help.helperName || "Ein Nachbar"} hat dir bei ${count} Feld${count > 1 ? "ern" : ""} geholfen!`, false);
-                } else if (help.type === "collectAnimals") {
+                } else if (help.type === "collectAnimals" && Array.isArray(help.indices)) {
                     const handledTypes = new Set();
                     let count = 0;
                     help.indices.forEach(idx => {
@@ -5235,6 +5313,30 @@
                         }
                     });
                     if (count > 0) showToast(`🤝 ${help.helperName || "Ein Nachbar"} hat dir beim Einsammeln geholfen!`, false);
+                } else if (help.type === "plantFields" && help.cropId) {
+                    const crop = CROPS[help.cropId];
+                    if (crop) {
+                        const wanted = help.count || 1;
+                        let planted = 0;
+                        for (let idx = 0; idx < fields.length && planted < wanted; idx++) {
+                            const f = fields[idx];
+                            if (!f || !f.owned || f.cropId) continue;
+                            // Aussaat wurde bereits vom Helfer bezahlt – hier nur pflanzen, kein Gold abziehen.
+                            f.cropId = help.cropId;
+                            f.plantedAt = Date.now();
+                            f.isReady = false;
+                            if (f.timerId) clearTimeout(f.timerId);
+                            startFieldTimer(idx, help.cropId);
+                            addXP(2);
+                            updateQuestProgress("plant", 1);
+                            planted++;
+                        }
+                        if (planted > 0) {
+                            renderFields();
+                            saveGameToLocal();
+                            showToast(`🤝 ${help.helperName || "Ein Nachbar"} hat dir ${planted} Feld${planted > 1 ? "er" : ""} mit ${crop.name} bepflanzt (bezahlt vom Helfer)!`, false);
+                        }
+                    }
                 }
             } catch (err) { console.warn("Farm-Hilfe konnte nicht angewendet werden:", err); }
             finally {
