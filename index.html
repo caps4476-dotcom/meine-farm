@@ -1124,6 +1124,10 @@
                     <div id="giftsListContainer" style="padding:6px 2px;"></div>
                 </div>
                 <div class="account-slot" style="grid-column:1/-1;">
+                    <div class="status" style="background:#5a3a6a;">⭐ PRESTIGE</div>
+                    <div id="prestigeCard" style="padding:6px 2px;"></div>
+                </div>
+                <div class="account-slot" style="grid-column:1/-1;">
                     <div class="status" style="background:#3a5a3a;">📜 NEUIGKEITEN</div>
                     <div style="text-align:center; padding:6px; color:#ffefcf; font-size:0.9rem;">
                         Sieh dir an, was sich in dieser und früheren Versionen geändert hat.
@@ -2571,6 +2575,7 @@
                 masterCollector: false };
         let stats = { totalHarvest: 0, totalOrders: 0, totalGoldEarned: 0, totalCrafts: 0, totalResearch: 0 };
         let ownedDecorations = {};
+        let prestigeLevel = 0;
         const DEKO_ITEMS = {
             scarecrow:   { name: "Vogelscheuche",     emoji: "🎃", desc: "Klassiker für jede Farm", price: 150 },
             windmill:    { name: "Windmühle",         emoji: "🎡", desc: "Dreht sich im Wind", price: 400 },
@@ -4360,13 +4365,71 @@
         function getAnimalProdModifier() { let mod = activeEvent?.type === "disease" ? 2.0 : 1.0;
             mod *= researchBonuses.animalSpeedBonus; return mod; }
 
-        function getYieldBonus() { return researchBonuses.yieldBonus; }
+        function getPrestigeMultiplier() { return 1 + (prestigeLevel || 0) * 0.05; }
+        function isPrestigeAvailable() {
+            const totalResearch = Object.keys(RESEARCH).length;
+            return playerLevel >= 50 && (completedResearch || []).length >= totalResearch;
+        }
+        async function doPrestige() {
+            if (!currentUser) { showToast("❌ Bitte zuerst einloggen!", true); return; }
+            const totalResearch = Object.keys(RESEARCH).length;
+            if (!isPrestigeAvailable()) {
+                showToast(`🔒 Prestige erst ab Level 50 mit abgeschlossener Forschung (${(completedResearch||[]).length}/${totalResearch}) möglich!`, true);
+                return;
+            }
+            const nextPrestige = (prestigeLevel || 0) + 1;
+            const bonusPct = Math.round(nextPrestige * 5);
+            if (!confirm(`⭐ Prestige-Neustart auf Stufe ${nextPrestige}?\n\nDu beginnst wieder bei Level 1 mit 500 Startgold, 4 Feldern und ohne Forschung/Lizenzen/Tiere.\n\nDafür bekommst du DAUERHAFT +${bonusPct}% Ertrag & Glücks-Chance – für immer, auch über weitere Prestiges hinweg.\n\nErfolge, Statistiken und Deko-Items bleiben erhalten.\n\nWirklich fortfahren?`)) return;
+            try {
+                const freshData = {
+                    gold: 500, playerXP: 0, playerLevel: 1,
+                    inventory: {}, day: 1, maxStorage: 50, barnOwned: false, barnUpgrades: { autoCollector: false, speedBoost: false },
+                    acker2Owned: false, acker3Owned: false, helperEnabled: false,
+                    animals: [], completedResearch: [], researchProgress: {}, ownedLicenses: [],
+                    currentWeather: "sunny",
+                    fields: Array(MAX_FIELDS).fill(null).map((_, i) => ({ owned: i < 4, cropId: null, plantedAt: null, isReady: false })),
+                    achievements: achievements || {},
+                    stats: stats || {},
+                    ownedDecorations: ownedDecorations || {},
+                    prestigeLevel: nextPrestige,
+                    lastSeenReleaseVersion: lastSeenReleaseVersion || null,
+                    timestamp: Date.now(),
+                    version: CURRENT_GAME_VERSION
+                };
+                await database.ref('users/' + currentUser.uid + '/savegame').set(freshData);
+                localStorage.removeItem("farmPremium");
+                alert(`⭐ Prestige-Stufe ${nextPrestige} erreicht!\n\nDauerhafter Bonus: +${bonusPct}% Ertrag & Glücks-Chance.\n\nDie Seite wird jetzt neu geladen.`);
+                location.reload();
+            } catch (err) { alert("❌ Fehler beim Prestige-Reset: " + err.message); }
+        }
+        function renderPrestigeCard() {
+            const el = document.getElementById("prestigeCard");
+            if (!el) return;
+            const totalResearch = Object.keys(RESEARCH).length;
+            const bonusPct = Math.round((prestigeLevel || 0) * 5);
+            const nextBonusPct = Math.round(((prestigeLevel || 0) + 1) * 5);
+            const available = isPrestigeAvailable();
+            el.innerHTML = `
+                <div style="font-size:.85rem;color:#ffefcf;margin-bottom:6px;">
+                    ${prestigeLevel > 0 ? `⭐ Aktuelle Prestige-Stufe: <strong>${prestigeLevel}</strong> (dauerhaft +${bonusPct}% Ertrag & Glücks-Chance)` : "Noch keine Prestige-Stufe erreicht."}
+                </div>
+                <div style="font-size:.78rem;color:#c8b090;margin-bottom:8px;">
+                    Voraussetzung: Level 50 + alle Forschungen abgeschlossen (${(completedResearch||[]).length}/${totalResearch}, aktuell Level ${playerLevel}).
+                </div>
+                <button id="doPrestigeBtn" class="mass-btn" style="background:${available ? '#8b3a8b' : '#5a5a55'};width:100%;" ${available ? '' : 'disabled'}>
+                    ⭐ ${available ? `Prestige starten (nächste Stufe: +${nextBonusPct}%)` : "Noch nicht verfügbar"}
+                </button>`;
+            const btn = document.getElementById("doPrestigeBtn");
+            if (btn) btn.onclick = () => doPrestige();
+        }
+
+        function getYieldBonus() { return researchBonuses.yieldBonus * getPrestigeMultiplier(); }
 
         function getCraftSpeedBonus() { return researchBonuses.craftSpeedBonus; }
 
         function getCraftPriceBonus() { return researchBonuses.craftPriceBonus; }
 
-        function getDoubleChance() { return researchBonuses.doubleChance; }
+        function getDoubleChance() { return Math.min(0.9, researchBonuses.doubleChance + (prestigeLevel || 0) * 0.02); }
         // ==================== TAG & ZEIT ====================
         function nextDay() { if (isPaused) { showToast("⏸️ Spiel ist pausiert! Drücke Start, um fortzufahren.",
             true); return; }
@@ -4432,7 +4495,7 @@
             if (view === "research") renderResearch();
             if (view === "licenses") renderLicenses();
             if (view === "achievements") renderAchievements();
-            if (view === "account") renderGiftsList();
+            if (view === "account") { renderGiftsList(); renderPrestigeCard(); }
             if (view === "deko") renderDekoShop();
             if (view === "farm") renderFarmDecorations();
             if (view === "markt") { renderMarktView(); }
@@ -4463,7 +4526,7 @@
                     type: a.type, name: a.name, isReady: (barnUpgrades && barnUpgrades.autoCollector) ? false :
                         a.isReady, productionStartTime: a.productionStartTime || Date.now() })),
                 achievements, stats, playerLevel, playerXP, completedResearch, researchProgress, ownedLicenses,
-                currentWeather, ownedDecorations, timestamp: Date.now(), version: CURRENT_GAME_VERSION }; const dataStr = JSON
+                currentWeather, ownedDecorations, prestigeLevel, timestamp: Date.now(), version: CURRENT_GAME_VERSION }; const dataStr = JSON
                 .stringify(saveData); const blob = new Blob([dataStr], { type: "application/json" }); const url = URL
                 .createObjectURL(blob); const a = document.createElement("a");
             a.href = url;
@@ -4614,6 +4677,7 @@
                     ownedLicenses: ownedLicenses || [],
                     currentWeather: currentWeather || "sunny",
                     ownedDecorations: ownedDecorations || {},
+                    prestigeLevel: prestigeLevel || 0,
                     timestamp: Date.now(),
                     version: CURRENT_GAME_VERSION
                 };
@@ -4734,6 +4798,7 @@
             ownedLicenses = data.ownedLicenses || [];
             if (data.currentWeather) currentWeather = data.currentWeather;
             ownedDecorations = data.ownedDecorations || {};
+            prestigeLevel = data.prestigeLevel || 0;
             renderFarmDecorations();
             if (data.fields) { for (let i = 0; i < fields.length && i < data.fields.length; i++) { fields[i].owned =
                         data.fields[i].owned;
@@ -4868,6 +4933,7 @@
                 ownedLicenses: ownedLicenses || [],
                 currentWeather: currentWeather || "sunny",
                 ownedDecorations: ownedDecorations || {},
+                prestigeLevel: prestigeLevel || 0,
                 timestamp: Date.now()
             };
             localStorage.setItem("farmPremium", JSON.stringify(saveData));
@@ -5086,14 +5152,14 @@
                 ?.value || playerName || "Anonymous"; if (currentUser && !bannedPlayers.some(b => b.name ===
                     currentPlayerName) && !isPaused) { const scoreRef = database.ref('leaderboard/' +
                 currentPlayerName); await scoreRef.set({ name: currentPlayerName, gold: playerGold, level: playerLevel,
-                    day: currentDay, timestamp: Date.now(), online: true, uid: currentUser.uid }); } const snapshot = await database.ref(
+                    day: currentDay, timestamp: Date.now(), online: true, uid: currentUser.uid, prestigeLevel: prestigeLevel || 0 }); } const snapshot = await database.ref(
                 'leaderboard').orderByChild('level').limitToLast(20).once('value'); const scores = [];
             snapshot.forEach(child => { const entry = child.val(); if (!bannedPlayers.some(b => b.name === entry.name))
                     scores.push(entry); });
             scores.reverse();
             scores.splice(10); const container = document.getElementById("leaderboardList"); if (container) { container
                     .innerHTML = scores.map((s, i) => { const isOnline = onlinePlayers[s.name] !== undefined; const
-                            isCurrentPlayer = s.name === currentPlayerName && currentUser; return `<div class="leaderboard-entry ${isOnline ? 'online' : ''}" style="${isCurrentPlayer ? 'background: rgba(245, 166, 35, 0.2);' : ''}"><div class="leaderboard-name"><span class="online-indicator ${isOnline ? 'online-true' : 'online-false'}"></span>${i+1}. ${s.name} ${isCurrentPlayer ? '👑' : ''}</div><div class="leaderboard-gold">⭐ Level ${s.level} &nbsp;|&nbsp; 💰 ${s.gold}</div><div style="display:none"></div>${!isCurrentPlayer ? `<button class="admin-btn" style="font-size:0.6rem;" data-view-farm="${s.name}" data-view-farm-uid="${s.uid || ''}">👁️ Farm</button>` : ''}${isAdmin ? `<button class="admin-btn danger" style="font-size:0.6rem;" onclick="adminRemovePlayerFromList('${s.name}')">🗑️</button>` : ''}</div>`; })
+                            isCurrentPlayer = s.name === currentPlayerName && currentUser; return `<div class="leaderboard-entry ${isOnline ? 'online' : ''}" style="${isCurrentPlayer ? 'background: rgba(245, 166, 35, 0.2);' : ''}"><div class="leaderboard-name"><span class="online-indicator ${isOnline ? 'online-true' : 'online-false'}"></span>${i+1}. ${s.name} ${s.prestigeLevel > 0 ? `<span title="Prestige-Stufe ${s.prestigeLevel}" style="color:#c060c0;">⭐${s.prestigeLevel}</span>` : ''} ${isCurrentPlayer ? '👑' : ''}</div><div class="leaderboard-gold">⭐ Level ${s.level} &nbsp;|&nbsp; 💰 ${s.gold}</div><div style="display:none"></div>${!isCurrentPlayer ? `<button class="admin-btn" style="font-size:0.6rem;" data-view-farm="${s.name}" data-view-farm-uid="${s.uid || ''}">👁️ Farm</button>` : ''}${isAdmin ? `<button class="admin-btn danger" style="font-size:0.6rem;" onclick="adminRemovePlayerFromList('${s.name}')">🗑️</button>` : ''}</div>`; })
                         .join(''); container.querySelectorAll('[data-view-farm]').forEach(btn => { btn.onclick = () => viewPlayerFarm(btn.getAttribute('data-view-farm'), btn.getAttribute('data-view-farm-uid')); }); if (scores.length === 0) container.innerHTML =
                         "<div class='status'>Noch keine Einträge. Spiele und erscheine hier!</div>"; const onlineCount =
                         Object.keys(onlinePlayers).length; const existingCount = container.parentElement.querySelector(
@@ -8417,7 +8483,7 @@
                             false, productionStartTime: a.productionStartTime || null })),
                     achievements: achievements || [], stats: stats || {}, completedResearch: completedResearch ||
                         [], researchProgress: researchProgress || {}, ownedLicenses: ownedLicenses || [],
-                    currentWeather: currentWeather || "sunny", ownedDecorations: ownedDecorations || {}, timestamp: Date.now(), version: CURRENT_GAME_VERSION }; await database
+                    currentWeather: currentWeather || "sunny", ownedDecorations: ownedDecorations || {}, prestigeLevel: prestigeLevel || 0, timestamp: Date.now(), version: CURRENT_GAME_VERSION }; await database
                     .ref("users/" + currentUser.uid + "/savegame").set(saveData);
                 alert("✅ Gespeichert!\nGold: " + playerGold + "\nXP: " + playerXP + "\nLevel: " + playerLevel); } catch (
                 e) { alert("❌ Fehler beim Speichern: " + e.message); } }
