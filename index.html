@@ -991,6 +991,7 @@
                 <button id="viewAccountBtn" class="view-btn">👤 Account</button>
                 <button id="viewAchievementsBtn" class="view-btn">🏆 Erfolge</button>
                 <button id="viewDekoBtn" class="view-btn">🎨 Deko</button>
+                <button id="viewGuildBtn" class="view-btn">🏰 Gilde</button>
                 <button id="viewHandbookBtn" class="view-btn">📖 Handbuch</button>
             <button id="viewAdminBtn" class="view-btn hidden" style="background:linear-gradient(135deg,#8a1010,#c01818);color:#fff;">👑 Admin</button>
             </div>
@@ -1143,6 +1144,10 @@
                 <div style="font-size:1.3rem; text-align:center; margin-bottom:4px;">🎨 Deko-Shop</div>
                 <div style="text-align:center; font-size:.78rem; color:#c8a478; margin-bottom:15px;">Rein kosmetisch – kein Einfluss auf Werte oder Preise.</div>
                 <div id="dekoList" class="achievement-list"></div>
+            </div>
+            <div id="guildView" class="achievements-section hidden">
+                <div style="font-size:1.3rem; text-align:center; margin-bottom:4px;">🏰 Gilde</div>
+                <div id="guildContent"></div>
             </div>
             <div id="handbookView" class="handbook-grid hidden">
                 <div class="handbook-slot" style="grid-column:1/-1;">
@@ -2576,6 +2581,173 @@
         let stats = { totalHarvest: 0, totalOrders: 0, totalGoldEarned: 0, totalCrafts: 0, totalResearch: 0 };
         let ownedDecorations = {};
         let prestigeLevel = 0;
+        // ==================== GILDEN ====================
+        let guildId = null, guildData = null, guildListenerRef = null;
+        const GUILD_FOUND_COST = 2000;
+        function getGuildBonusMultiplier() {
+            if (!guildData) return 1;
+            const members = guildData.memberCount || 1;
+            return 1 + Math.min(0.20, members * 0.02);
+        }
+        function listenGuild() {
+            if (guildListenerRef) { guildListenerRef.off(); guildListenerRef = null; }
+            if (!guildId) { guildData = null; return; }
+            guildListenerRef = database.ref("guilds/" + guildId);
+            guildListenerRef.on("value", (snap) => {
+                guildData = snap.val();
+                if (!guildData) { guildId = null; saveGameToLocal(); }
+                if (currentView === "guild") renderGuildView();
+            });
+        }
+        async function createGuild(name) {
+            if (!currentUser) { showToast("❌ Bitte zuerst einloggen!", true); return; }
+            if (guildId) { showToast("❌ Du bist bereits in einer Gilde!", true); return; }
+            name = (name || "").trim().slice(0, 30);
+            if (name.length < 3) { showToast("❌ Name zu kurz (min. 3 Zeichen).", true); return; }
+            if ((playerGold || 0) < GUILD_FOUND_COST) { showToast(`❌ Gilde gründen kostet ${GUILD_FOUND_COST}💰`, true); return; }
+            const newGuildRef = database.ref("guilds").push();
+            const newGuildId = newGuildRef.key;
+            try {
+                await newGuildRef.set({ name, founderUid: currentUser.uid, founderName: playerName || "Anonym", createdAt: Date.now(), memberCount: 1 });
+                await database.ref(`guilds/${newGuildId}/members/${currentUser.uid}`).set({ name: playerName || "Anonym", joinedAt: Date.now(), role: "founder" });
+                playerGold -= GUILD_FOUND_COST;
+                guildId = newGuildId;
+                updateMoneyUI();
+                saveGameToLocal();
+                if (typeof autoSaveToCloud === "function") autoSaveToCloud();
+                showToast(`🏰 Gilde "${name}" gegründet!`, false);
+                listenGuild();
+                renderGuildView();
+            } catch (err) { showToast("❌ Fehler beim Gründen.", true); }
+        }
+        async function joinGuild(gid, gname) {
+            if (!currentUser) { showToast("❌ Bitte zuerst einloggen!", true); return; }
+            if (guildId) { showToast("❌ Du bist bereits in einer Gilde!", true); return; }
+            try {
+                await database.ref(`guilds/${gid}/members/${currentUser.uid}`).set({ name: playerName || "Anonym", joinedAt: Date.now(), role: "member" });
+                await database.ref(`guilds/${gid}/memberCount`).transaction(c => (c || 0) + 1);
+                guildId = gid;
+                saveGameToLocal();
+                if (typeof autoSaveToCloud === "function") autoSaveToCloud();
+                showToast(`🏰 Der Gilde "${gname}" beigetreten!`, false);
+                listenGuild();
+                renderGuildView();
+            } catch (err) { showToast("❌ Fehler beim Beitreten.", true); }
+        }
+        async function leaveGuild() {
+            if (!currentUser || !guildId) return;
+            if (!confirm("Gilde wirklich verlassen? Dein eingezahltes Lager bleibt der Gilde erhalten.")) return;
+            const oldGuildId = guildId;
+            try {
+                await database.ref(`guilds/${oldGuildId}/members/${currentUser.uid}`).remove();
+                await database.ref(`guilds/${oldGuildId}/memberCount`).transaction(c => Math.max(0, (c || 1) - 1));
+                if (guildListenerRef) { guildListenerRef.off(); guildListenerRef = null; }
+                guildId = null; guildData = null;
+                saveGameToLocal();
+                if (typeof autoSaveToCloud === "function") autoSaveToCloud();
+                showToast("🏰 Gilde verlassen.", false);
+                renderGuildView();
+            } catch (err) { showToast("❌ Fehler beim Verlassen.", true); }
+        }
+        async function depositToGuildStorage(key, amount) {
+            if (!currentUser || !guildId) return;
+            amount = parseInt(amount);
+            if (!amount || amount <= 0) return;
+            if (!inventory[key] || inventory[key] < amount) { showToast("❌ Nicht genug im eigenen Lager!", true); return; }
+            inventory[key] -= amount;
+            if (typeof updateStorageUI === "function") updateStorageUI();
+            try {
+                await database.ref(`guilds/${guildId}/storage/${key}`).transaction(cur => (cur || 0) + amount);
+                showToast(`📦 ${amount}x ${getProductName(key)} ins Gildenlager eingezahlt.`, false);
+                saveGameToLocal();
+                if (typeof autoSaveToCloud === "function") autoSaveToCloud();
+                renderGuildView();
+            } catch (err) {
+                inventory[key] = (inventory[key] || 0) + amount;
+                if (typeof updateStorageUI === "function") updateStorageUI();
+                showToast("❌ Einzahlung fehlgeschlagen.", true);
+            }
+        }
+        async function withdrawFromGuildStorage(key, amount) {
+            if (!currentUser || !guildId) return;
+            amount = parseInt(amount);
+            if (!amount || amount <= 0) return;
+            try {
+                const result = await database.ref(`guilds/${guildId}/storage/${key}`).transaction(cur => {
+                    if (!cur || cur < amount) return; // bricht ab, wenn zu wenig da ist
+                    return cur - amount;
+                });
+                if (!result.committed) { showToast("❌ Nicht genug im Gildenlager!", true); return; }
+                if (inventory[key] === undefined) inventory[key] = 0;
+                inventory[key] += amount;
+                if (typeof updateStorageUI === "function") updateStorageUI();
+                showToast(`📦 ${amount}x ${getProductName(key)} aus dem Gildenlager geholt.`, false);
+                saveGameToLocal();
+                if (typeof autoSaveToCloud === "function") autoSaveToCloud();
+                renderGuildView();
+            } catch (err) { showToast("❌ Fehler beim Abheben.", true); }
+        }
+        function renderGuildView() {
+            const el = document.getElementById("guildContent");
+            if (!el) return;
+            if (!guildId || !guildData) {
+                database.ref("guilds").orderByChild("memberCount").limitToLast(20).once("value").then(snap => {
+                    const list = [];
+                    snap.forEach(child => list.push({ id: child.key, ...child.val() }));
+                    list.reverse();
+                    el.innerHTML = `
+                        <div style="font-size:.8rem;color:#c8b090;margin-bottom:10px;">Du bist noch in keiner Gilde. Gründe eine eigene (${GUILD_FOUND_COST}💰) oder tritt einer bestehenden bei.</div>
+                        <input type="text" id="newGuildNameInput" placeholder="Name deiner neuen Gilde" maxlength="30" style="width:100%;padding:8px;border-radius:10px;border:2px solid #556;margin-bottom:6px;background:#2a2a25;color:#ffefcf;">
+                        <button id="createGuildBtn" class="mass-btn" style="background:#8b3a8b;width:100%;margin-bottom:16px;">🏰 Gilde gründen (${GUILD_FOUND_COST}💰)</button>
+                        <div style="font-size:.85rem;font-weight:700;color:#ffefcf;margin-bottom:8px;">Bestehende Gilden</div>
+                        ${list.length === 0 ? `<div style="color:#aaa;font-size:.8rem;">Noch keine Gilden vorhanden – gründe die erste!</div>` :
+                            list.map(g => `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:#3a3a35;border-radius:10px;margin-bottom:6px;">
+                                <div style="font-size:.85rem;color:#ffefcf;">🏰 ${g.name}<br><small style="color:#aaa;">👥 ${g.memberCount || 0} Mitglieder</small></div>
+                                <button class="mass-btn" style="padding:6px 10px;font-size:.75rem;" data-join-guild="${g.id}" data-join-guild-name="${g.name}">Beitreten</button>
+                            </div>`).join('')}`;
+                    document.getElementById("createGuildBtn").onclick = () => createGuild(document.getElementById("newGuildNameInput").value);
+                    el.querySelectorAll("[data-join-guild]").forEach(btn => {
+                        btn.onclick = () => joinGuild(btn.getAttribute("data-join-guild"), btn.getAttribute("data-join-guild-name"));
+                    });
+                });
+                return;
+            }
+            const members = Object.entries(guildData.members || {});
+            const storage = Object.entries(guildData.storage || {}).filter(([, qty]) => qty > 0);
+            const bonusPct = Math.round((getGuildBonusMultiplier() - 1) * 100);
+            const ownItems = Object.entries(inventory || {}).filter(([, qty]) => qty > 0);
+            el.innerHTML = `
+                <div style="font-size:1.05rem;font-weight:800;color:#f5a623;margin-bottom:4px;">🏰 ${guildData.name}</div>
+                <div style="font-size:.78rem;color:#c8b090;margin-bottom:4px;">👥 ${members.length} Mitglied${members.length !== 1 ? "er" : ""} &nbsp;|&nbsp; Gegründet von ${guildData.founderName || "?"}</div>
+                <div style="font-size:.8rem;color:#5a9e4a;font-weight:700;margin-bottom:12px;">✨ Gilden-Bonus: +${bonusPct}% Ertrag & Glücks-Chance für alle Mitglieder</div>
+                <div style="font-size:.85rem;font-weight:700;color:#ffefcf;margin-bottom:6px;">👥 Mitglieder</div>
+                <div style="margin-bottom:14px;">${members.map(([uid, m]) => `<div style="font-size:.8rem;color:#ddd;padding:4px 0;">${m.role === "founder" ? "👑" : "•"} ${m.name}</div>`).join('')}</div>
+                <div style="font-size:.85rem;font-weight:700;color:#ffefcf;margin-bottom:6px;">📦 Gildenlager</div>
+                <div style="margin-bottom:10px;">${storage.length === 0 ? `<div style="color:#aaa;font-size:.78rem;">Leer – zahl was ein!</div>` :
+                    storage.map(([key, qty]) => `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #444;"><span style="font-size:.8rem;color:#ddd;">${getProductEmoji(key)} ${getProductName(key)}: ${qty}</span><button class="mass-btn" style="padding:4px 8px;font-size:.68rem;" data-withdraw="${key}">Abheben</button></div>`).join('')}</div>
+                <div style="font-size:.85rem;font-weight:700;color:#ffefcf;margin-bottom:6px;">📥 Einzahlen</div>
+                ${ownItems.length === 0 ? `<div style="color:#aaa;font-size:.78rem;margin-bottom:14px;">Dein Lager ist leer.</div>` : `
+                <select id="guildDepositSelect" style="width:100%;padding:8px;border-radius:10px;border:2px solid #556;background:#2a2a25;color:#ffefcf;margin-bottom:6px;">
+                    ${ownItems.map(([key, qty]) => `<option value="${key}">${getProductEmoji(key)} ${getProductName(key)} (${qty})</option>`).join('')}
+                </select>
+                <div style="display:flex;gap:6px;margin-bottom:14px;">
+                    <input type="number" id="guildDepositAmount" min="1" value="1" style="flex:1;padding:8px;border-radius:10px;border:2px solid #556;background:#2a2a25;color:#ffefcf;">
+                    <button id="guildDepositBtn" class="mass-btn" style="background:#4a8b6e;">Einzahlen</button>
+                </div>`}
+                <button id="leaveGuildBtn" class="mass-btn" style="background:#8b2020;width:100%;">🚪 Gilde verlassen</button>`;
+            const depositBtn = document.getElementById("guildDepositBtn");
+            if (depositBtn) depositBtn.onclick = () => {
+                depositToGuildStorage(document.getElementById("guildDepositSelect").value, document.getElementById("guildDepositAmount").value);
+            };
+            el.querySelectorAll("[data-withdraw]").forEach(btn => {
+                btn.onclick = () => {
+                    const key = btn.getAttribute("data-withdraw");
+                    const amount = prompt(`Wie viel ${getProductName(key)} abheben?`, "1");
+                    if (amount) withdrawFromGuildStorage(key, amount);
+                };
+            });
+            document.getElementById("leaveGuildBtn").onclick = () => leaveGuild();
+        }
         const DEKO_ITEMS = {
             scarecrow:   { name: "Vogelscheuche",     emoji: "🎃", desc: "Klassiker für jede Farm", price: 150 },
             windmill:    { name: "Windmühle",         emoji: "🎡", desc: "Dreht sich im Wind", price: 400 },
@@ -4423,13 +4595,13 @@
             if (btn) btn.onclick = () => doPrestige();
         }
 
-        function getYieldBonus() { return researchBonuses.yieldBonus * getPrestigeMultiplier(); }
+        function getYieldBonus() { return researchBonuses.yieldBonus * getPrestigeMultiplier() * getGuildBonusMultiplier(); }
 
         function getCraftSpeedBonus() { return researchBonuses.craftSpeedBonus; }
 
         function getCraftPriceBonus() { return researchBonuses.craftPriceBonus; }
 
-        function getDoubleChance() { return Math.min(0.9, researchBonuses.doubleChance + (prestigeLevel || 0) * 0.02); }
+        function getDoubleChance() { return Math.min(0.9, researchBonuses.doubleChance + (prestigeLevel || 0) * 0.02 + (getGuildBonusMultiplier() - 1)); }
         // ==================== TAG & ZEIT ====================
         function nextDay() { if (isPaused) { showToast("⏸️ Spiel ist pausiert! Drücke Start, um fortzufahren.",
             true); return; }
@@ -4467,6 +4639,7 @@
             document.getElementById("accountView").classList.toggle("hidden", view !== "account");
             document.getElementById("achievementsView").classList.toggle("hidden", view !== "achievements");
             document.getElementById("dekoView").classList.toggle("hidden", view !== "deko");
+            document.getElementById("guildView").classList.toggle("hidden", view !== "guild");
             document.getElementById("marktView").classList.toggle("hidden", view !== "markt");
             const adminViewEl = document.getElementById("adminView");
             if (adminViewEl) adminViewEl.classList.toggle("hidden", view !== "admin");
@@ -4484,6 +4657,8 @@
             document.getElementById("viewAchievementsBtn").classList.toggle("active", view === "achievements");
             const dekoBtn = document.getElementById("viewDekoBtn");
             if (dekoBtn) dekoBtn.classList.toggle("active", view === "deko");
+            const guildBtn = document.getElementById("viewGuildBtn");
+            if (guildBtn) guildBtn.classList.toggle("active", view === "guild");
             const marktBtn = document.getElementById("viewMarktBtn");
             if (marktBtn) marktBtn.classList.toggle("active", view === "markt");
             const adminNavBtn = document.getElementById("viewAdminBtn");
@@ -4497,6 +4672,7 @@
             if (view === "achievements") renderAchievements();
             if (view === "account") { renderGiftsList(); renderPrestigeCard(); }
             if (view === "deko") renderDekoShop();
+            if (view === "guild") renderGuildView();
             if (view === "farm") renderFarmDecorations();
             if (view === "markt") { renderMarktView(); }
             if (view === "admin" && isAdmin) {
@@ -4526,7 +4702,7 @@
                     type: a.type, name: a.name, isReady: (barnUpgrades && barnUpgrades.autoCollector) ? false :
                         a.isReady, productionStartTime: a.productionStartTime || Date.now() })),
                 achievements, stats, playerLevel, playerXP, completedResearch, researchProgress, ownedLicenses,
-                currentWeather, ownedDecorations, prestigeLevel, timestamp: Date.now(), version: CURRENT_GAME_VERSION }; const dataStr = JSON
+                currentWeather, ownedDecorations, prestigeLevel, guildId, timestamp: Date.now(), version: CURRENT_GAME_VERSION }; const dataStr = JSON
                 .stringify(saveData); const blob = new Blob([dataStr], { type: "application/json" }); const url = URL
                 .createObjectURL(blob); const a = document.createElement("a");
             a.href = url;
@@ -4678,6 +4854,7 @@
                     currentWeather: currentWeather || "sunny",
                     ownedDecorations: ownedDecorations || {},
                     prestigeLevel: prestigeLevel || 0,
+                    guildId: guildId || null,
                     timestamp: Date.now(),
                     version: CURRENT_GAME_VERSION
                 };
@@ -4799,6 +4976,7 @@
             if (data.currentWeather) currentWeather = data.currentWeather;
             ownedDecorations = data.ownedDecorations || {};
             prestigeLevel = data.prestigeLevel || 0;
+            if ((data.guildId || null) !== guildId) { guildId = data.guildId || null; listenGuild(); }
             renderFarmDecorations();
             if (data.fields) { for (let i = 0; i < fields.length && i < data.fields.length; i++) { fields[i].owned =
                         data.fields[i].owned;
@@ -4934,6 +5112,7 @@
                 currentWeather: currentWeather || "sunny",
                 ownedDecorations: ownedDecorations || {},
                 prestigeLevel: prestigeLevel || 0,
+                guildId: guildId || null,
                 timestamp: Date.now()
             };
             localStorage.setItem("farmPremium", JSON.stringify(saveData));
@@ -8219,6 +8398,8 @@
                 document.getElementById("viewAchievementsBtn").onclick = () => setView("achievements");
                 const vDekoBtn = document.getElementById("viewDekoBtn");
                 if (vDekoBtn) vDekoBtn.onclick = () => setView("deko");
+                const vGuildBtn = document.getElementById("viewGuildBtn");
+                if (vGuildBtn) vGuildBtn.onclick = () => setView("guild");
                 document.getElementById("viewHandbookBtn").onclick = () => setView("handbook");
                 const vMarktBtn = document.getElementById("viewMarktBtn");
                 if (vMarktBtn) vMarktBtn.onclick = () => setView("markt");
