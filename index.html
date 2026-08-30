@@ -765,6 +765,41 @@
             background: rgba(200,140,50,.1); border-radius: 16px;
         }
         .field { border-radius: 22px; }
+        .animal-icon { font-size: 2.2rem; margin-bottom: 4px; line-height: 1;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,.2)); }
+        .animal-name { font-size: .8rem; font-weight: 700; color: var(--text-dark); margin-bottom: 3px; }
+        /* ── STALL: Themenbezogene Gehege ── */
+        #barnView {
+            background:
+                repeating-linear-gradient(90deg, rgba(0,0,0,.05) 0px, rgba(0,0,0,.05) 2px, transparent 2px, transparent 40px),
+                linear-gradient(180deg, #c8935a 0%, #a9723a 50%, #8a5a2e 100%);
+            border: 6px solid #5a3818;
+            border-radius: 20px;
+            box-shadow: inset 0 0 40px rgba(30,15,0,.3);
+        }
+        #barnView .animal-slot {
+            border-radius: 18px;
+            box-shadow: 0 4px 0 rgba(0,0,0,.25), inset 0 2px 5px rgba(255,255,255,.12);
+        }
+        #barnView .animal-slot .animal-name { color: #fff8e0; text-shadow: 0 1px 3px rgba(0,0,0,.5); }
+        #barnView .animal-slot .status { background: rgba(255,248,224,.88); color: #4a2e10; border-color: rgba(90,56,24,.3); }
+        #barnView .enclosure-stable {
+            background: repeating-linear-gradient(0deg, #7a5228 0px, #7a5228 7px, #6a4520 7px, #6a4520 9px), linear-gradient(160deg, #8a6535, #6a4a24);
+            border: 3px solid #4a3216;
+        }
+        #barnView .enclosure-coop {
+            background: radial-gradient(ellipse at 50% 20%, #f0dca0 0%, #d8b878 60%, #c0a060 100%);
+            border: 3px solid #a8804a;
+        }
+        #barnView .enclosure-coop .animal-name { color: #4a2e10; text-shadow: none; }
+        #barnView .enclosure-hive {
+            background: radial-gradient(ellipse at 50% 30%, #ffcc44 0%, #f5a623 60%, #d4820a 100%);
+            border: 3px solid #a85e00;
+        }
+        #barnView .enclosure-exotic {
+            background: radial-gradient(ellipse at 50% 30%, #9a6ac0 0%, #6a3a8a 60%, #4a2060 100%);
+            border: 3px solid #3a1850;
+        }
         /* ── FARM: Visuelle Hofszene ── */
         #farmView {
             background:
@@ -3909,6 +3944,15 @@
                 `❌ Lager voll!`, true);
         }
 
+        function getAnimalEnclosureClass(type) {
+            const coop = ["chicken", "duck", "ostrich", "peacock"];
+            const hive = ["bee"];
+            const exotic = ["dragon", "silkworm"];
+            if (hive.includes(type)) return "enclosure-hive";
+            if (coop.includes(type)) return "enclosure-coop";
+            if (exotic.includes(type)) return "enclosure-exotic";
+            return "enclosure-stable";
+        }
         function renderBarn() {
             if (!barnContainer) return;
             barnContainer.innerHTML = "";
@@ -3941,7 +3985,7 @@
                 const avgProgress = inProgress.length > 0 ? Math.round(inProgress.reduce((sum, g) => sum +
                     getAnimalProgress(g.animal), 0) / inProgress.length) : 0;
                 const div = document.createElement("div");
-                div.className = "animal-slot";
+                div.className = "animal-slot " + getAnimalEnclosureClass(type);
                 div.style.position = "relative";
                 div.dataset.animalType = type;
                 let statusHtml = "";
