@@ -774,19 +774,24 @@
             border: 6px solid #7a4a22;
             border-radius: 20px;
             box-shadow: inset 0 0 40px rgba(40,20,0,.25);
+            grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+            gap: 10px;
+            padding: 14px 16px;
         }
         #farmView .field {
             background: radial-gradient(ellipse at 50% 30%, #a9713f 0%, #8a5a2e 65%, #6e4522 100%);
             border: 3px solid #5a3818;
             box-shadow: 0 4px 0 rgba(0,0,0,.22), inset 0 2px 5px rgba(255,255,255,.15);
+            padding: 10px 8px;
         }
         #farmView .field.locked {
             background: linear-gradient(160deg, #5a7a45, #46603a);
             border: 3px dashed #35502a;
             opacity: .9;
         }
-        #farmView .field .crop-name { color: #fff8e0; text-shadow: 0 1px 3px rgba(0,0,0,.5); }
-        #farmView .field .status { background: rgba(255,248,224,.85); color: #4a2e10; border-color: rgba(90,56,24,.3); }
+        #farmView .field .crop-icon { font-size: 1.8rem; margin-bottom: 2px; }
+        #farmView .field .crop-name { font-size: .68rem; color: #fff8e0; text-shadow: 0 1px 3px rgba(0,0,0,.5); }
+        #farmView .field .status { font-size: .62rem; padding: 2px 6px; background: rgba(255,248,224,.85); color: #4a2e10; border-color: rgba(90,56,24,.3); }
         #farmDekoBar {
             position: relative; min-height: 40px;
             background: linear-gradient(180deg, #a8d86a 0%, #8bc34a 100%);
