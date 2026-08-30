@@ -3664,6 +3664,8 @@
                 const div = document.createElement("div");
                 div.className = "field" + (f.owned ? "" : " locked");
                 div.style.position = "relative";
+                div.style.borderTopColor = ackerColors[getAckerOfField(i)] || "#5a3818";
+                div.style.borderTopWidth = "5px";
                 if (!f.owned) { const price = getPriceForNextField();
                     div.innerHTML =
                         `<div class="crop-icon">🔒</div><div class="crop-name">Feld ${fieldNumberInAcker}</div><div class="status">${price}💰</div><button class="buy-field-btn" data-idx="${i}">Kaufen</button>`; } else {
@@ -3688,23 +3690,26 @@
                 }
                 farmContainer.appendChild(div);
             };
+            const ackerColors = { 1: "#7a9c4a", 2: "#c08a3a", 3: "#6a7ac0" };
             const addAckerHeader = (title, ackerNum, showHarvestBtn) => {
                 const header = document.createElement("div");
                 header.style.gridColumn = "1 / -1";
-                header.style.background = "#5a4a2e";
+                header.style.background = "linear-gradient(160deg, #8a6535 0%, #6a4a24 100%)";
                 header.style.color = "#ffefcf";
-                header.style.padding = "8px 12px";
-                header.style.borderRadius = "10px";
-                header.style.margin = "8px 0 4px 0";
+                header.style.padding = "9px 14px";
+                header.style.borderRadius = "12px";
+                header.style.margin = "14px 0 6px 0";
                 header.style.fontWeight = "bold";
                 header.style.display = "flex";
                 header.style.justifyContent = "space-between";
                 header.style.alignItems = "center";
                 header.style.fontSize = "0.9rem";
+                header.style.border = `3px solid ${ackerColors[ackerNum] || "#5a3818"}`;
+                header.style.boxShadow = "0 4px 0 rgba(0,0,0,.25), inset 0 1px 2px rgba(255,255,255,.15)";
                 const harvestBtnHtml = showHarvestBtn ?
                     `<button class="harvest-acker-btn" data-acker="${ackerNum}" style="background:#3a8c3a; color:white; border:none; padding:5px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.75rem;">🚜 Acker ${ackerNum} ernten</button>` :
                     "";
-                header.innerHTML = `<span>🌾 ${title}</span>${harvestBtnHtml}`;
+                header.innerHTML = `<span>🚧 ${title}</span>${harvestBtnHtml}`;
                 farmContainer.appendChild(header);
             };
             const addBuyAckerTile = (ackerNum, cost, disabledReason) => {
