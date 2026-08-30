@@ -2584,6 +2584,55 @@
         // ==================== GILDEN ====================
         let guildId = null, guildData = null, guildListenerRef = null;
         const GUILD_FOUND_COST = 2000;
+        const GUILD_RESEARCH = {
+            guildYield:  { name: "🌾 Gilden-Ernte-Boost", desc: "+5% Ertrag für alle Mitglieder", levelRequired: 2, resources: { carrot: 200, wheat: 150 }, effect: { type: "yield", value: 0.05 } },
+            guildLuck:   { name: "🎲 Gilden-Glück", desc: "+5% Glücks-Chance für alle Mitglieder", levelRequired: 4, resources: { egg: 150, milk: 150 }, effect: { type: "luck", value: 0.05 } },
+            guildGrowth: { name: "🌱 Gilden-Wachstum", desc: "10% schnelleres Pflanzenwachstum für alle Mitglieder", levelRequired: 6, resources: { tomato: 200, strawberry: 150 }, effect: { type: "growth", value: 0.90 } },
+            guildAnimal: { name: "🐄 Gilden-Tierpflege", desc: "10% schnellere Tierproduktion für alle Mitglieder", levelRequired: 8, resources: { wool: 100, honey: 80 }, effect: { type: "animalSpeed", value: 0.90 } }
+        };
+        function getItemBaseValue(key) {
+            if (CROPS[key]) return CROPS[key].basePrice || 1;
+            if (RECIPES[key]) return RECIPES[key].basePrice || 1;
+            for (const id in ANIMALS) if (ANIMALS[id].productKey === key) return ANIMALS[id].basePrice || 1;
+            return 1;
+        }
+        function getGuildLevel() {
+            const total = (guildData && guildData.totalContributed) || 0;
+            return 1 + Math.floor(total / 5000);
+        }
+        function getGuildResearchBonus(type) {
+            const isMultiplicative = (type === "growth" || type === "animalSpeed");
+            let total = isMultiplicative ? 1 : 0;
+            if (!guildData || !guildData.research) return total;
+            for (const [id, unlocked] of Object.entries(guildData.research)) {
+                if (!unlocked) continue;
+                const tech = GUILD_RESEARCH[id];
+                if (!tech || tech.effect.type !== type) continue;
+                if (isMultiplicative) total *= tech.effect.value; else total += tech.effect.value;
+            }
+            return total;
+        }
+        async function researchGuildTech(id) {
+            if (!currentUser || !guildId || !guildData) return;
+            const tech = GUILD_RESEARCH[id];
+            if (!tech) return;
+            if (guildData.research && guildData.research[id]) { showToast("✅ Bereits erforscht.", false); return; }
+            const level = getGuildLevel();
+            if (level < tech.levelRequired) { showToast(`🔒 Gilden-Level ${tech.levelRequired} benötigt (aktuell ${level}).`, true); return; }
+            const storage = guildData.storage || {};
+            for (const [key, needed] of Object.entries(tech.resources)) {
+                if ((storage[key] || 0) < needed) { showToast(`❌ Zu wenig ${getProductName(key)} im Gildenlager (${storage[key] || 0}/${needed}).`, true); return; }
+            }
+            const costText = Object.entries(tech.resources).map(([k, v]) => `${v}x ${getProductName(k)}`).join(", ");
+            if (!confirm(`"${tech.name}" erforschen?\n\nKosten aus dem Gildenlager: ${costText}\n\nGilt danach dauerhaft für ALLE Mitglieder.`)) return;
+            try {
+                const updates = {};
+                for (const [key, needed] of Object.entries(tech.resources)) updates[`storage/${key}`] = firebase.database.ServerValue.increment(-needed);
+                updates[`research/${id}`] = true;
+                await database.ref(`guilds/${guildId}`).update(updates);
+                showToast(`🔬 "${tech.name}" erforscht! Gilt jetzt für alle Mitglieder.`, false);
+            } catch (err) { showToast("❌ Forschung fehlgeschlagen.", true); }
+        }
         function getGuildBonusMultiplier() {
             if (!guildData) return 1;
             const members = guildData.memberCount || 1;
@@ -2656,9 +2705,13 @@
             if (!inventory[key] || inventory[key] < amount) { showToast("❌ Nicht genug im eigenen Lager!", true); return; }
             inventory[key] -= amount;
             if (typeof updateStorageUI === "function") updateStorageUI();
+            const value = amount * getItemBaseValue(key);
             try {
-                await database.ref(`guilds/${guildId}/storage/${key}`).transaction(cur => (cur || 0) + amount);
-                showToast(`📦 ${amount}x ${getProductName(key)} ins Gildenlager eingezahlt.`, false);
+                await database.ref(`guilds/${guildId}`).update({
+                    [`storage/${key}`]: firebase.database.ServerValue.increment(amount),
+                    totalContributed: firebase.database.ServerValue.increment(value)
+                });
+                showToast(`📦 ${amount}x ${getProductName(key)} ins Gildenlager eingezahlt (+${value} Gilden-Punkte).`, false);
                 saveGameToLocal();
                 if (typeof autoSaveToCloud === "function") autoSaveToCloud();
                 renderGuildView();
@@ -2716,10 +2769,30 @@
             const storage = Object.entries(guildData.storage || {}).filter(([, qty]) => qty > 0);
             const bonusPct = Math.round((getGuildBonusMultiplier() - 1) * 100);
             const ownItems = Object.entries(inventory || {}).filter(([, qty]) => qty > 0);
+            const guildLevel = getGuildLevel();
+            const totalContributed = guildData.totalContributed || 0;
+            const nextLevelAt = guildLevel * 5000;
+            const research = guildData.research || {};
+            const researchHtml = Object.entries(GUILD_RESEARCH).map(([id, tech]) => {
+                const unlocked = !!research[id];
+                const canAfford = Object.entries(tech.resources).every(([k, v]) => ((guildData.storage || {})[k] || 0) >= v);
+                const levelOk = guildLevel >= tech.levelRequired;
+                const costText = Object.entries(tech.resources).map(([k, v]) => `${v}x ${getProductEmoji(k)}${getProductName(k)}`).join(", ");
+                return `<div style="padding:8px;background:#fdf3e0;border:1px solid #e0c088;border-radius:10px;margin-bottom:6px;opacity:${unlocked ? 1 : (levelOk ? 1 : 0.55)};">
+                    <div style="font-size:.85rem;font-weight:700;color:#2c1810;">${tech.name} ${unlocked ? "✅" : ""}</div>
+                    <div style="font-size:.72rem;color:#6b4226;margin-bottom:4px;">${tech.desc}</div>
+                    ${unlocked ? "" : `<div style="font-size:.7rem;color:#a08050;margin-bottom:4px;">Ab Gilden-Level ${tech.levelRequired} &nbsp;|&nbsp; Kosten: ${costText}</div>
+                    <button class="mass-btn" style="padding:5px 10px;font-size:.7rem;" data-research="${id}" ${(levelOk && canAfford) ? "" : "disabled"}>${!levelOk ? "🔒 Level zu niedrig" : (!canAfford ? "📦 Zu wenig im Lager" : "🔬 Erforschen")}</button>`}
+                </div>`;
+            }).join('');
             el.innerHTML = `
                 <div style="font-size:1.05rem;font-weight:800;color:#5c3317;margin-bottom:4px;">🏰 ${guildData.name}</div>
                 <div style="font-size:.78rem;color:#6b4226;margin-bottom:4px;">👥 ${members.length} Mitglied${members.length !== 1 ? "er" : ""} &nbsp;|&nbsp; Gegründet von ${guildData.founderName || "?"}</div>
-                <div style="font-size:.8rem;color:#2e7d32;font-weight:700;margin-bottom:12px;">✨ Gilden-Bonus: +${bonusPct}% Ertrag & Glücks-Chance für alle Mitglieder</div>
+                <div style="font-size:.8rem;color:#8b3a8b;font-weight:700;margin-bottom:2px;">🏅 Gilden-Level ${guildLevel} (${totalContributed}/${nextLevelAt} Punkte bis Level ${guildLevel + 1})</div>
+                <div style="font-size:.8rem;color:#2e7d32;font-weight:700;margin-bottom:12px;">✨ Mitglieder-Bonus: +${bonusPct}% Ertrag & Glücks-Chance (mehr Mitglieder = mehr Bonus, bis +20%)</div>
+                <div style="font-size:.85rem;font-weight:700;color:#5c3317;margin-bottom:6px;">🔬 Gilden-Forschung</div>
+                <div style="font-size:.7rem;color:#a08050;margin-bottom:8px;">Wird aus dem Gildenlager bezahlt, gilt danach dauerhaft für alle Mitglieder.</div>
+                <div style="margin-bottom:14px;">${researchHtml}</div>
                 <div style="font-size:.85rem;font-weight:700;color:#5c3317;margin-bottom:6px;">👥 Mitglieder</div>
                 <div style="margin-bottom:14px;">${members.map(([uid, m]) => `<div style="font-size:.8rem;color:#2c1810;padding:4px 0;">${m.role === "founder" ? "👑" : "•"} ${m.name}</div>`).join('')}</div>
                 <div style="font-size:.85rem;font-weight:700;color:#5c3317;margin-bottom:6px;">📦 Gildenlager</div>
@@ -2735,6 +2808,9 @@
                     <button id="guildDepositBtn" class="mass-btn" style="background:#4a8b6e;color:#fff;">Einzahlen</button>
                 </div>`}
                 <button id="leaveGuildBtn" class="mass-btn" style="background:#8b2020;color:#fff;width:100%;">🚪 Gilde verlassen</button>`;
+            el.querySelectorAll("[data-research]").forEach(btn => {
+                btn.onclick = () => researchGuildTech(btn.getAttribute("data-research"));
+            });
             const depositBtn = document.getElementById("guildDepositBtn");
             if (depositBtn) depositBtn.onclick = () => {
                 depositToGuildStorage(document.getElementById("guildDepositSelect").value, document.getElementById("guildDepositAmount").value);
@@ -4531,11 +4607,11 @@
         function getWeatherHarvestRisk() { if (currentWeather === "thunder") return Math.random() < 0.2; return false; }
 
         function getGrowthModifier(weatherOverride = null) { let mod = activeEvent?.type === "drought" ? 1.5 : 1.0;
-            mod *= researchBonuses.growthSpeedBonus; if (weatherOverride) mod *= getGrowthModifierForWeather(
+            mod *= researchBonuses.growthSpeedBonus; mod *= getGuildResearchBonus("growth"); if (weatherOverride) mod *= getGrowthModifierForWeather(
                 weatherOverride); else mod *= getWeatherGrowthModifier(); return mod; }
 
         function getAnimalProdModifier() { let mod = activeEvent?.type === "disease" ? 2.0 : 1.0;
-            mod *= researchBonuses.animalSpeedBonus; return mod; }
+            mod *= researchBonuses.animalSpeedBonus; mod *= getGuildResearchBonus("animalSpeed"); return mod; }
 
         function getPrestigeMultiplier() { return 1 + (prestigeLevel || 0) * 0.05; }
         function isPrestigeAvailable() {
@@ -4595,13 +4671,13 @@
             if (btn) btn.onclick = () => doPrestige();
         }
 
-        function getYieldBonus() { return researchBonuses.yieldBonus * getPrestigeMultiplier() * getGuildBonusMultiplier(); }
+        function getYieldBonus() { return researchBonuses.yieldBonus * getPrestigeMultiplier() * getGuildBonusMultiplier() * (1 + getGuildResearchBonus("yield")); }
 
         function getCraftSpeedBonus() { return researchBonuses.craftSpeedBonus; }
 
         function getCraftPriceBonus() { return researchBonuses.craftPriceBonus; }
 
-        function getDoubleChance() { return Math.min(0.9, researchBonuses.doubleChance + (prestigeLevel || 0) * 0.02 + (getGuildBonusMultiplier() - 1)); }
+        function getDoubleChance() { return Math.min(0.9, researchBonuses.doubleChance + (prestigeLevel || 0) * 0.02 + (getGuildBonusMultiplier() - 1) + getGuildResearchBonus("luck")); }
         // ==================== TAG & ZEIT ====================
         function nextDay() { if (isPaused) { showToast("⏸️ Spiel ist pausiert! Drücke Start, um fortzufahren.",
             true); return; }
