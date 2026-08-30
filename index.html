@@ -5368,7 +5368,7 @@
                         const f = fields[idx];
                         if (f && f.owned && f.cropId && f.isReady) { harvestField(idx); count++; }
                     });
-                    if (count > 0) showToast(`🤝 ${help.helperName || "Ein Nachbar"} hat dir bei ${count} Feld${count > 1 ? "ern" : ""} geholfen!`, false);
+                    if (count > 0) { showToast(`🤝 ${help.helperName || "Ein Nachbar"} hat dir bei ${count} Feld${count > 1 ? "ern" : ""} geholfen!`, false); if (typeof autoSaveToCloud === "function") autoSaveToCloud(); }
                 } else if (help.type === "collectAnimals" && Array.isArray(help.indices)) {
                     const handledTypes = new Set();
                     let count = 0;
@@ -5379,7 +5379,7 @@
                             if (typeof collectProduct === "function") { collectProduct(idx); count++; }
                         }
                     });
-                    if (count > 0) showToast(`🤝 ${help.helperName || "Ein Nachbar"} hat dir beim Einsammeln geholfen!`, false);
+                    if (count > 0) { showToast(`🤝 ${help.helperName || "Ein Nachbar"} hat dir beim Einsammeln geholfen!`, false); if (typeof autoSaveToCloud === "function") autoSaveToCloud(); }
                 } else if (help.type === "plantFields" && help.cropId) {
                     const crop = CROPS[help.cropId];
                     if (crop) {
@@ -5401,6 +5401,7 @@
                         if (planted > 0) {
                             renderFields();
                             saveGameToLocal();
+                            if (typeof autoSaveToCloud === "function") autoSaveToCloud();
                             showToast(`🤝 ${help.helperName || "Ein Nachbar"} hat dir ${planted} Feld${planted > 1 ? "er" : ""} mit ${crop.name} bepflanzt (bezahlt vom Helfer)!`, false);
                         }
                     }
