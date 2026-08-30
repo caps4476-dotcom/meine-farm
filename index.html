@@ -5233,6 +5233,7 @@
         }
         function openPlantHelpPicker(targetUid, targetName, sg, emptyFieldCount) {
             if (!currentUser) { showToast("❌ Bitte zuerst einloggen!", true); return; }
+            const existing = document.getElementById("plantHelpModal");
             if (existing) existing.remove();
             const ownerLevel = sg.playerLevel || 1;
             const ownerLicenses = sg.ownedLicenses || [];
