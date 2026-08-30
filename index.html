@@ -765,6 +765,39 @@
             background: rgba(200,140,50,.1); border-radius: 16px;
         }
         .field { border-radius: 22px; }
+        /* ── FARM: Visuelle Hofszene ── */
+        #farmView {
+            background:
+                radial-gradient(ellipse at 20% 15%, rgba(255,255,255,.10) 0%, transparent 35%),
+                repeating-linear-gradient(45deg, rgba(255,255,255,.035) 0px, rgba(255,255,255,.035) 2px, transparent 2px, transparent 16px),
+                linear-gradient(180deg, #8bc34a 0%, #7cb342 45%, #689f38 100%);
+            border: 6px solid #7a4a22;
+            border-radius: 20px;
+            box-shadow: inset 0 0 40px rgba(40,20,0,.25);
+        }
+        #farmView .field {
+            background: radial-gradient(ellipse at 50% 30%, #a9713f 0%, #8a5a2e 65%, #6e4522 100%);
+            border: 3px solid #5a3818;
+            box-shadow: 0 4px 0 rgba(0,0,0,.22), inset 0 2px 5px rgba(255,255,255,.15);
+        }
+        #farmView .field.locked {
+            background: linear-gradient(160deg, #5a7a45, #46603a);
+            border: 3px dashed #35502a;
+            opacity: .9;
+        }
+        #farmView .field .crop-name { color: #fff8e0; text-shadow: 0 1px 3px rgba(0,0,0,.5); }
+        #farmView .field .status { background: rgba(255,248,224,.85); color: #4a2e10; border-color: rgba(90,56,24,.3); }
+        #farmDekoBar {
+            position: relative; min-height: 40px;
+            background: linear-gradient(180deg, #a8d86a 0%, #8bc34a 100%);
+            border-left: 6px solid #7a4a22; border-right: 6px solid #7a4a22;
+            overflow: visible;
+        }
+        #farmDekoBar .deko-placed {
+            display: inline-block; font-size: 1.5rem;
+            filter: drop-shadow(0 3px 3px rgba(0,0,0,.35));
+            margin: 4px 10px;
+        }
         .crop-icon { font-size: 2.4rem; margin-bottom: 4px; line-height: 1;
             filter: drop-shadow(0 2px 4px rgba(0,0,0,.2)); }
         .crop-name { font-size: .8rem; font-weight: 700; color: var(--text-dark); margin-bottom: 3px; }
@@ -5337,7 +5370,8 @@
             const owned = Object.keys(ownedDecorations || {});
             if (owned.length === 0) { bar.innerHTML = ""; bar.classList.add("hidden"); return; }
             bar.classList.remove("hidden");
-            bar.innerHTML = owned.map(id => DEKO_ITEMS[id] ? `<span title="${DEKO_ITEMS[id].name}" style="font-size:1.3rem;margin-right:6px;">${DEKO_ITEMS[id].emoji}</span>` : '').join('');
+            bar.style.textAlign = "center";
+            bar.innerHTML = owned.map(id => DEKO_ITEMS[id] ? `<span class="deko-placed" title="${DEKO_ITEMS[id].name}">${DEKO_ITEMS[id].emoji}</span>` : '').join('');
         }
         // ==================== TOAST & EVENT ====================
         function showToast(msg, isError = false) { toastEl.style.backgroundColor = isError ? "#8b3a3acc" :
