@@ -1498,6 +1498,7 @@
                 else if (currentView === "craft") renderCraft();
                 else if (currentView === "research" && isResearchUnlocked(playerLevel)) renderResearch();
                 else if (currentView === "licenses" && isLicensesUnlocked(playerLevel)) renderLicenses();
+                else if (currentView === "guild" && guildId && guildData) updateGuildFieldsGrid();
                 updateMassPlantButtonsLive();
             }, 500);
         }
@@ -2730,7 +2731,8 @@
             const newGuildRef = database.ref("guilds").push();
             const newGuildId = newGuildRef.key;
             try {
-                await newGuildRef.set({ name, founderUid: currentUser.uid, founderName: playerName || "Anonym", createdAt: Date.now(), memberCount: 1 });
+                await newGuildRef.set({ name, founderUid: currentUser.uid, founderName: playerName || "Anonym", createdAt: Date.now(), memberCount: 1,
+                    fields: Array(12).fill(null).map(() => ({ cropId: null, plantedAt: null })) });
                 await database.ref(`guilds/${newGuildId}/members/${currentUser.uid}`).set({ name: playerName || "Anonym", joinedAt: Date.now(), role: "founder" });
                 playerGold -= GUILD_FOUND_COST;
                 guildId = newGuildId;
@@ -2813,6 +2815,127 @@
                 renderGuildView();
             } catch (err) { showToast("❌ Fehler beim Abheben.", true); }
         }
+        // ==================== GILDEN-ACKER (gehört der Gilde, nicht einzelnen Spielern) ====================
+        const GUILD_FIELD_COUNT = 12;
+        function getGuildFieldGrowTime(cropId) {
+            const crop = CROPS[cropId];
+            return crop ? crop.growTime : 0;
+        }
+        function isGuildFieldReady(f) {
+            if (!f || !f.cropId || !f.plantedAt) return false;
+            return Date.now() >= f.plantedAt + getGuildFieldGrowTime(f.cropId);
+        }
+        function getGuildFields() {
+            const raw = (guildData && guildData.fields) || [];
+            const fields = [];
+            for (let i = 0; i < GUILD_FIELD_COUNT; i++) fields.push(raw[i] || { cropId: null, plantedAt: null });
+            return fields;
+        }
+        function openGuildPlantPicker(idx) {
+            if (!currentUser || !guildId) { showToast("❌ Bitte zuerst einloggen!", true); return; }
+            const existing = document.getElementById("guildPlantModal");
+            if (existing) existing.remove();
+            const plantableCrops = Object.entries(CROPS).filter(([, crop]) =>
+                playerLevel >= crop.levelRequired && (!crop.licenseRequired || ownedLicenses.includes(crop.licenseRequired))
+            );
+            const modal = document.createElement("div");
+            modal.id = "guildPlantModal";
+            modal.style.cssText = "position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px;";
+            modal.innerHTML = `
+                <div style="background:linear-gradient(160deg,#fdf3e0,#f0ddb8);border-radius:24px;padding:24px;max-width:380px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.4);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                        <div style="font-weight:800;font-size:1.05rem;color:#5c3317;">🌾 Gilden-Feld bepflanzen</div>
+                        <button id="closeGuildPlantBtn" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:#5c3317;">✕</button>
+                    </div>
+                    <div style="font-size:.78rem;color:#6b4226;margin-bottom:10px;">Du bezahlst die Aussaat, die Ernte landet später direkt im Gildenlager – für alle.</div>
+                    <select id="guildPlantCropSelect" style="width:100%;padding:8px;border-radius:10px;border:2px solid #c8a060;background:#fff8ea;color:#2c1810;margin-bottom:10px;">
+                        ${plantableCrops.map(([id, crop]) => `<option value="${id}">${crop.emoji} ${crop.name} (${crop.seedCost}💰)</option>`).join('')}
+                    </select>
+                    <button id="confirmGuildPlantBtn" class="mass-btn" style="background:#4a7b4a;color:#fff;width:100%;">🌱 Pflanzen</button>
+                </div>`;
+            document.body.appendChild(modal);
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+            document.getElementById("closeGuildPlantBtn").onclick = () => modal.remove();
+            document.getElementById("confirmGuildPlantBtn").onclick = () => {
+                const cropId = document.getElementById("guildPlantCropSelect").value;
+                modal.remove();
+                plantGuildField(idx, cropId);
+            };
+        }
+        async function plantGuildField(idx, cropId) {
+            if (!currentUser || !guildId) return;
+            const crop = CROPS[cropId];
+            if (!crop) return;
+            if (playerLevel < crop.levelRequired) { showToast(`🔒 ${crop.name} wird auf Level ${crop.levelRequired} freigeschaltet!`, true); return; }
+            if (crop.licenseRequired && !ownedLicenses.includes(crop.licenseRequired)) { showToast(`🔒 ${crop.name} benötigt eine Lizenz!`, true); return; }
+            const currentField = getGuildFields()[idx];
+            if (currentField && currentField.cropId) { showToast("❌ Hier wächst schon etwas!", true); return; }
+            if ((playerGold || 0) < crop.seedCost) { showToast(`❌ Zu wenig Gold! Saatgut: ${crop.seedCost}💰`, true); return; }
+            playerGold -= crop.seedCost;
+            updateMoneyUI();
+            try {
+                await database.ref(`guilds/${guildId}/fields/${idx}`).set({ cropId, plantedAt: Date.now(), plantedBy: playerName || "Anonym" });
+                showToast(`🌱 ${crop.emoji} ${crop.name} auf dem Gilden-Acker gepflanzt!`, false);
+                saveGameToLocal();
+                if (typeof autoSaveToCloud === "function") autoSaveToCloud();
+            } catch (err) {
+                playerGold += crop.seedCost; updateMoneyUI();
+                showToast("❌ Pflanzen fehlgeschlagen.", true);
+            }
+        }
+        async function harvestGuildField(idx) {
+            if (!currentUser || !guildId) return;
+            const f = getGuildFields()[idx];
+            if (!isGuildFieldReady(f)) { showToast("❌ Noch nicht erntereif!", true); return; }
+            const crop = CROPS[f.cropId];
+            if (!crop) return;
+            const amount = Math.max(1, Math.floor(1 * getYieldBonus()));
+            const value = amount * getItemBaseValue(f.cropId);
+            try {
+                await database.ref(`guilds/${guildId}`).update({
+                    [`fields/${idx}`]: { cropId: null, plantedAt: null },
+                    [`storage/${f.cropId}`]: firebase.database.ServerValue.increment(amount),
+                    totalContributed: firebase.database.ServerValue.increment(value)
+                });
+                addXP(3 * amount);
+                saveGameToLocal();
+                if (typeof autoSaveToCloud === "function") autoSaveToCloud();
+                showToast(`🌾 +${amount} ${crop.name} für die Gilde geerntet! +${3 * amount} XP`, false);
+            } catch (err) { showToast("❌ Ernten fehlgeschlagen.", true); }
+        }
+        function renderGuildFields() {
+            const guildFields = getGuildFields();
+            return guildFields.map((f, idx) => {
+                if (!f.cropId) {
+                    return `<div style="width:100%;aspect-ratio:1;background:linear-gradient(160deg,#5a7a45,#46603a);border:2px dashed #35502a;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;" data-guild-plant="${idx}">
+                        <span style="font-size:1.4rem;">➕</span><span style="font-size:.6rem;color:#eaffea;">pflanzen</span>
+                    </div>`;
+                }
+                const crop = CROPS[f.cropId];
+                const ready = isGuildFieldReady(f);
+                const growTime = getGuildFieldGrowTime(f.cropId);
+                const pct = ready ? 100 : Math.min(100, Math.round(((Date.now() - f.plantedAt) / growTime) * 100));
+                return `<div style="width:100%;aspect-ratio:1;background:radial-gradient(ellipse at 50% 30%,#a9713f 0%,#8a5a2e 65%,#6e4522 100%);border:2px solid #5a3818;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;">
+                    <span style="font-size:1.6rem;">${ready ? "✅" : crop.emoji}</span>
+                    <span style="font-size:.58rem;color:#fff8e0;text-shadow:0 1px 2px rgba(0,0,0,.5);">${ready ? "bereit!" : pct + "%"}</span>
+                    ${ready ? `<button data-guild-harvest="${idx}" style="margin-top:2px;padding:2px 8px;font-size:.62rem;border:none;border-radius:8px;background:#3a8c3a;color:#fff;cursor:pointer;">Ernten</button>` : ""}
+                </div>`;
+            }).join('');
+        }
+        function attachGuildFieldListeners(el) {
+            el.querySelectorAll("[data-guild-plant]").forEach(elm => {
+                elm.onclick = () => openGuildPlantPicker(parseInt(elm.getAttribute("data-guild-plant")));
+            });
+            el.querySelectorAll("[data-guild-harvest]").forEach(elm => {
+                elm.onclick = () => harvestGuildField(parseInt(elm.getAttribute("data-guild-harvest")));
+            });
+        }
+        function updateGuildFieldsGrid() {
+            const grid = document.getElementById("guildFieldsGrid");
+            if (!grid) return;
+            grid.innerHTML = renderGuildFields();
+            attachGuildFieldListeners(grid);
+        }
         function renderGuildView() {
             const el = document.getElementById("guildContent");
             if (!el) return;
@@ -2863,6 +2986,9 @@
                 <div style="font-size:.78rem;color:#6b4226;margin-bottom:4px;">👥 ${members.length} Mitglied${members.length !== 1 ? "er" : ""} &nbsp;|&nbsp; Gegründet von ${guildData.founderName || "?"}</div>
                 <div style="font-size:.8rem;color:#8b3a8b;font-weight:700;margin-bottom:2px;">🏅 Gilden-Level ${guildLevel} (${totalContributed}/${nextLevelAt} Punkte bis Level ${guildLevel + 1})</div>
                 <div style="font-size:.8rem;color:#2e7d32;font-weight:700;margin-bottom:12px;">✨ Mitglieder-Bonus: +${bonusPct}% Ertrag & Glücks-Chance (mehr Mitglieder = mehr Bonus, bis +20%)</div>
+                <div style="font-size:.85rem;font-weight:700;color:#5c3317;margin-bottom:6px;">🌾 Gilden-Acker (gehört der Gilde)</div>
+                <div style="font-size:.7rem;color:#a08050;margin-bottom:8px;">Jedes Mitglied kann pflanzen (bezahlt selbst) und ernten – die Ernte landet direkt im Gildenlager.</div>
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:16px;" id="guildFieldsGrid">${renderGuildFields()}</div>
                 <div style="font-size:.85rem;font-weight:700;color:#5c3317;margin-bottom:6px;">🔬 Gilden-Forschung</div>
                 <div style="font-size:.7rem;color:#a08050;margin-bottom:8px;">Wird aus dem Gildenlager bezahlt, gilt danach dauerhaft für alle Mitglieder.</div>
                 <div style="margin-bottom:14px;">${researchHtml}</div>
@@ -2881,6 +3007,7 @@
                     <button id="guildDepositBtn" class="mass-btn" style="background:#4a8b6e;color:#fff;">Einzahlen</button>
                 </div>`}
                 <button id="leaveGuildBtn" class="mass-btn" style="background:#8b2020;color:#fff;width:100%;">🚪 Gilde verlassen</button>`;
+            attachGuildFieldListeners(el);
             el.querySelectorAll("[data-research]").forEach(btn => {
                 btn.onclick = () => researchGuildTech(btn.getAttribute("data-research"));
             });
