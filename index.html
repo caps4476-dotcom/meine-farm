@@ -2696,13 +2696,13 @@
                     snap.forEach(child => list.push({ id: child.key, ...child.val() }));
                     list.reverse();
                     el.innerHTML = `
-                        <div style="font-size:.8rem;color:#c8b090;margin-bottom:10px;">Du bist noch in keiner Gilde. Gründe eine eigene (${GUILD_FOUND_COST}💰) oder tritt einer bestehenden bei.</div>
-                        <input type="text" id="newGuildNameInput" placeholder="Name deiner neuen Gilde" maxlength="30" style="width:100%;padding:8px;border-radius:10px;border:2px solid #556;margin-bottom:6px;background:#2a2a25;color:#ffefcf;">
-                        <button id="createGuildBtn" class="mass-btn" style="background:#8b3a8b;width:100%;margin-bottom:16px;">🏰 Gilde gründen (${GUILD_FOUND_COST}💰)</button>
-                        <div style="font-size:.85rem;font-weight:700;color:#ffefcf;margin-bottom:8px;">Bestehende Gilden</div>
-                        ${list.length === 0 ? `<div style="color:#aaa;font-size:.8rem;">Noch keine Gilden vorhanden – gründe die erste!</div>` :
-                            list.map(g => `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:#3a3a35;border-radius:10px;margin-bottom:6px;">
-                                <div style="font-size:.85rem;color:#ffefcf;">🏰 ${g.name}<br><small style="color:#aaa;">👥 ${g.memberCount || 0} Mitglieder</small></div>
+                        <div style="font-size:.8rem;color:#6b4226;margin-bottom:10px;">Du bist noch in keiner Gilde. Gründe eine eigene (${GUILD_FOUND_COST}💰) oder tritt einer bestehenden bei.</div>
+                        <input type="text" id="newGuildNameInput" placeholder="Name deiner neuen Gilde" maxlength="30" style="width:100%;padding:8px;border-radius:10px;border:2px solid #c8a060;margin-bottom:6px;background:#fff8ea;color:#2c1810;">
+                        <button id="createGuildBtn" class="mass-btn" style="background:#8b3a8b;color:#fff;width:100%;margin-bottom:16px;">🏰 Gilde gründen (${GUILD_FOUND_COST}💰)</button>
+                        <div style="font-size:.85rem;font-weight:700;color:#5c3317;margin-bottom:8px;">Bestehende Gilden</div>
+                        ${list.length === 0 ? `<div style="color:#a08050;font-size:.8rem;">Noch keine Gilden vorhanden – gründe die erste!</div>` :
+                            list.map(g => `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:#fdf3e0;border:1px solid #e0c088;border-radius:10px;margin-bottom:6px;">
+                                <div style="font-size:.85rem;color:#2c1810;">🏰 ${g.name}<br><small style="color:#a08050;">👥 ${g.memberCount || 0} Mitglieder</small></div>
                                 <button class="mass-btn" style="padding:6px 10px;font-size:.75rem;" data-join-guild="${g.id}" data-join-guild-name="${g.name}">Beitreten</button>
                             </div>`).join('')}`;
                     document.getElementById("createGuildBtn").onclick = () => createGuild(document.getElementById("newGuildNameInput").value);
@@ -2717,24 +2717,24 @@
             const bonusPct = Math.round((getGuildBonusMultiplier() - 1) * 100);
             const ownItems = Object.entries(inventory || {}).filter(([, qty]) => qty > 0);
             el.innerHTML = `
-                <div style="font-size:1.05rem;font-weight:800;color:#f5a623;margin-bottom:4px;">🏰 ${guildData.name}</div>
-                <div style="font-size:.78rem;color:#c8b090;margin-bottom:4px;">👥 ${members.length} Mitglied${members.length !== 1 ? "er" : ""} &nbsp;|&nbsp; Gegründet von ${guildData.founderName || "?"}</div>
-                <div style="font-size:.8rem;color:#5a9e4a;font-weight:700;margin-bottom:12px;">✨ Gilden-Bonus: +${bonusPct}% Ertrag & Glücks-Chance für alle Mitglieder</div>
-                <div style="font-size:.85rem;font-weight:700;color:#ffefcf;margin-bottom:6px;">👥 Mitglieder</div>
-                <div style="margin-bottom:14px;">${members.map(([uid, m]) => `<div style="font-size:.8rem;color:#ddd;padding:4px 0;">${m.role === "founder" ? "👑" : "•"} ${m.name}</div>`).join('')}</div>
-                <div style="font-size:.85rem;font-weight:700;color:#ffefcf;margin-bottom:6px;">📦 Gildenlager</div>
-                <div style="margin-bottom:10px;">${storage.length === 0 ? `<div style="color:#aaa;font-size:.78rem;">Leer – zahl was ein!</div>` :
-                    storage.map(([key, qty]) => `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #444;"><span style="font-size:.8rem;color:#ddd;">${getProductEmoji(key)} ${getProductName(key)}: ${qty}</span><button class="mass-btn" style="padding:4px 8px;font-size:.68rem;" data-withdraw="${key}">Abheben</button></div>`).join('')}</div>
-                <div style="font-size:.85rem;font-weight:700;color:#ffefcf;margin-bottom:6px;">📥 Einzahlen</div>
-                ${ownItems.length === 0 ? `<div style="color:#aaa;font-size:.78rem;margin-bottom:14px;">Dein Lager ist leer.</div>` : `
-                <select id="guildDepositSelect" style="width:100%;padding:8px;border-radius:10px;border:2px solid #556;background:#2a2a25;color:#ffefcf;margin-bottom:6px;">
+                <div style="font-size:1.05rem;font-weight:800;color:#5c3317;margin-bottom:4px;">🏰 ${guildData.name}</div>
+                <div style="font-size:.78rem;color:#6b4226;margin-bottom:4px;">👥 ${members.length} Mitglied${members.length !== 1 ? "er" : ""} &nbsp;|&nbsp; Gegründet von ${guildData.founderName || "?"}</div>
+                <div style="font-size:.8rem;color:#2e7d32;font-weight:700;margin-bottom:12px;">✨ Gilden-Bonus: +${bonusPct}% Ertrag & Glücks-Chance für alle Mitglieder</div>
+                <div style="font-size:.85rem;font-weight:700;color:#5c3317;margin-bottom:6px;">👥 Mitglieder</div>
+                <div style="margin-bottom:14px;">${members.map(([uid, m]) => `<div style="font-size:.8rem;color:#2c1810;padding:4px 0;">${m.role === "founder" ? "👑" : "•"} ${m.name}</div>`).join('')}</div>
+                <div style="font-size:.85rem;font-weight:700;color:#5c3317;margin-bottom:6px;">📦 Gildenlager</div>
+                <div style="margin-bottom:10px;">${storage.length === 0 ? `<div style="color:#a08050;font-size:.78rem;">Leer – zahl was ein!</div>` :
+                    storage.map(([key, qty]) => `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:#fdf3e0;border:1px solid #e0c088;border-radius:8px;margin-bottom:5px;"><span style="font-size:.8rem;color:#2c1810;">${getProductEmoji(key)} ${getProductName(key)}: ${qty}</span><button class="mass-btn" style="padding:4px 8px;font-size:.68rem;" data-withdraw="${key}">Abheben</button></div>`).join('')}</div>
+                <div style="font-size:.85rem;font-weight:700;color:#5c3317;margin-bottom:6px;">📥 Einzahlen</div>
+                ${ownItems.length === 0 ? `<div style="color:#a08050;font-size:.78rem;margin-bottom:14px;">Dein Lager ist leer.</div>` : `
+                <select id="guildDepositSelect" style="width:100%;padding:8px;border-radius:10px;border:2px solid #c8a060;background:#fff8ea;color:#2c1810;margin-bottom:6px;">
                     ${ownItems.map(([key, qty]) => `<option value="${key}">${getProductEmoji(key)} ${getProductName(key)} (${qty})</option>`).join('')}
                 </select>
                 <div style="display:flex;gap:6px;margin-bottom:14px;">
-                    <input type="number" id="guildDepositAmount" min="1" value="1" style="flex:1;padding:8px;border-radius:10px;border:2px solid #556;background:#2a2a25;color:#ffefcf;">
-                    <button id="guildDepositBtn" class="mass-btn" style="background:#4a8b6e;">Einzahlen</button>
+                    <input type="number" id="guildDepositAmount" min="1" value="1" style="flex:1;padding:8px;border-radius:10px;border:2px solid #c8a060;background:#fff8ea;color:#2c1810;">
+                    <button id="guildDepositBtn" class="mass-btn" style="background:#4a8b6e;color:#fff;">Einzahlen</button>
                 </div>`}
-                <button id="leaveGuildBtn" class="mass-btn" style="background:#8b2020;width:100%;">🚪 Gilde verlassen</button>`;
+                <button id="leaveGuildBtn" class="mass-btn" style="background:#8b2020;color:#fff;width:100%;">🚪 Gilde verlassen</button>`;
             const depositBtn = document.getElementById("guildDepositBtn");
             if (depositBtn) depositBtn.onclick = () => {
                 depositToGuildStorage(document.getElementById("guildDepositSelect").value, document.getElementById("guildDepositAmount").value);
