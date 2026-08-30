@@ -2907,18 +2907,18 @@
             const guildFields = getGuildFields();
             return guildFields.map((f, idx) => {
                 if (!f.cropId) {
-                    return `<div style="width:100%;aspect-ratio:1;background:linear-gradient(160deg,#5a7a45,#46603a);border:2px dashed #35502a;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;" data-guild-plant="${idx}">
-                        <span style="font-size:1.4rem;">➕</span><span style="font-size:.6rem;color:#eaffea;">pflanzen</span>
+                    return `<div style="width:100%;aspect-ratio:1;background:linear-gradient(160deg,#5a7a45,#46603a);border:2px dashed #35502a;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;" data-guild-plant="${idx}">
+                        <span style="font-size:1rem;">➕</span><span style="font-size:.5rem;color:#eaffea;">pflanzen</span>
                     </div>`;
                 }
                 const crop = CROPS[f.cropId];
                 const ready = isGuildFieldReady(f);
                 const growTime = getGuildFieldGrowTime(f.cropId);
                 const pct = ready ? 100 : Math.min(100, Math.round(((Date.now() - f.plantedAt) / growTime) * 100));
-                return `<div style="width:100%;aspect-ratio:1;background:radial-gradient(ellipse at 50% 30%,#a9713f 0%,#8a5a2e 65%,#6e4522 100%);border:2px solid #5a3818;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;">
-                    <span style="font-size:1.6rem;">${ready ? "✅" : crop.emoji}</span>
-                    <span style="font-size:.58rem;color:#fff8e0;text-shadow:0 1px 2px rgba(0,0,0,.5);">${ready ? "bereit!" : pct + "%"}</span>
-                    ${ready ? `<button data-guild-harvest="${idx}" style="margin-top:2px;padding:2px 8px;font-size:.62rem;border:none;border-radius:8px;background:#3a8c3a;color:#fff;cursor:pointer;">Ernten</button>` : ""}
+                return `<div style="width:100%;aspect-ratio:1;background:radial-gradient(ellipse at 50% 30%,#a9713f 0%,#8a5a2e 65%,#6e4522 100%);border:2px solid #5a3818;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:2px;">
+                    <span style="font-size:1.1rem;line-height:1;">${ready ? "✅" : crop.emoji}</span>
+                    <span style="font-size:.48rem;color:#fff8e0;text-shadow:0 1px 2px rgba(0,0,0,.5);">${ready ? "bereit!" : pct + "%"}</span>
+                    ${ready ? `<button data-guild-harvest="${idx}" style="margin-top:1px;padding:1px 5px;font-size:.5rem;border:none;border-radius:6px;background:#3a8c3a;color:#fff;cursor:pointer;">Ernten</button>` : ""}
                 </div>`;
             }).join('');
         }
@@ -2988,7 +2988,7 @@
                 <div style="font-size:.8rem;color:#2e7d32;font-weight:700;margin-bottom:12px;">✨ Mitglieder-Bonus: +${bonusPct}% Ertrag & Glücks-Chance (mehr Mitglieder = mehr Bonus, bis +20%)</div>
                 <div style="font-size:.85rem;font-weight:700;color:#5c3317;margin-bottom:6px;">🌾 Gilden-Acker (gehört der Gilde)</div>
                 <div style="font-size:.7rem;color:#a08050;margin-bottom:8px;">Jedes Mitglied kann pflanzen (bezahlt selbst) und ernten – die Ernte landet direkt im Gildenlager.</div>
-                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:16px;" id="guildFieldsGrid">${renderGuildFields()}</div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(64px, 1fr));gap:6px;max-width:420px;margin-bottom:16px;" id="guildFieldsGrid">${renderGuildFields()}</div>
                 <div style="font-size:.85rem;font-weight:700;color:#5c3317;margin-bottom:6px;">🔬 Gilden-Forschung</div>
                 <div style="font-size:.7rem;color:#a08050;margin-bottom:8px;">Wird aus dem Gildenlager bezahlt, gilt danach dauerhaft für alle Mitglieder.</div>
                 <div style="margin-bottom:14px;">${researchHtml}</div>
