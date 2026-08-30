@@ -4687,6 +4687,7 @@
             } catch (error) { console.error("Fehler beim Laden:", error);
                 showToast("❌ Fehler beim Laden der Cloud-Daten", true); }
             isLoadingFromCloud = false;
+            listenForFarmHelp();
         }
         async function applyCloudData(data) {
             if (!data) return;
@@ -5141,20 +5142,26 @@
             modal.id = "playerFarmModal";
             modal.style.cssText = "position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.75); z-index:9998; display:flex; align-items:center; justify-content:center; padding:20px;";
             const fields = sg.fields || [];
-            const fieldsHtml = fields.map(f => {
+            const readyFieldIndices = [];
+            const fieldsHtml = fields.map((f, idx) => {
                 if (!f.owned) return '<div style="width:32px;height:32px;background:#2a2015;border-radius:6px;opacity:.35;"></div>';
                 let emoji = '🟫';
-                if (f.cropId && CROPS[f.cropId]) emoji = f.isReady ? '✅' : CROPS[f.cropId].emoji;
+                if (f.cropId && CROPS[f.cropId]) { emoji = f.isReady ? '✅' : CROPS[f.cropId].emoji; if (f.isReady) readyFieldIndices.push(idx); }
                 return `<div style="width:32px;height:32px;background:#3a2a18;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1.05rem;">${emoji}</div>`;
             }).join('');
             const animals = sg.animals || [];
-            const animalsHtml = animals.length ? animals.map(a => {
+            const readyAnimalIndices = [];
+            const animalsHtml = animals.length ? animals.map((a, idx) => {
                 const def = ANIMALS[a.type];
                 const emoji = def ? def.emoji : '🐾';
+                if (a.isReady) readyAnimalIndices.push(idx);
                 return `<span style="font-size:1.3rem;margin-right:4px;" title="${def ? def.name : a.type}">${emoji}${a.isReady ? '✨' : ''}</span>`;
             }).join('') : '<span style="opacity:.6;">Keine Tiere</span>';
             const decos = Object.keys(sg.ownedDecorations || {});
             const decoHtml = decos.length ? decos.map(id => DEKO_ITEMS[id] ? `<span title="${DEKO_ITEMS[id].name}" style="font-size:1.2rem;margin-right:4px;">${DEKO_ITEMS[id].emoji}</span>` : '').join('') : '<span style="opacity:.6;">Keine Deko</span>';
+            const helpButtonsHtml = `
+                ${readyFieldIndices.length > 0 ? `<button id="helpHarvestBtn" class="mass-btn" style="background:#5a9e4a;width:100%;margin-bottom:6px;">🤝 Bei der Ernte helfen (${readyFieldIndices.length} Feld${readyFieldIndices.length > 1 ? 'er' : ''})</button>` : ''}
+                ${readyAnimalIndices.length > 0 ? `<button id="helpAnimalsBtn" class="mass-btn" style="background:#8b6e3a;width:100%;margin-bottom:6px;">🤝 Beim Einsammeln helfen (${readyAnimalIndices.length} Tier${readyAnimalIndices.length > 1 ? 'e' : ''})</button>` : ''}`;
             modal.innerHTML = `
                 <div style="background:linear-gradient(160deg,#fdf3e0,#f0ddb8);border-radius:24px;padding:24px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.4);">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
@@ -5168,16 +5175,71 @@
                     <div style="margin-bottom:14px;">${animalsHtml}</div>
                     <div style="font-size:.8rem;font-weight:700;color:#6b4226;margin-bottom:4px;">🎨 Deko</div>
                     <div>${decoHtml}</div>
+                    ${(readyFieldIndices.length > 0 || readyAnimalIndices.length > 0) ? `<div style="margin-top:14px;">${helpButtonsHtml}</div>` : ''}
                     <div style="text-align:center;margin-top:14px;">
                         <button id="sendGiftBtn" class="mass-btn" style="background:#4a8b6e;">🎁 Geschenk senden</button>
                     </div>
-                    <div style="font-size:.68rem;color:#a08050;margin-top:8px;text-align:center;">👁️ Nur Ansicht – hier kann nichts verändert werden.</div>
+                    <div style="font-size:.68rem;color:#a08050;margin-top:8px;text-align:center;">Du kannst hier nur helfen und schenken – der Rest bleibt unverändert.</div>
                 </div>`;
             modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
             document.body.appendChild(modal);
             document.getElementById("closePlayerFarmModalBtn").onclick = () => modal.remove();
             const giftBtn = document.getElementById("sendGiftBtn");
             if (giftBtn) giftBtn.onclick = () => openGiftPicker(name, targetUid);
+            const helpHarvestBtn = document.getElementById("helpHarvestBtn");
+            if (helpHarvestBtn) helpHarvestBtn.onclick = () => {
+                sendFarmHelp(targetUid, name, "harvestFields", readyFieldIndices);
+                helpHarvestBtn.disabled = true; helpHarvestBtn.style.opacity = 0.5; helpHarvestBtn.textContent = "🤝 Geholfen!";
+            };
+            const helpAnimalsBtn = document.getElementById("helpAnimalsBtn");
+            if (helpAnimalsBtn) helpAnimalsBtn.onclick = () => {
+                sendFarmHelp(targetUid, name, "collectAnimals", readyAnimalIndices);
+                helpAnimalsBtn.disabled = true; helpAnimalsBtn.style.opacity = 0.5; helpAnimalsBtn.textContent = "🤝 Geholfen!";
+            };
+        }
+        async function sendFarmHelp(targetUid, targetName, type, indices) {
+            if (!currentUser) { showToast("❌ Bitte zuerst einloggen!", true); return; }
+            if (!targetUid || targetUid === currentUser.uid) { showToast("❌ Du kannst dir nicht selbst helfen.", true); return; }
+            if (!indices || indices.length === 0) return;
+            try {
+                const ref = database.ref("farmHelp/" + targetUid).push();
+                await ref.set({ type, indices, helperName: playerName || "Anonym", timestamp: Date.now() });
+                showToast(`🤝 Danke fürs Helfen! ${targetName} bekommt es beim nächsten Öffnen gutgeschrieben.`, false);
+            } catch (err) { showToast("❌ Konnte nicht helfen.", true); }
+        }
+        let farmHelpListenerRef = null;
+        function listenForFarmHelp() {
+            if (!currentUser || !database) return;
+            if (farmHelpListenerRef) farmHelpListenerRef.off();
+            farmHelpListenerRef = database.ref("farmHelp/" + currentUser.uid);
+            farmHelpListenerRef.on("child_added", (snap) => { applyFarmHelp(snap.key, snap.val()); });
+        }
+        async function applyFarmHelp(helpId, help) {
+            try {
+                if (!help || !Array.isArray(help.indices)) return;
+                if (help.type === "harvestFields") {
+                    let count = 0;
+                    help.indices.forEach(idx => {
+                        const f = fields[idx];
+                        if (f && f.owned && f.cropId && f.isReady) { harvestField(idx); count++; }
+                    });
+                    if (count > 0) showToast(`🤝 ${help.helperName || "Ein Nachbar"} hat dir bei ${count} Feld${count > 1 ? "ern" : ""} geholfen!`, false);
+                } else if (help.type === "collectAnimals") {
+                    const handledTypes = new Set();
+                    let count = 0;
+                    help.indices.forEach(idx => {
+                        const a = animals[idx];
+                        if (a && a.isReady && !handledTypes.has(a.type)) {
+                            handledTypes.add(a.type);
+                            if (typeof collectProduct === "function") { collectProduct(idx); count++; }
+                        }
+                    });
+                    if (count > 0) showToast(`🤝 ${help.helperName || "Ein Nachbar"} hat dir beim Einsammeln geholfen!`, false);
+                }
+            } catch (err) { console.warn("Farm-Hilfe konnte nicht angewendet werden:", err); }
+            finally {
+                try { await database.ref("farmHelp/" + currentUser.uid + "/" + helpId).remove(); } catch (e) {}
+            }
         }
         // ==================== GESCHENKE ====================
         function getProductEmoji(key) {
