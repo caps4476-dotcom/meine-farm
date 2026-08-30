@@ -2585,10 +2585,10 @@
         let guildId = null, guildData = null, guildListenerRef = null;
         const GUILD_FOUND_COST = 2000;
         const GUILD_RESEARCH = {
-            guildYield:  { name: "🌾 Gilden-Ernte-Boost", desc: "+5% Ertrag für alle Mitglieder", levelRequired: 2, resources: { carrot: 200, wheat: 150 }, effect: { type: "yield", value: 0.05 } },
-            guildLuck:   { name: "🎲 Gilden-Glück", desc: "+5% Glücks-Chance für alle Mitglieder", levelRequired: 4, resources: { egg: 150, milk: 150 }, effect: { type: "luck", value: 0.05 } },
-            guildGrowth: { name: "🌱 Gilden-Wachstum", desc: "10% schnelleres Pflanzenwachstum für alle Mitglieder", levelRequired: 6, resources: { tomato: 200, strawberry: 150 }, effect: { type: "growth", value: 0.90 } },
-            guildAnimal: { name: "🐄 Gilden-Tierpflege", desc: "10% schnellere Tierproduktion für alle Mitglieder", levelRequired: 8, resources: { wool: 100, honey: 80 }, effect: { type: "animalSpeed", value: 0.90 } }
+            guildYield:  { name: "🌾 Gilden-Ernte-Boost", desc: "+5% Ertrag für alle Mitglieder", levelRequired: 5, resources: { carrot: 10000, wheat: 6000 }, effect: { type: "yield", value: 0.05 } },
+            guildLuck:   { name: "🎲 Gilden-Glück", desc: "+5% Glücks-Chance für alle Mitglieder", levelRequired: 10, resources: { egg: 8000, milk: 6000 }, effect: { type: "luck", value: 0.05 } },
+            guildGrowth: { name: "🌱 Gilden-Wachstum", desc: "10% schnelleres Pflanzenwachstum für alle Mitglieder", levelRequired: 15, resources: { tomato: 9000, strawberry: 5000 }, effect: { type: "growth", value: 0.90 } },
+            guildAnimal: { name: "🐄 Gilden-Tierpflege", desc: "10% schnellere Tierproduktion für alle Mitglieder", levelRequired: 20, resources: { wool: 4500, honey: 3000 }, effect: { type: "animalSpeed", value: 0.90 } }
         };
         function getItemBaseValue(key) {
             if (CROPS[key]) return CROPS[key].basePrice || 1;
